@@ -1,0 +1,31 @@
+# Artefactos de build de la imagen
+*.img
+*.img.*
+*.iso
+*.squashfs
+/build/
+/out/
+/dist/
+rootfs.tar
+filesystem.squashfs
+
+# Python (app/)
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Música precargada local (no versionar audio pesado)
+/os/rootfs-overlay/opt/rocola/music/*
+!/os/rootfs-overlay/opt/rocola/music/.gitkeep
+
+# Sistema operativo / editores
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/

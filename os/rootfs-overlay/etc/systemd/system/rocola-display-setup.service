@@ -1,0 +1,14 @@
+# Configura el modo de video (VGA/moderno o CRT 15 kHz) antes de arrancar la UI.
+[Unit]
+Description=Rocola — configuración de video (VGA / CRT 15 kHz)
+Before=rocola.service
+DefaultDependencies=no
+After=systemd-udev-settle.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/rocola-display-setup
+
+[Install]
+WantedBy=multi-user.target

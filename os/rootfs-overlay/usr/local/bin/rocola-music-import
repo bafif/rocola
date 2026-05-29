@@ -1,0 +1,56 @@
+#!/bin/bash
+# Importa música a /music desde:
+#   - la biblioteca precargada en la imagen (/opt/rocola/music), y/o
+#   - un pendrive USB montado (autodetección simple).
+# Luego dispara un re-scan de MPD.
+set -euo pipefail
+
+DEST="/music"
+PRELOAD="/opt/rocola/music"
+mkdir -p "$DEST"
+
+log() { echo "[rocola-music-import] $*"; }
+
+# 1) Música precargada en la imagen (solo si /music está vacío).
+if [ -d "$PRELOAD" ] && [ -z "$(ls -A "$DEST" 2>/dev/null)" ]; then
+    if [ -n "$(ls -A "$PRELOAD" 2>/dev/null)" ]; then
+        log "Copiando música precargada de $PRELOAD a $DEST…"
+        rsync -a --info=progress2 "$PRELOAD"/ "$DEST"/ || true
+    fi
+fi
+
+# 2) Música desde USB. Se pasa el punto de montaje como argumento, o se intenta
+#    autodetectar discos USB con sistemas de archivos montables.
+import_from() {
+    local src="$1"
+    [ -d "$src" ] || return 0
+    log "Importando desde $src…"
+    # Copia carpetas/archivos de audio evitando duplicados (--ignore-existing).
+    rsync -a --ignore-existing \
+        --include='*/' \
+        --include='*.mp3' --include='*.flac' --include='*.ogg' --include='*.m4a' \
+        --include='*.wav' --include='*.opus' --include='*.aac' \
+        --include='cover.*' --include='folder.*' --include='*.jpg' --include='*.png' \
+        --exclude='*' \
+        "$src"/ "$DEST"/ || true
+}
+
+if [ "${1:-}" != "" ]; then
+    import_from "$1"
+else
+    # Autodetección básica: recorre /media/* y /mnt/* buscando carpetas con audio.
+    for mp in /media/*/* /media/* /mnt/*; do
+        [ -d "$mp" ] || continue
+        if find "$mp" -maxdepth 3 -type f \( -iname '*.mp3' -o -iname '*.flac' -o -iname '*.ogg' \) -print -quit | grep -q .; then
+            import_from "$mp"
+        fi
+    done
+fi
+
+# 3) Re-escanear la biblioteca de MPD.
+if command -v mpc >/dev/null 2>&1; then
+    log "Actualizando biblioteca de MPD…"
+    mpc update >/dev/null 2>&1 || true
+fi
+
+log "Listo."

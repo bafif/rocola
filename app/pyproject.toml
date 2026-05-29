@@ -1,0 +1,22 @@
+[project]
+name = "rocola"
+version = "0.1.0"
+description = "UI de la rocola (SDL2/pygame-ce) sobre MPD"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Bautista D. Fiori" }]
+dependencies = [
+    "pygame-ce>=2.4",   # en Debian bookworm: paquete python3-pygame
+]
+
+[project.scripts]
+rocola = "rocola.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rocola*"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"

@@ -1,0 +1,19 @@
+#!/bin/bash
+# Sesión X de la rocola: prepara el entorno y lanza la app SDL2 a pantalla completa.
+# Lo invoca xinit desde rocola.service.
+set -euo pipefail
+
+# Sin salvapantallas / DPMS (es una rocola, la pantalla queda encendida).
+xset s off -dpms || true
+xset s noblank || true
+
+# Oculta el cursor si está 'unclutter' disponible (opcional).
+command -v unclutter >/dev/null 2>&1 && unclutter -idle 1 &
+
+# Asegura que MPD esté arriba y la música escaneada.
+command -v mpc >/dev/null 2>&1 && mpc update >/dev/null 2>&1 || true
+
+# Lanza la app. PYTHONPATH apunta al paquete instalado en /opt/rocola.
+export PYTHONPATH=/opt/rocola
+cd /opt/rocola
+exec python3 -m rocola

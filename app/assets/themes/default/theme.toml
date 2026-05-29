@@ -1,0 +1,20 @@
+# Tema por defecto de la rocola. Copiá esta carpeta y editá para tu branding.
+name = "Rocola Clásica"
+
+[colors]
+background = "#0b0b15"
+accent     = "#ff3366"
+text       = "#f5f5f5"
+highlight  = "#ffd24a"
+muted      = "#7878a0"
+
+[fonts]
+# Rutas relativas a ESTA carpeta. Si se omiten o faltan, se usa la fuente del sistema.
+# Poné los .ttf en app/assets/fonts/ y referencialos así:
+# title = "../../fonts/PressStart2P.ttf"
+# body  = "../../fonts/Inter-Regular.ttf"
+
+[branding]
+title = "MI ROCOLA"
+# Logo compartido en app/assets/logo.svg (reemplazable por .png).
+logo  = "../../logo.svg"
