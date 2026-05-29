@@ -12,12 +12,14 @@ os/Dockerfile ──build──► imagen Docker del SO ──export──► ou
 
 ## Requisitos del host
 
-- **Docker** con soporte multiarch para `linux/386`:
+- **Docker** y **make**. Nada más.
+- En CPUs **x86-64**, Docker ejecuta los contenedores `linux/386` de forma nativa (no hace falta
+  emulador). En hosts que no puedan, instalá binfmt una sola vez:
   ```bash
-  docker run --privileged --rm tonistiigi/binfmt --install all   # una sola vez
+  docker run --privileged --rm tonistiigi/binfmt --install all
   ```
-- **make**.
-- Para `make image`: capacidad de correr `docker run --privileged` (usa loop devices + GRUB).
+- `make image` corre con un `docker run` **normal**: no necesita `--privileged`, loop devices ni
+  `/dev` (usa `grub-mkrescue`). Por eso funciona en **WSL2** y en CI.
 
 ## Paso 1 — SO como imagen Docker (`make rootfs`)
 
@@ -35,17 +37,22 @@ kernel, `live-boot` y GRUB se instalaron en el paso 1, el rootfs es **autosufici
 
 ## Paso 3 — Armar la imagen booteable (`make image`)
 
-`image/Dockerfile.builder` trae el tooling (`mksquashfs`, `grub-pc-bin`, `grub-efi-amd64-bin`,
-`genimage`, `dosfstools`, `e2fsprogs`). `build-image.sh`, dentro de un contenedor **privilegiado**:
+`image/Dockerfile.builder` trae el tooling (`mksquashfs`, `xorriso`, `mtools`, `grub-pc-bin`,
+`grub-efi-amd64-bin`). `build-image.sh`:
 
 1. Desempaqueta `rootfs.tar`.
-2. `mksquashfs` → `filesystem.squashfs`.
-3. `genimage` (según `genimage.cfg`) arma `rocola-i386.img` con:
-   - **MBR híbrido**: GRUB-PC para BIOS.
-   - **ESP (FAT32)** con GRUB-EFI amd64 para UEFI x64.
-   - **Partición live** con `filesystem.squashfs` + kernel + initrd (`live-boot`).
+2. `mksquashfs` → `filesystem.squashfs` (incluye `/boot`, para que el sistema **instalado** tenga
+   kernel+initrd al clonarse desde la raíz viva).
+3. Copia kernel+initrd a `/live/` y escribe `boot/grub/grub.cfg` (entradas normal y "modo seguro VGA").
+4. **`grub-mkrescue`** ensambla `rocola-i386.img`: una **ISO híbrida (isohybrid)** con El Torito para
+   **BIOS** (core GRUB i386-pc) **y UEFI x64** (imagen EFI + `/EFI/BOOT/BOOTX64.EFI`).
 
-Resultado: `out/rocola-i386.img`, booteable por BIOS y por UEFI x64.
+> **Sin privilegios ni loop devices.** `grub-mkrescue` trabaja en espacio de usuario (xorriso +
+> mtools), así que `make image` corre con un `docker run` normal —no `--privileged`—. Esto es lo que
+> permite construir en **WSL2/CI**, donde `losetup -P` no crea los nodos de partición. El `.img`
+> resultante se graba con `dd` y bootea por BIOS y UEFI; live-boot monta el squashfs con overlay en RAM.
+
+Resultado: `out/rocola-i386.img`, ISO híbrida booteable por BIOS y por UEFI x64.
 
 ## Paso 4 — Grabar (`make flash DEV=/dev/sdX`)
 
@@ -54,9 +61,14 @@ Resultado: `out/rocola-i386.img`, booteable por BIOS y por UEFI x64.
 ## Verificación rápida
 
 ```bash
-fdisk -l out/rocola-i386.img      # ver particiones (ESP + live)
-qemu-system-i386 -hda out/rocola-i386.img -m 2048           # BIOS
-qemu-system-i386 -bios /usr/share/ovmf/OVMF.fd -hda out/rocola-i386.img -m 2048   # UEFI
+file out/rocola-i386.img          # ISO 9660 / boot sector (isohybrid)
+xorriso -indev out/rocola-i386.img -report_el_torito plain   # entradas BIOS + UEFI
+
+# Probar en QEMU (la imagen es una ISO booteable; usar como cdrom):
+qemu-system-i386 -cdrom out/rocola-i386.img -m 2048                                   # BIOS
+qemu-system-i386 -bios /usr/share/ovmf/OVMF.fd -cdrom out/rocola-i386.img -m 2048     # UEFI x64
 ```
+
+> El `.img` es una ISO híbrida: bootea igual grabada con `dd` a un pendrive (`dd if=…img of=/dev/sdX`).
 
 Siguiente: [03 · Boot y modo live](03-boot-and-live.md).

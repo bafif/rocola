@@ -32,11 +32,18 @@ los de 15 kHz de arcade/TV**, sin configuración posterior.
 
 ### 1. Construir la imagen
 
-Requisitos en la máquina de build: **Docker** (con soporte `linux/386` vía binfmt/qemu) y `make`.
+Requisitos en la máquina de build: **Docker** y `make`. (En CPUs x86-64 Docker corre los
+contenedores i386 nativo; en otros hosts, instalá binfmt una vez —ver
+[docs/02](docs/02-build-pipeline.md)—.)
 
 ```bash
-make image          # produce out/rocola-i386.img (booteable BIOS + UEFI x64)
+make rootfs         # construye el SO (imagen Docker i386); la primera vez tarda
+make image          # produce out/rocola-i386.img: ISO híbrida booteable BIOS + UEFI x64
 ```
+
+> **Estado:** verificado de punta a punta — `make image` genera la ISO y **arranca en QEMU (BIOS)
+> hasta la UI de la rocola a pantalla completa, con MPD conectado**. Capturas en
+> [docs/screenshots/](docs/screenshots/); detalle en [docs/12-verificacion.md](docs/12-verificacion.md).
 
 ### 2. Grabar el pendrive
 
@@ -92,6 +99,7 @@ detalle de cada parte.
 | [docs/09-branding-theming.md](docs/09-branding-theming.md) | Branding y temas |
 | [docs/10-flashing-usb.md](docs/10-flashing-usb.md) | Grabar el pendrive |
 | [docs/11-troubleshooting.md](docs/11-troubleshooting.md) | Resolución de problemas |
+| [docs/12-verificacion.md](docs/12-verificacion.md) | Qué está probado y qué falta validar |
 
 ---
 
@@ -100,7 +108,8 @@ detalle de cada parte.
 - El soporte **15 kHz** depende de una **GPU/driver compatibles** con modelines de baja frecuencia;
   donde no haya, el sistema cae a un modo VGA seguro. Ver
   [docs/05-display-crt-15khz.md](docs/05-display-crt-15khz.md).
-- El paso de armado de la imagen necesita un contenedor **privilegiado** (loop devices, GRUB).
+- El armado de la imagen usa `grub-mkrescue` (xorriso + mtools): **no requiere privilegios** ni loop
+  devices, así que funciona en WSL2/CI con un `docker run` normal.
 - `make flash` **borra** el dispositivo destino: verificá `DEV` dos veces.
 
 ---

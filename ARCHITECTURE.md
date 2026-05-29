@@ -30,11 +30,11 @@ Un **pendrive booteable** que convierte una PC de escritorio vieja en una **roco
                 ▼
         out/rootfs.tar
                 │
-                │  image/Dockerfile.builder (squashfs + grub + genimage)
-                ▼  build-image.sh   (contenedor PRIVILEGIADO)
-        out/rocola-i386.img
-          · MBR híbrido: GRUB-PC (BIOS) + ESP con GRUB-EFI amd64 (UEFI x64)
-          · partición live con filesystem.squashfs + kernel + initrd (live-boot)
+                │  image/Dockerfile.builder (mksquashfs + xorriso + grub-mkrescue)
+                ▼  build-image.sh   (docker run NORMAL, sin privilegios)
+        out/rocola-i386.img  (ISO híbrida / isohybrid)
+          · El Torito BIOS (core GRUB i386-pc) + UEFI x64 (BOOTX64.EFI)
+          · /live/{vmlinuz,initrd.img,filesystem.squashfs}  (live-boot, overlay en RAM)
                 │  make flash  (dd / Etcher)
                 ▼
         PENDRIVE booteable
@@ -44,8 +44,11 @@ Decisiones clave:
 - **El SO se define como una imagen Docker** (fiel a la consigna): todo el userland, configs y la
   app viven en `os/`. El kernel, `live-boot` y GRUB se instalan dentro de esa imagen para que el
   rootfs exportado sea autosuficiente.
-- **El empaquetado a `.img`** (particionar, `mksquashfs`, instalar GRUB) corre en un **contenedor
-  builder privilegiado**, así no hace falta tooling especial en el host (solo Docker).
+- **El empaquetado a `.img`** (`mksquashfs` + `grub-mkrescue`) corre en un contenedor builder con un
+  `docker run` **normal**: `grub-mkrescue` arma la ISO híbrida en espacio de usuario (xorriso +
+  mtools), **sin loop devices ni privilegios**. Así el build funciona en WSL2/CI y no hace falta
+  tooling especial en el host (solo Docker). La instalación a disco (particionar/`grub-install`) la
+  hace el instalador en el sistema ya booteado, donde sí hay `/dev/sdX` real.
 
 Detalle: [docs/02-build-pipeline.md](docs/02-build-pipeline.md).
 

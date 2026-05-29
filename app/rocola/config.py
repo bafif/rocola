@@ -39,6 +39,12 @@ class Config:
     # Combo de teclas para abrir el instalador (ver input.py / docs 06).
     installer_hotkey: str = "F10"
 
+    # Modo captura (dev/CI): si ROCOLA_SCREENSHOT apunta a un archivo, la app
+    # renderiza unos frames, guarda un PNG y sale. Sirve para previews del
+    # branding y para verificar el render sin hardware/monitor real.
+    screenshot: str | None = None
+    screenshot_scene: str = "library"
+
     @classmethod
     def load(cls) -> "Config":
         cfg = cls()
@@ -59,6 +65,8 @@ class Config:
         res = _parse_res(os.environ.get("ROCOLA_RES"))
         if res:
             cfg.resolution = res
+        cfg.screenshot = os.environ.get("ROCOLA_SCREENSHOT", cfg.screenshot)
+        cfg.screenshot_scene = os.environ.get("ROCOLA_SCREENSHOT_SCENE", cfg.screenshot_scene)
         return cfg
 
     @property

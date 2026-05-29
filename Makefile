@@ -28,17 +28,25 @@ $(OUT):
 rootfs: ## Construye la imagen Docker del SO de la rocola
 	docker build --platform linux/386 -t $(OS_IMAGE) -f os/Dockerfile .
 
+# Asegura que la imagen del SO exista, SIN forzar un rebuild en cada `make image`.
+# (Si `export`/`image` dependieran del target `rootfs`, se reconstruiría el docker
+#  build cada vez. Con esto sólo se construye si falta; para forzar: `make rootfs`.)
+.PHONY: ensure-os
+ensure-os: | $(OUT)
+	@if [ -z "$$(docker images -q $(OS_IMAGE))" ]; then \
+		echo "Imagen $(OS_IMAGE) no existe; construyendo…"; $(MAKE) rootfs; \
+	else echo "Usando $(OS_IMAGE) existente (usá 'make rootfs' para reconstruir)"; fi
+
 .PHONY: export
-export: rootfs | $(OUT) ## Exporta el rootfs de la imagen Docker a un tar
+export: ensure-os ## Exporta el rootfs de la imagen Docker a un tar
 	cid=$$(docker create --platform linux/386 $(OS_IMAGE)); \
 	docker export $$cid -o $(ROOTFS_TAR); \
 	docker rm $$cid
 
 .PHONY: image
-image: export ## Arma la imagen booteable rocola-i386.img
+image: export ## Arma la imagen booteable rocola-i386.img (híbrida BIOS+UEFI)
 	docker build -t rocola-builder -f image/Dockerfile.builder image/
-	docker run --rm --privileged \
-		-v /dev:/dev \
+	docker run --rm \
 		-v "$(CURDIR)/$(OUT)":/out \
 		rocola-builder /usr/local/bin/build-image.sh /out/rootfs.tar /out/rocola-$(ARCH).img
 

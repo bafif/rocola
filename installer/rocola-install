@@ -75,13 +75,24 @@ P_ESP="${TARGET}1"; P_ROOT="${TARGET}2"; P_DATA="${TARGET}3"
 # (para discos nvme las particiones son p1/p2/p3)
 case "$TARGET" in *nvme*|*mmcblk*) P_ESP="${TARGET}p1"; P_ROOT="${TARGET}p2"; P_DATA="${TARGET}p3";; esac
 
+# ¿Hay un layout previo de rocola (ESP+ROOT+MUSIC) que podamos conservar?
+KEEP_OK=no
+if [ "$KEEP_MUSIC" = yes ] \
+   && blkid "$P_DATA" >/dev/null 2>&1 \
+   && [ "$(blkid -s LABEL -o value "$P_DATA" 2>/dev/null)" = "music" ]; then
+    KEEP_OK=yes
+fi
+
 echo "Particionando $TARGET…"
-log "particionando"
-if [ "$KEEP_MUSIC" = yes ] && blkid "$P_DATA" >/dev/null 2>&1; then
-    # Reescribe solo ESP + ROOT, conserva DATA.
-    sgdisk --zap-all --new=1:0:+256M --typecode=1:ef00 \
-           --new=2:0:0 --typecode=2:8300 "$TARGET" >&3 2>&1 || true
+log "particionando (keep_ok=$KEEP_OK)"
+if [ "$KEEP_OK" = yes ]; then
+    # NO reparticionar: conservar la tabla y la partición de música intactas.
+    # Sólo se reformatean ESP y ROOT más abajo; DATA queda como está.
+    log "conservando layout y partición de música $P_DATA"
 else
+    if [ "$KEEP_MUSIC" = yes ]; then
+        log "no hay partición 'music' previa reconocible; se hará layout nuevo"
+    fi
     sgdisk --zap-all \
         --new=1:0:+256M  --typecode=1:ef00 --change-name=1:ESP \
         --new=2:0:+12G   --typecode=2:8300 --change-name=2:ROOT \
@@ -92,8 +103,8 @@ partprobe "$TARGET"; sleep 2
 echo "Formateando…"; log "mkfs"
 mkfs.vfat -F32 -n ESP "$P_ESP"        >&3 2>&1
 mkfs.ext4 -F -L rocola-root "$P_ROOT" >&3 2>&1
-if [ "$KEEP_MUSIC" = yes ] && blkid "$P_DATA" >/dev/null 2>&1; then
-    log "conservando $P_DATA"
+if [ "$KEEP_OK" = yes ]; then
+    log "conservando datos en $P_DATA (sin formatear)"
 else
     mkfs.ext4 -F -L music "$P_DATA"   >&3 2>&1
 fi

@@ -1,17 +1,15 @@
 # Builder de la imagen booteable de la rocola.
 # Consume out/rootfs.tar (exportado del SO) y produce rocola-i386.img.
-# Se corre PRIVILEGIADO (usa loop devices + grub-install).
+# Usa grub-mkrescue (xorriso + mtools): NO requiere privilegios ni loop devices,
+# así funciona en WSL2/CI. Genera una ISO híbrida booteable por BIOS y UEFI x64.
 FROM debian:bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
         squashfs-tools \
-        dosfstools \
+        xorriso \
         mtools \
-        parted \
-        gdisk \
-        e2fsprogs \
-        util-linux \
+        dosfstools \
         grub-pc-bin \
         grub-efi-amd64-bin \
         grub-common \
@@ -20,7 +18,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY build-image.sh /usr/local/bin/build-image.sh
-COPY genimage.cfg   /usr/local/share/rocola/genimage.cfg
 RUN chmod +x /usr/local/bin/build-image.sh
 
 ENTRYPOINT []
