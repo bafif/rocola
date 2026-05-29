@@ -1,0 +1,68 @@
+#!/bin/bash
+# rocola-display-setup — configura el video de la rocola según el tipo de monitor.
+#
+# Lo corre un servicio oneshot ANTES de arrancar Xorg/la UI. Como X todavía no
+# está corriendo, NO usa xrandr: genera un snippet de Xorg con los modelines
+# adecuados (VGA/moderno por EDID, o CRT 15 kHz con modelines fijos).
+#
+# Lee /etc/rocola/display.conf (MODE = auto|vga|crt15). Ver docs/05.
+set -euo pipefail
+
+CONF=/etc/rocola/display.conf
+MODELINES_DIR=/opt/rocola-display/modelines
+OUT=/etc/X11/xorg.conf.d/10-rocola-display.conf
+
+MODE=auto
+TV_STANDARD=ntsc
+PREFERRED_RES=
+# shellcheck disable=SC1090
+[ -f "$CONF" ] && . "$CONF" || true
+
+mkdir -p /etc/X11/xorg.conf.d
+
+write_vga() {
+    cat > "$OUT" <<'EOF'
+# VGA / moderno: Xorg autodetecta los modos por EDID.
+Section "Monitor"
+    Identifier "rocola-vga"
+EndSection
+EOF
+}
+
+write_crt15() {
+    local pref="${PREFERRED_RES:-640x480i_60}"
+    {
+        echo "# CRT 15 kHz — generado por rocola-display-setup (ajustar por monitor)"
+        echo 'Section "Monitor"'
+        echo '    Identifier "rocola-crt15"'
+        echo '    HorizSync 15.0-16.5'
+        echo '    VertRefresh 49-61'
+        if [ -f "$MODELINES_DIR/15khz.conf" ]; then
+            grep -h '^[[:space:]]*Modeline' "$MODELINES_DIR/15khz.conf" || true
+        fi
+        echo "    Option \"PreferredMode\" \"$pref\""
+        echo 'EndSection'
+    } > "$OUT"
+}
+
+case "$MODE" in
+    crt15)
+        write_crt15
+        ;;
+    vga)
+        write_vga
+        ;;
+    auto | *)
+        # Autodetección: si hay EDID legible => VGA/moderno. Si no, fallback VGA seguro
+        # (el 15 kHz se fuerza poniendo MODE=crt15 en display.conf, ya que los CRT 15 kHz
+        #  no entregan EDID confiable).
+        if command -v get-edid >/dev/null 2>&1 \
+           && get-edid 2>/dev/null | parse-edid 2>/dev/null | grep -qi modeline; then
+            write_vga
+        else
+            write_vga
+        fi
+        ;;
+esac
+
+echo "rocola-display-setup: MODE=$MODE TV=$TV_STANDARD -> $OUT"

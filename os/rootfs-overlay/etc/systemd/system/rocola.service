@@ -1,0 +1,22 @@
+# Lanza la sesión de la rocola: Xorg mínimo + app SDL2 a pantalla completa.
+[Unit]
+Description=Rocola (UI SDL2 + Xorg)
+After=systemd-user-sessions.service mpd.service rocola-display-setup.service
+Wants=mpd.service
+Requires=rocola-display-setup.service
+Conflicts=getty@tty1.service
+
+[Service]
+User=rocola
+PAMName=login
+TTYPath=/dev/tty1
+StandardInput=tty
+StandardOutput=journal
+StandardError=journal
+# xinit arranca Xorg y, como cliente único, la sesión de la rocola.
+ExecStart=/usr/bin/xinit /usr/local/bin/rocola-session -- :0 vt1 -nolisten tcp
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

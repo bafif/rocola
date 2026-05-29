@@ -1,0 +1,54 @@
+# Paquetes del SO de la rocola (i386, bookworm). Comentarios con '#'.
+# Mantener MÍNIMO: target 2 GB RAM / i386.
+
+# --- Núcleo del sistema / arranque ---
+linux-image-686-pae        # kernel i386 (PAE). Fallback no-PAE: linux-image-686
+live-boot                  # arranque live desde squashfs + overlay
+live-boot-initramfs-tools
+initramfs-tools
+systemd-sysv
+grub-pc-bin                # GRUB para BIOS
+grub-efi-amd64-bin         # GRUB para UEFI x64 (carga kernel i386)
+grub-common
+dosfstools
+e2fsprogs
+parted
+gdisk
+rsync
+squashfs-tools            # unsquashfs en el instalador
+
+# --- Locales / utilidades base ---
+locales
+ca-certificates
+less
+nano
+pciutils
+usbutils
+util-linux
+whiptail                  # TUI del instalador
+
+# --- Servidor gráfico (mínimo) ---
+xserver-xorg-core
+xserver-xorg-legacy
+xserver-xorg-video-all     # drivers de video genéricos (incluye CRT-capaces)
+xserver-xorg-input-libinput
+xserver-xorg-input-evdev
+xinit
+x11-xserver-utils          # xrandr, etc.
+libgl1-mesa-dri
+
+# --- Audio + motor de la rocola ---
+mpd                        # Music Player Daemon (motor de audio)
+mpc                        # cliente CLI para scripts (update, etc.)
+alsa-utils
+
+# --- App de la rocola (SDL2 / pygame-ce) ---
+python3
+python3-pygame             # pygame-ce en bookworm
+python3-mutagen            # lectura de tags/carátulas (opcional pero útil)
+fonts-dejavu-core          # fuente de fallback
+
+# --- Video CRT / 15 kHz ---
+# 'switchres' no está en Debian; se compila/instala en el builder o vía paquete propio.
+# Acá dejamos lo necesario para modelines manuales:
+read-edid                  # parseo de EDID para autodetección

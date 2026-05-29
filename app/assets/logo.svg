@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Logo PLACEHOLDER de la rocola. Reemplazalo por el tuyo (SVG o PNG). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="96" viewBox="0 0 320 96">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff3366"/>
+      <stop offset="1" stop-color="#ffd24a"/>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="6" width="308" height="84" rx="14" fill="#0b0b15" stroke="url(#g)" stroke-width="4"/>
+  <circle cx="48" cy="48" r="26" fill="none" stroke="url(#g)" stroke-width="5"/>
+  <circle cx="48" cy="48" r="6" fill="#ffd24a"/>
+  <text x="92" y="44" font-family="monospace" font-size="30" font-weight="bold" fill="#f5f5f5">ROCOLA</text>
+  <text x="92" y="72" font-family="monospace" font-size="14" fill="#7878a0">jukebox arcade</text>
+</svg>
