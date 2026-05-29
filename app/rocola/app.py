@@ -47,14 +47,21 @@ class RocolaApp:
         self.theme = Theme.load(self.config.theme_dir)
         self.header_h = max(40, self.screen.get_height() // 10)
         self.input.init_joysticks()
-        self._connect_mpd()
+        # En modo captura no esperamos a MPD (1 intento); en runtime reintentamos.
+        self._connect_mpd(retries=1 if self.config.screenshot else 30)
 
         self.scenes = {
             "library": ui.LibraryScene(self),
             "nowplaying": ui.NowPlayingScene(self),
             "menu": ui.MenuScene(self),
         }
-        self.set_scene("library")
+        self.set_scene(self.config.screenshot_scene if self.config.screenshot else "library")
+
+        # Modo captura: render de unos frames, guardar PNG y salir (dev/CI).
+        if self.config.screenshot:
+            self._render_screenshot(self.config.screenshot)
+            self._shutdown()
+            return
 
         self.running = True
         while self.running:
@@ -66,6 +73,20 @@ class RocolaApp:
             self.clock.tick(self.config.fps)
 
         self._shutdown()
+
+    def _render_screenshot(self, path: str) -> None:
+        """Dibuja la escena y guarda un PNG. Tolera que MPD no esté disponible."""
+        self._poll_state()
+        for _ in range(3):  # un par de frames para asentar layout/estado
+            if self.scene:
+                self.scene.draw(self.screen)
+            pygame.display.flip()
+            self.clock.tick(self.config.fps)
+        try:
+            pygame.image.save(self.screen, path)
+            print(f"[rocola] screenshot guardado en {path}")
+        except (OSError, pygame.error) as exc:
+            print(f"[rocola] no se pudo guardar screenshot: {exc}")
 
     def _handle_events(self) -> None:
         for event in pygame.event.get():

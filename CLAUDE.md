@@ -23,7 +23,7 @@ App propia SDL2 + MPD, controles de arcade, soporte CRT (VGA y 15 kHz).
 
 ```
 os/         Dockerfile (FROM i386/debian:bookworm) + packages.list + rootfs-overlay/
-image/      Dockerfile.builder + build-image.sh + genimage.cfg  (rootfs -> .img)
+image/      Dockerfile.builder + build-image.sh (grub-mkrescue, rootfs -> ISO híbrida .img)
 app/        UI SDL2 (Python): rocola/ (ui, mpd client, input, config, theme) + assets/
 installer/  rocola-install (whiptail TUI)
 display/    modelines/ + rocola-display-setup (VGA vs 15 kHz, switchres)
@@ -34,14 +34,17 @@ docs/       01..11 — un doc por subsistema
 
 ```bash
 make rootfs     # build de la imagen Docker del SO
-make image      # rootfs -> out/rocola-i386.img (privilegiado: loop/grub)
+make image      # rootfs -> out/rocola-i386.img (ISO híbrida; grub-mkrescue, sin privilegios)
 make flash DEV=/dev/sdX   # graba el pendrive (DESTRUCTIVO)
 make app-run    # corre la UI localmente (necesita MPD + python3-pygame)
 make clean
 ```
 
-- `make image` requiere `docker run --privileged` (usa loop devices y `grub-install`).
-- Para `linux/386` en build hace falta binfmt/qemu configurado (`docker run --privileged --rm tonistiigi/binfmt --install all` una vez).
+- `make image` usa `grub-mkrescue` (xorriso + mtools): `docker run` **normal**, sin `--privileged`
+  ni loop devices. Genera una ISO híbrida (BIOS + UEFI x64). Verificado en WSL2.
+- En x86-64 Docker corre i386 nativo. En otros hosts: `docker run --privileged --rm tonistiigi/binfmt --install all` una vez.
+- El squashfs incluye `/boot` (el instalador clona desde la raíz viva; el sistema instalado necesita kernel+initrd).
+- Hardening del build: el Dockerfile reintenta apt (`Acquire::Retries` + reintento de install) ante blips de red.
 
 ## Convenciones
 

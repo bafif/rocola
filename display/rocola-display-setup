@@ -53,14 +53,16 @@ case "$MODE" in
         write_vga
         ;;
     auto | *)
-        # Autodetección: si hay EDID legible => VGA/moderno. Si no, fallback VGA seguro
-        # (el 15 kHz se fuerza poniendo MODE=crt15 en display.conf, ya que los CRT 15 kHz
-        #  no entregan EDID confiable).
+        # Autodetección. Los CRT de 15 kHz NO entregan EDID confiable, así que
+        # 'auto' siempre escribe una config VGA segura (Xorg elige el mejor modo
+        # por EDID si lo hay). El 15 kHz se activa explícitamente con MODE=crt15.
+        # El chequeo de EDID sólo sirve para dejar una pista útil en el log.
+        write_vga
         if command -v get-edid >/dev/null 2>&1 \
-           && get-edid 2>/dev/null | parse-edid 2>/dev/null | grep -qi modeline; then
-            write_vga
+           && get-edid 2>/dev/null | parse-edid 2>/dev/null | grep -qi 'Modeline\|Monitor'; then
+            echo "rocola-display-setup: EDID detectado -> modos VGA/moderno por EDID"
         else
-            write_vga
+            echo "rocola-display-setup: sin EDID útil; VGA seguro. Si usás CRT 15 kHz, poné MODE=crt15 en $CONF"
         fi
         ;;
 esac

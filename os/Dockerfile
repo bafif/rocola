@@ -9,19 +9,32 @@ LABEL org.opencontainers.image.title="rocola-os" \
       org.opencontainers.image.description="SO de la rocola (Debian i386) — live + instalable" \
       org.opencontainers.image.licenses="MIT"
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    LANG=es_AR.UTF-8 \
-    LC_ALL=es_AR.UTF-8
+# Durante el build dejamos el locale en C (el locale es_AR todavía no está
+# generado; setear LC_ALL acá sólo produce warnings de perl). El locale real se
+# fija más abajo, después de locale-gen, vía /etc/default/locale.
+ENV DEBIAN_FRONTEND=noninteractive
 
 # --- Paquetes -------------------------------------------------------------
 COPY os/packages.list /tmp/packages.list
-RUN apt-get update \
- && sed -e 's/#.*//' -e '/^[[:space:]]*$/d' /tmp/packages.list | xargs apt-get install -y --no-install-recommends \
- && rm -rf /var/lib/apt/lists/* /tmp/packages.list
+# Reintentos a nivel apt (Acquire::Retries) + reintento del update y del install:
+# deb.debian.org a veces corta conexiones a mitad de descarga. Sin esto, un blip
+# de red rompe todo el build de ~10 min. Con --fix-missing reanuda lo que falte.
+RUN set -eux; \
+    echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries; \
+    for i in 1 2 3; do apt-get update && break || { echo "apt update retry $i"; sleep 5; }; done; \
+    PKGS="$(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' /tmp/packages.list)"; \
+    ok=0; \
+    for i in 1 2 3 4 5; do \
+        if apt-get install -y --no-install-recommends --fix-missing $PKGS; then ok=1; break; fi; \
+        echo "apt install retry $i (blip de red); reintentando…"; sleep 8; apt-get update || true; \
+    done; \
+    [ "$ok" = 1 ]; \
+    rm -rf /var/lib/apt/lists/* /tmp/packages.list
 
 # --- Locale + zona horaria (Argentina) ------------------------------------
 RUN sed -i 's/# es_AR.UTF-8/es_AR.UTF-8/' /etc/locale.gen \
  && locale-gen \
+ && printf 'LANG=es_AR.UTF-8\n' > /etc/default/locale \
  && ln -sf /usr/share/zoneinfo/America/Argentina/Buenos_Aires /etc/localtime
 
 # --- Usuario de la rocola -------------------------------------------------
@@ -47,12 +60,19 @@ RUN set -eux; \
 # --- Dependencias Python de la app (pygame-ce vía apt) --------------------
 # (python3-pygame y demás vienen en packages.list; instalá extras acá si hiciera falta)
 
-# --- Habilitar servicios + autologin --------------------------------------
+# --- Habilitar servicios + target por defecto -----------------------------
+# En un build de Docker no hay systemd corriendo, así que `systemctl` puede
+# fallar. Creamos los symlinks de "enable" y "set-default" a mano: es
+# determinista y equivalente a lo que hace systemctl offline.
 RUN set -eux; \
-    systemctl enable mpd.service || true; \
-    systemctl enable rocola-display-setup.service || true; \
-    systemctl enable rocola.service || true; \
-    systemctl set-default multi-user.target
+    ln -sf /lib/systemd/system/multi-user.target /etc/systemd/system/default.target; \
+    mkdir -p /etc/systemd/system/multi-user.target.wants; \
+    for unit in mpd.service rocola-display-setup.service rocola.service; do \
+        if   [ -e "/etc/systemd/system/$unit" ]; then src="/etc/systemd/system/$unit"; \
+        elif [ -e "/lib/systemd/system/$unit"  ]; then src="/lib/systemd/system/$unit"; \
+        else echo "WARN: unit $unit no encontrada, se omite"; continue; fi; \
+        ln -sf "$src" "/etc/systemd/system/multi-user.target.wants/$unit"; \
+    done
 
 # --- initramfs con live-boot ---------------------------------------------
 # Regenerar el initrd para incluir los hooks de live-boot (arranque desde squashfs).

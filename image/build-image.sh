@@ -3,12 +3,17 @@
 #
 #   build-image.sh <rootfs.tar> <salida.img>
 #
-# Produce una imagen GPT híbrida:
-#   p1 bios_grub  (GRUB core para BIOS)
-#   p2 FAT32      (ESP + sistema live: kernel, initrd, filesystem.squashfs, GRUB)
+# Produce una imagen HÍBRIDA (ISO El Torito + isohybrid) booteable por:
+#   - BIOS  (core GRUB i386-pc embebido)
+#   - UEFI x64 (imagen EFI El Torito + /EFI/BOOT/BOOTX64.EFI)
+# Se graba con `dd` a un pendrive y bootea en ambos firmwares.
 #
-# Requiere correr en un contenedor PRIVILEGIADO con /dev montado (usa losetup + grub-install).
-# NOTA: validar en QEMU/hardware; el booteo real depende de la GPU/firmware destino.
+# Usa grub-mkrescue (xorriso + mtools): TODO en espacio de usuario, sin loop
+# devices ni mount. Así funciona en WSL2, contenedores y CI donde losetup falla.
+#
+# El sistema arranca "live" (live-boot) montando /live/filesystem.squashfs con
+# overlay en RAM. La instalación a disco la hace el instalador en el sistema ya
+# booteado (ahí sí hay /dev/sdX real), no este script.
 set -euo pipefail
 
 ROOTFS_TAR="${1:?uso: build-image.sh <rootfs.tar> <salida.img>}"
@@ -18,39 +23,34 @@ log() { echo -e "\033[36m[build-image]\033[0m $*"; }
 
 WORK="$(mktemp -d)"
 ROOTDIR="$WORK/root"
-LIVE="$WORK/live"          # contenido que irá a la partición FAT32
-MNT="$WORK/mnt"
-mkdir -p "$ROOTDIR" "$LIVE/live" "$LIVE/boot/grub" "$LIVE/EFI/BOOT" "$MNT"
-
-cleanup() {
-    mountpoint -q "$MNT" && umount "$MNT" || true
-    [ -n "${LOOP:-}" ] && losetup -d "$LOOP" 2>/dev/null || true
-    rm -rf "$WORK"
-}
-trap cleanup EXIT
+STAGE="$WORK/stage"
+mkdir -p "$ROOTDIR" "$STAGE/live" "$STAGE/boot/grub"
+trap 'rm -rf "$WORK"' EXIT
 
 # --- 1) Extraer rootfs --------------------------------------------------------
 log "Extrayendo rootfs…"
 tar -C "$ROOTDIR" -xf "$ROOTFS_TAR"
 
-# --- 2) Kernel + initrd -------------------------------------------------------
+# --- 2) Kernel + initrd para el arranque LIVE ---------------------------------
 log "Tomando kernel + initrd…"
-KIMG="$(ls -1 "$ROOTDIR"/boot/vmlinuz-*  2>/dev/null | sort -V | tail -1 || true)"
+KIMG="$(ls -1 "$ROOTDIR"/boot/vmlinuz-*   2>/dev/null | sort -V | tail -1 || true)"
 IIMG="$(ls -1 "$ROOTDIR"/boot/initrd.img-* 2>/dev/null | sort -V | tail -1 || true)"
 [ -n "$KIMG" ] && [ -n "$IIMG" ] || { echo "ERROR: no encuentro kernel/initrd en el rootfs"; exit 1; }
-cp "$KIMG" "$LIVE/live/vmlinuz"
-cp "$IIMG" "$LIVE/live/initrd.img"
+cp "$KIMG" "$STAGE/live/vmlinuz"
+cp "$IIMG" "$STAGE/live/initrd.img"
 
 # --- 3) squashfs del rootfs ---------------------------------------------------
+# NO excluir /boot: el instalador clona desde la raíz viva (este squashfs) al
+# disco destino, así que el kernel+initrd deben estar DENTRO del squashfs para
+# que el sistema instalado tenga con qué arrancar. (En /live van aparte sólo
+# para el arranque live del pendrive.)
 log "Creando filesystem.squashfs (puede tardar)…"
-mksquashfs "$ROOTDIR" "$LIVE/live/filesystem.squashfs" \
-    -comp xz -noappend -e boot
-# Aviso: FAT32 limita archivos a 4 GB. Si el squashfs supera 4 GB (mucha música
-# precargada), usar una partición ext4 para 'live' en vez de FAT32.
+mksquashfs "$ROOTDIR" "$STAGE/live/filesystem.squashfs" \
+    -comp xz -noappend
 
-# --- 4) grub.cfg --------------------------------------------------------------
+# --- 4) grub.cfg del medio LIVE -----------------------------------------------
 log "Escribiendo grub.cfg…"
-cat > "$LIVE/boot/grub/grub.cfg" <<'EOF'
+cat > "$STAGE/boot/grub/grub.cfg" <<'EOF'
 set timeout=5
 set default=0
 insmod all_video
@@ -60,49 +60,18 @@ menuentry "Rocola" {
     linux  /live/vmlinuz boot=live components quiet splash
     initrd /live/initrd.img
 }
-menuentry "Rocola — modo seguro (VGA)" {
+menuentry "Rocola — modo seguro (VGA, sin KMS)" {
     linux  /live/vmlinuz boot=live components nomodeset vga=788
     initrd /live/initrd.img
 }
 EOF
 
-# --- 5) Crear y particionar la imagen ----------------------------------------
-SIZE_MB=$(( $(du -sm "$LIVE" | cut -f1) + 600 ))
-log "Creando imagen de ${SIZE_MB} MiB…"
-truncate -s "${SIZE_MB}M" "$OUT_IMG"
+# --- 5) Ensamblar imagen híbrida BIOS+UEFI con grub-mkrescue ------------------
+# El volid se pasa a xorriso/mkisofs DESPUÉS de '--' y con sintaxis mkisofs
+# (-volid VALUE, separado por espacio; '--volid=' no es válido).
+log "Generando imagen híbrida (grub-mkrescue)…"
+grub-mkrescue --output="$OUT_IMG" "$STAGE" -- -volid ROCOLA
 
-parted -s "$OUT_IMG" mklabel gpt
-parted -s "$OUT_IMG" mkpart bios_grub 1MiB 3MiB
-parted -s "$OUT_IMG" set 1 bios_grub on
-parted -s "$OUT_IMG" mkpart ESP fat32 3MiB 100%
-parted -s "$OUT_IMG" set 2 esp on
-
-# --- 6) loop + formato --------------------------------------------------------
-LOOP="$(losetup --show -fP "$OUT_IMG")"
-log "Loop: $LOOP"
-mkfs.vfat -F32 -n ROCOLA "${LOOP}p2" >/dev/null
-
-# --- 7) Copiar contenido a la partición --------------------------------------
-mount "${LOOP}p2" "$MNT"
-cp -a "$LIVE"/. "$MNT"/
-
-# --- 8) GRUB BIOS (i386-pc) ---------------------------------------------------
-log "Instalando GRUB BIOS…"
-grub-install --target=i386-pc \
-    --boot-directory="$MNT/boot" \
-    --modules="part_gpt fat normal linux" \
-    "$LOOP"
-
-# --- 9) GRUB UEFI x64 (removable) --------------------------------------------
-log "Instalando GRUB UEFI x64…"
-grub-install --target=x86_64-efi \
-    --efi-directory="$MNT" \
-    --boot-directory="$MNT/boot" \
-    --removable --no-nvram \
-    --modules="part_gpt fat normal linux"
-
-sync
-umount "$MNT"
-losetup -d "$LOOP"; LOOP=""
-
-log "Imagen lista: $OUT_IMG"
+[ -s "$OUT_IMG" ] || { echo "ERROR: no se generó $OUT_IMG"; exit 1; }
+log "Imagen lista: $OUT_IMG ($(du -h "$OUT_IMG" | cut -f1))"
+log "Grabar con:  dd if=$OUT_IMG of=/dev/sdX bs=4M status=progress conv=fsync"

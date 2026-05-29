@@ -7,10 +7,13 @@ live-boot                  # arranque live desde squashfs + overlay
 live-boot-initramfs-tools
 initramfs-tools
 systemd-sysv
-grub-pc-bin                # GRUB para BIOS
+grub-pc-bin                # GRUB para BIOS (módulos i386-pc)
 grub-efi-amd64-bin         # GRUB para UEFI x64 (carga kernel i386)
+grub2-common               # provee grub-install/update-grub (lo usa el instalador en chroot)
 grub-common
+efibootmgr                 # registrar la entrada UEFI al instalar en disco
 dosfstools
+mtools                     # grub-install UEFI usa mtools/mformat
 e2fsprogs
 parted
 gdisk

@@ -1,20 +1,30 @@
-# Lanza la sesión de la rocola: Xorg mínimo + app SDL2 a pantalla completa.
+# Lanza la sesión de la rocola: Xorg mínimo + app SDL2 a pantalla completa en tty1.
+#
+# Patrón "reemplazo de getty en tty1" (kiosko): en vez de competir con getty@tty1
+# vía Conflicts (lo que hacía que systemd descartara silenciosamente uno de los
+# dos), este servicio toma tty1 directamente. getty@tty1 se deshabilita por
+# separado enmascarándolo (ver getty@tty1 mask en el overlay) para que nada más
+# reclame la VT1.
 [Unit]
-Description=Rocola (UI SDL2 + Xorg)
-After=systemd-user-sessions.service mpd.service rocola-display-setup.service
-Wants=mpd.service
-Requires=rocola-display-setup.service
-Conflicts=getty@tty1.service
+Description=Rocola (UI SDL2 + Xorg en tty1)
+# Arrancar después de que el sistema esté listo, mpd levantado y el video configurado.
+After=systemd-user-sessions.service plymouth-quit-wait.service mpd.service rocola-display-setup.service
+Wants=mpd.service rocola-display-setup.service
+# Kiosko: reintentar indefinidamente sin rate-limit permanente.
+StartLimitIntervalSec=0
 
 [Service]
+Type=simple
 User=rocola
 PAMName=login
 TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
 StandardInput=tty
 StandardOutput=journal
 StandardError=journal
-# xinit arranca Xorg y, como cliente único, la sesión de la rocola.
-ExecStart=/usr/bin/xinit /usr/local/bin/rocola-session -- :0 vt1 -nolisten tcp
+# xinit arranca Xorg en vt1 y, como cliente único, la sesión de la rocola.
+ExecStart=/usr/bin/xinit /usr/local/bin/rocola-session -- :0 vt1 -keeptty -nolisten tcp
 Restart=always
 RestartSec=2
 
