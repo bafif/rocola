@@ -2,6 +2,7 @@
 # Uso rápido:
 #   make rootfs     # construye la imagen Docker del SO (FROM i386/debian:bookworm)
 #   make image      # rootfs -> out/rocola-i386.img (booteable BIOS + UEFI x64)
+#   make release VERSION=vX.Y.Z   # empaqueta el .iso + checksum para subir a un Release
 #   make flash DEV=/dev/sdX   # escribe la imagen al pendrive (¡destructivo!)
 #   make app-run    # corre la UI de la rocola localmente (dev)
 #   make clean      # borra artefactos de build
@@ -13,6 +14,7 @@ OS_IMAGE ?= rocola-os:$(SUITE)-$(ARCH)
 OUT ?= out
 IMG ?= $(OUT)/rocola-$(ARCH).img
 ROOTFS_TAR ?= $(OUT)/rootfs.tar
+RELEASE_DIR ?= $(OUT)/release
 
 .DEFAULT_GOAL := help
 
@@ -49,6 +51,12 @@ image: export ## Arma la imagen booteable rocola-i386.img (híbrida BIOS+UEFI)
 	docker run --rm \
 		-v "$(CURDIR)/$(OUT)":/out \
 		rocola-builder /usr/local/bin/build-image.sh /out/rootfs.tar /out/rocola-$(ARCH).img
+
+.PHONY: release
+release: ## Empaqueta el .iso + checksum para subir a un Release: make release VERSION=vX.Y.Z
+	@test -n "$(VERSION)" || { echo "ERROR: pasá VERSION=vX.Y.Z"; exit 1; }
+	@test -f "$(IMG)" || { echo "ERROR: no existe $(IMG); corré 'make image' primero"; exit 1; }
+	image/package-release.sh "$(IMG)" "$(VERSION)" "$(RELEASE_DIR)"
 
 .PHONY: flash
 flash: ## Escribe la imagen al pendrive: make flash DEV=/dev/sdX

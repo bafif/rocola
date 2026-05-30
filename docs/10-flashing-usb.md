@@ -1,11 +1,33 @@
 # 10 · Grabar el pendrive
 
-Cómo pasar `out/rocola-i386.img` a un pendrive. **Esto borra el pendrive por completo.**
+Cómo pasar la imagen de la rocola a un pendrive. **Esto borra el pendrive por completo.**
+
+La imagen es una **ISO 9660 híbrida (isohybrid)**: el mismo archivo arranca por **BIOS y UEFI x64**
+y se puede grabar con `dd`, Rufus o balenaEtcher, o copiar a Ventoy. `make image` la deja como
+`out/rocola-i386.img`; el Release la publica como `rocola-i386-<versión>.iso` (mismo contenido,
+extensión `.iso` para que Windows/Rufus/Ventoy la reconozcan sin dudar).
 
 ## Requisitos
 
 - Un pendrive de **≥ 4 GB** (recomendado 8 GB+).
-- La imagen ya construida: `out/rocola-i386.img` (ver [02](02-build-pipeline.md)).
+- La imagen: `out/rocola-i386.img` recién construida (ver [02](02-build-pipeline.md)) **o** el
+  `.iso` descargado desde [Releases](https://github.com/bafif/rocola/releases/latest).
+
+## En Windows (Rufus / Ventoy / balenaEtcher)
+
+Descargá el `.iso` del Release y usá una de estas:
+
+- **Rufus**: *Dispositivo* = tu pendrive → *Seleccionar* el `.iso` → *Empezar*. Si pregunta el modo,
+  elegí **"Escribir en modo Imagen DD"** (la ISO es híbrida; el modo DD respeta el MBR/El Torito).
+- **Ventoy**: instalá Ventoy en el pendrive **una sola vez** (`Ventoy2Disk.exe`) y después **copiá**
+  el `.iso` a la partición de Ventoy. Para actualizar, reemplazás el archivo; no reformateás.
+- **balenaEtcher**: *Flash from file* → el `.iso` → elegí el pendrive → *Flash*.
+
+Verificá la descarga antes de grabar (PowerShell):
+
+```powershell
+Get-FileHash rocola-i386-*.iso -Algorithm SHA256   # comparar con SHA256SUMS.txt del Release
+```
 
 ## Identificar el dispositivo (¡con cuidado!)
 

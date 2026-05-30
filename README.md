@@ -28,6 +28,32 @@ los de 15 kHz de arcade/TV**, sin configuración posterior.
 
 ---
 
+## ⬇️ Descargar y grabar (sin compilar)
+
+¿Solo querés el pendrive? No hace falta compilar nada ni tener Docker.
+
+1. Descargá el archivo `rocola-i386-<versión>.iso` (~405 MB) desde la página de
+   **[Releases](https://github.com/bafif/rocola/releases/latest)**.
+2. *(Opcional, recomendado)* verificá la descarga contra el `SHA256SUMS.txt` del Release:
+   - **Windows (PowerShell):** `Get-FileHash rocola-i386-*.iso -Algorithm SHA256`
+   - **Linux / macOS:** `sha256sum -c SHA256SUMS.txt`
+
+   y comprobá que el hash coincida con el publicado.
+3. Grabá el `.iso` a un pendrive (≥ 1 GB; **se borra entero**):
+
+   | Herramienta | Cómo |
+   |-------------|------|
+   | **Rufus** (Windows) | *Dispositivo* = tu pendrive → *Seleccionar* el `.iso` → *Empezar*. Si pregunta, elegí **"Escribir en modo Imagen DD"** (la imagen es híbrida). |
+   | **Ventoy** (Windows/Linux) | Instalá Ventoy en el pendrive **una vez** y después **copiá** el `.iso` a su partición. No hace falta reformatear para actualizar. |
+   | **balenaEtcher** (multiplataforma) | *Flash from file* → el `.iso` → elegí el pendrive → *Flash*. |
+
+4. Booteá la PC vieja desde el pendrive (BIOS o UEFI x64) y seguí desde [Usar](#3-usar).
+
+> El archivo es una **ISO 9660 híbrida (isohybrid)**: arranca por **BIOS y por UEFI x64**, y se
+> puede grabar con `dd`, Rufus o balenaEtcher, o copiar a Ventoy — todo desde el mismo `.iso`.
+
+---
+
 ## 🚀 Inicio rápido
 
 ### 1. Construir la imagen
@@ -39,6 +65,7 @@ contenedores i386 nativo; en otros hosts, instalá binfmt una vez —ver
 ```bash
 make rootfs         # construye el SO (imagen Docker i386); la primera vez tarda
 make image          # produce out/rocola-i386.img: ISO híbrida booteable BIOS + UEFI x64
+make release VERSION=v0.1.0-beta   # empaqueta out/release/rocola-i386-<ver>.iso + SHA256SUMS.txt
 ```
 
 > **Estado:** verificado de punta a punta en QEMU/KVM — `make image` genera la ISO y arranca hasta la
@@ -54,6 +81,9 @@ make image          # produce out/rocola-i386.img: ISO híbrida booteable BIOS +
 make flash DEV=/dev/sdX     # ⚠️ DESTRUCTIVO: reemplazá sdX por tu pendrive
 # o con tu herramienta gráfica favorita (p. ej. balenaEtcher) usando out/rocola-i386.img
 ```
+
+> En Windows usá **Rufus**, **Ventoy** o **balenaEtcher** con el `.iso` del Release; ver
+> [Descargar y grabar (sin compilar)](#️-descargar-y-grabar-sin-compilar).
 
 ### 3. Usar
 
