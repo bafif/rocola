@@ -1,0 +1,45 @@
+#!/bin/bash
+# rocola-selftest — corre el instalador en modo DESATENDIDO contra un disco de
+# prueba y apaga. Solo se dispara si el kernel arrancó con `rocola.selftest` en el
+# cmdline (ver rocola-selftest.service). NO forma parte del flujo normal: existe
+# para validar el instalador de punta a punta en QEMU/CI sin intervención manual.
+#
+# Destino: rocola.selftest.target=/dev/sdX en el cmdline; por defecto /dev/sdb.
+# Imprime todo a la consola (serial) para que el runner capture el resultado.
+set -u
+
+# CANDADO: solo actuar si el kernel arrancó con `rocola.selftest` en el cmdline.
+# Esta unidad está habilitada (corre en cada arranque) pero acá sale de inmediato
+# salvo que se pida explícitamente el autotest -> 100% inerte en producción.
+grep -qw rocola.selftest /proc/cmdline || exit 0
+
+TARGET=/dev/sdb
+for tok in $(cat /proc/cmdline); do
+    case "$tok" in rocola.selftest.target=*) TARGET="${tok#*=}";; esac
+done
+
+# Evitar que la UI/Xorg tome el control mientras instalamos (cosmético).
+systemctl stop rocola.service 2>/dev/null || true
+
+echo "==================== ROCOLA SELFTEST (instalador) ===================="
+echo "[selftest] destino: $TARGET"
+lsblk -dno NAME,SIZE,TYPE "$TARGET" 2>/dev/null || echo "[selftest] (lsblk del destino falló)"
+
+ROCOLA_UNATTENDED=1 ROCOLA_TARGET="$TARGET" ROCOLA_KEEP_MUSIC=no ROCOLA_DISPLAY=auto \
+    /usr/local/bin/rocola-install
+RC=$?
+
+echo "---------------------------------------------------------------------"
+echo "[selftest] rocola-install exit code: $RC"
+echo "[selftest] --- tabla de particiones resultante ($TARGET) ---"
+sgdisk -p "$TARGET" 2>/dev/null || true
+echo "[selftest] --- blkid de las particiones ---"
+blkid "${TARGET}"* 2>/dev/null || true
+echo "[selftest] --- log del instalador ---"
+tail -n 40 /tmp/rocola-install.log 2>/dev/null || true
+
+if [ "$RC" = 0 ]; then echo "SELFTEST_RESULT: OK"; else echo "SELFTEST_RESULT: FAIL($RC)"; fi
+echo "====================================================================="
+sync
+# Apagar para que el runner sepa que terminó.
+systemctl poweroff --no-block 2>/dev/null || poweroff -f

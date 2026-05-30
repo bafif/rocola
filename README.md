@@ -41,9 +41,12 @@ make rootfs         # construye el SO (imagen Docker i386); la primera vez tarda
 make image          # produce out/rocola-i386.img: ISO híbrida booteable BIOS + UEFI x64
 ```
 
-> **Estado:** verificado de punta a punta — `make image` genera la ISO y **arranca en QEMU (BIOS)
-> hasta la UI de la rocola a pantalla completa, con MPD conectado**. Capturas en
-> [docs/screenshots/](docs/screenshots/); detalle en [docs/12-verificacion.md](docs/12-verificacion.md).
+> **Estado:** verificado de punta a punta en QEMU/KVM — `make image` genera la ISO y arranca hasta la
+> UI de la rocola a pantalla completa (MPD conectado) por **BIOS y por UEFI x64**; además el
+> **instalador clona a un disco vacío** (particiona, copia el SO, pone GRUB) y ese **disco arranca
+> solo** —sin pendrive— a la rocola, también por BIOS y UEFI. Capturas en
+> [docs/screenshots/](docs/screenshots/); detalle y bugs corregidos en
+> [docs/12-verificacion.md](docs/12-verificacion.md).
 
 ### 2. Grabar el pendrive
 

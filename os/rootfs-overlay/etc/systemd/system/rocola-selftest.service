@@ -1,0 +1,26 @@
+# Autotest del instalador — NO actúa en producción.
+#
+# La unidad está HABILITADA (corre en cada arranque) pero su script sale de
+# inmediato salvo que el kernel haya arrancado con `rocola.selftest` en el
+# cmdline (ver /usr/local/bin/rocola-selftest). En un pendrive/instalación
+# normales no se pasa ese flag, así que el autotest no hace nada. Sirve para
+# validar el instalador de punta a punta en QEMU/CI (ver docs/12-verificacion.md).
+#
+# Ordenado después de basic.target (udev/discos listos) y ANTES de getty.target,
+# para que en el arranque de autotest corra con la consola serie limpia y la
+# instalación termine (con poweroff) antes de mostrar el login.
+[Unit]
+Description=Rocola — autotest desatendido del instalador (NO producción)
+After=basic.target systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+Before=getty.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/rocola-selftest
+StandardOutput=journal+console
+StandardError=journal+console
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

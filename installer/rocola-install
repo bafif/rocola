@@ -15,11 +15,23 @@ TITLE="Rocola — Instalador"
 LOG=/tmp/rocola-install.log
 exec 3>>"$LOG"
 
-die() { whiptail --title "$TITLE" --msgbox "ERROR: $*\n\nVer $LOG" 12 70 || true; exit 1; }
+# Modo desatendido (para QEMU/CI/factory): si ROCOLA_UNATTENDED=1 se saltan TODOS
+# los prompts de whiptail y se leen las respuestas de variables de entorno:
+#   ROCOLA_TARGET=/dev/sdb         (obligatoria)
+#   ROCOLA_KEEP_MUSIC=yes|no       (default no)
+#   ROCOLA_DISPLAY=auto|vga|crt15  (default auto)
+# Nunca se usa en producción: el menú de la rocola lanza el flujo interactivo.
+UNATTENDED="${ROCOLA_UNATTENDED:-0}"
+
+die() {
+    if [ "$UNATTENDED" = 1 ]; then echo "ERROR: $*  (ver $LOG)" >&2
+    else whiptail --title "$TITLE" --msgbox "ERROR: $*\n\nVer $LOG" 12 70 || true; fi
+    exit 1
+}
 log() { echo "[$(date +%T)] $*" >&3; }
 
 [ "$(id -u)" -eq 0 ] || exec sudo -- "$0" "$@"
-command -v whiptail >/dev/null || die "falta whiptail"
+[ "$UNATTENDED" = 1 ] || command -v whiptail >/dev/null || die "falta whiptail"
 
 # --- Detectar la media de instalación (para excluirla del destino) -----------
 LIVE_SRC="$(findmnt -n -o SOURCE /run/live/medium 2>/dev/null || true)"
@@ -29,51 +41,69 @@ if [ -n "$LIVE_SRC" ]; then
 fi
 log "Media live: ${LIVE_SRC:-?} (disco ${LIVE_DISK:-?})"
 
-# --- Listar discos candidatos ------------------------------------------------
-mapfile -t DISKS < <(lsblk -dnpo NAME,TYPE | awk '$2=="disk"{print $1}')
-MENU_ITEMS=()
-for d in "${DISKS[@]}"; do
-    [ "$d" = "$LIVE_DISK" ] && continue          # excluir el pendrive de instalación
-    size="$(lsblk -dno SIZE "$d")"
-    model="$(lsblk -dno MODEL "$d" | tr -s ' ')"
-    MENU_ITEMS+=("$d" "${size}  ${model:-disco}")
-done
-[ "${#MENU_ITEMS[@]}" -gt 0 ] || die "no se encontraron discos destino (¿solo está el pendrive?)"
+# --- Selección de destino y opciones -----------------------------------------
+if [ "$UNATTENDED" = 1 ]; then
+    # Desatendido: todo viene de variables de entorno, sin TUI.
+    TARGET="${ROCOLA_TARGET:?ROCOLA_TARGET requerido en modo desatendido}"
+    [ -b "$TARGET" ] || die "ROCOLA_TARGET=$TARGET no es un dispositivo de bloque"
+    [ "$TARGET" = "$LIVE_DISK" ] && die "ROCOLA_TARGET es la media de instalación"
+    KEEP_MUSIC="${ROCOLA_KEEP_MUSIC:-no}"
+    DISP_MODE="${ROCOLA_DISPLAY:-auto}"
+    log "modo desatendido: destino=$TARGET keep_music=$KEEP_MUSIC display=$DISP_MODE"
+else
+    # --- Listar discos candidatos --------------------------------------------
+    mapfile -t DISKS < <(lsblk -dnpo NAME,TYPE | awk '$2=="disk"{print $1}')
+    MENU_ITEMS=()
+    for d in "${DISKS[@]}"; do
+        [ "$d" = "$LIVE_DISK" ] && continue          # excluir el pendrive de instalación
+        size="$(lsblk -dno SIZE "$d")"
+        model="$(lsblk -dno MODEL "$d" | tr -s ' ')"
+        MENU_ITEMS+=("$d" "${size}  ${model:-disco}")
+    done
+    [ "${#MENU_ITEMS[@]}" -gt 0 ] || die "no se encontraron discos destino (¿solo está el pendrive?)"
 
-TARGET="$(whiptail --title "$TITLE" --menu \
-    "Elegí el disco DESTINO.\nSe BORRARÁ por completo (salvo que conserves /music)." \
-    20 74 8 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3)" || exit 0
+    TARGET="$(whiptail --title "$TITLE" --menu \
+        "Elegí el disco DESTINO.\nSe BORRARÁ por completo (salvo que conserves /music)." \
+        20 74 8 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3)" || exit 0
 
-# --- Conservar /music existente ----------------------------------------------
-KEEP_MUSIC=no
-if whiptail --title "$TITLE" --yesno \
-    "¿Conservar una partición de música existente en $TARGET (si la hay)?" 10 70; then
-    KEEP_MUSIC=yes
+    # --- Conservar /music existente ------------------------------------------
+    KEEP_MUSIC=no
+    if whiptail --title "$TITLE" --yesno \
+        "¿Conservar una partición de música existente en $TARGET (si la hay)?" 10 70; then
+        KEEP_MUSIC=yes
+    fi
+
+    # --- Confirmación tipográfica (anti-borrado) -----------------------------
+    SUMMARY="DESTINO: $TARGET\n$(lsblk -no NAME,SIZE,FSTYPE,LABEL "$TARGET" | sed 's/^/  /')\n\nEsto DESTRUIRÁ los datos del disco."
+    CONFIRM="$(whiptail --title "$TITLE — CONFIRMAR" --inputbox \
+        "$SUMMARY\n\nEscribí BORRAR (en mayúsculas) para continuar:" 18 74 3>&1 1>&2 2>&3)" || exit 0
+    [ "$CONFIRM" = "BORRAR" ] || die "confirmación inválida; cancelado"
+
+    # --- Tipo de monitor (se persiste en el destino) -------------------------
+    DISP_MODE="$(whiptail --title "$TITLE" --menu "Tipo de monitor de esta rocola:" 15 70 4 \
+        auto  "Autodetectar (recomendado en VGA/moderno)" \
+        vga   "VGA / moderno (31 kHz)" \
+        crt15 "CRT de arcade / TV (15 kHz)" 3>&1 1>&2 2>&3)" || DISP_MODE=auto
 fi
-
-# --- Confirmación tipográfica (anti-borrado) ---------------------------------
-SUMMARY="DESTINO: $TARGET\n$(lsblk -no NAME,SIZE,FSTYPE,LABEL "$TARGET" | sed 's/^/  /')\n\nEsto DESTRUIRÁ los datos del disco."
-CONFIRM="$(whiptail --title "$TITLE — CONFIRMAR" --inputbox \
-    "$SUMMARY\n\nEscribí BORRAR (en mayúsculas) para continuar:" 18 74 3>&1 1>&2 2>&3)" || exit 0
-[ "$CONFIRM" = "BORRAR" ] || die "confirmación inválida; cancelado"
-
-# --- Tipo de monitor (se persiste en el destino) -----------------------------
-DISP_MODE="$(whiptail --title "$TITLE" --menu "Tipo de monitor de esta rocola:" 15 70 4 \
-    auto  "Autodetectar (recomendado en VGA/moderno)" \
-    vga   "VGA / moderno (31 kHz)" \
-    crt15 "CRT de arcade / TV (15 kHz)" 3>&1 1>&2 2>&3)" || DISP_MODE=auto
 
 # =============================================================================
 # A partir de acá se escribe en disco.
 # =============================================================================
+# Cualquier fallo de acá en adelante aborta y reporta (set -e + trap ERR). OJO:
+# NO envolver el bloque en `{ ... } || die`, porque eso DESACTIVA set -e dentro
+# del grupo (gotcha de bash) y los errores (grub, rsync, mkfs) pasarían como
+# "éxito". Con el trap, el primer comando que falle dispara die.
+trap 'die "falló la instalación (ver $LOG)"' ERR
 {
 log "=== Instalando en $TARGET (keep_music=$KEEP_MUSIC, display=$DISP_MODE) ==="
 
-# Particionado: GPT con ESP (FAT32) + ROOT (ext4) + DATOS /music (ext4).
-# Si KEEP_MUSIC=yes y ya existe una 3ra partición, se respeta.
-P_ESP="${TARGET}1"; P_ROOT="${TARGET}2"; P_DATA="${TARGET}3"
-# (para discos nvme las particiones son p1/p2/p3)
-case "$TARGET" in *nvme*|*mmcblk*) P_ESP="${TARGET}p1"; P_ROOT="${TARGET}p2"; P_DATA="${TARGET}p3";; esac
+# Particionado: GPT con BIOS-BOOT (ef02) + ESP (FAT32) + ROOT (ext4) + DATOS
+# /music (ext4). La BIOS Boot Partition es OBLIGATORIA para arrancar por BIOS
+# desde GPT: GRUB embebe ahí su core.img (en GPT no hay hueco post-MBR como en
+# MBR/msdos). Sin ella, grub-install i386-pc falla ("no BIOS Boot Partition").
+P_BIOS="${TARGET}1"; P_ESP="${TARGET}2"; P_ROOT="${TARGET}3"; P_DATA="${TARGET}4"
+# (para discos nvme/mmc las particiones llevan sufijo pN)
+case "$TARGET" in *nvme*|*mmcblk*) P_BIOS="${TARGET}p1"; P_ESP="${TARGET}p2"; P_ROOT="${TARGET}p3"; P_DATA="${TARGET}p4";; esac
 
 # ¿Hay un layout previo de rocola (ESP+ROOT+MUSIC) que podamos conservar?
 KEEP_OK=no
@@ -94,9 +124,10 @@ else
         log "no hay partición 'music' previa reconocible; se hará layout nuevo"
     fi
     sgdisk --zap-all \
-        --new=1:0:+256M  --typecode=1:ef00 --change-name=1:ESP \
-        --new=2:0:+12G   --typecode=2:8300 --change-name=2:ROOT \
-        --new=3:0:0      --typecode=3:8300 --change-name=3:MUSIC "$TARGET" >&3 2>&1
+        --new=1:0:+2M    --typecode=1:ef02 --change-name=1:BIOSBOOT \
+        --new=2:0:+256M  --typecode=2:ef00 --change-name=2:ESP \
+        --new=3:0:+12G   --typecode=3:8300 --change-name=3:ROOT \
+        --new=4:0:0      --typecode=4:8300 --change-name=4:MUSIC "$TARGET" >&3 2>&1
 fi
 partprobe "$TARGET"; sleep 2
 
@@ -138,22 +169,36 @@ mkdir -p "$T/etc/rocola"
 sed -i "s/^MODE=.*/MODE=$DISP_MODE/" "$T/etc/rocola/display.conf" 2>/dev/null \
     || echo "MODE=$DISP_MODE" > "$T/etc/rocola/display.conf"
 
-# Bootloader dentro del sistema clonado (chroot)
+# Bootloader. grub-install corre FUERA del chroot, con --boot-directory apuntando
+# al /boot del sistema clonado: así grub-probe resuelve el disco destino con el
+# /proc/mounts real del sistema vivo. (Dentro de un chroot, /proc/mounts no mapea
+# el destino -> el error típico "cannot find a device for /boot/grub".)
 echo "Instalando GRUB (BIOS + UEFI)…"; log "grub"
-for fs in proc sys dev dev/pts; do mount --bind "/$fs" "$T/$fs"; done
-chroot "$T" /bin/bash -eu <<CHROOT >&3 2>&1
-grub-install --target=i386-pc "$TARGET"
-grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=rocola --removable
-update-grub
-CHROOT
+grub-install --target=i386-pc --boot-directory="$T/boot" --recheck "$TARGET" >&3 2>&1
+grub-install --target=x86_64-efi --efi-directory="$T/boot/efi" \
+    --boot-directory="$T/boot" --bootloader-id=rocola --removable --recheck >&3 2>&1
+
+# grub.cfg del sistema instalado: en chroot, para que grub-mkconfig detecte el
+# kernel y el root=UUID del DESTINO (no los del medio vivo). Necesita /proc,/sys,
+# /dev,/run montados dentro del chroot. OJO: el rsync excluye esas rutas, así que
+# los puntos de montaje pueden no existir en el destino -> hay que crearlos
+# (si no, el bind falla y grub corre sin /dev: "is /dev mounted?").
+for fs in proc sys dev dev/pts run; do mkdir -p "$T/$fs"; mount --bind "/$fs" "$T/$fs"; done
+chroot "$T" /usr/sbin/update-grub >&3 2>&1
 
 # Desmontar
 echo "Finalizando…"; log "umount"
-for fs in dev/pts dev sys proc; do umount "$T/$fs" || true; done
+for fs in run dev/pts dev sys proc; do umount "$T/$fs" || true; done
 umount "$T/music" 2>/dev/null || true
 umount "$T/boot/efi"; umount "$T"
 log "OK"
-} 2>&3 || die "falló la instalación (ver $LOG)"
+} 2>&3
+trap - ERR   # a partir de acá los prompts pueden devolver no-cero sin abortar
+
+if [ "$UNATTENDED" = 1 ]; then
+    echo "Instalación desatendida completa en $TARGET."
+    exit 0
+fi
 
 if whiptail --title "$TITLE" --yesno \
     "¡Instalación completa!\n\nQuitá el pendrive y reiniciá.\n\n¿Reiniciar ahora?" 12 60; then

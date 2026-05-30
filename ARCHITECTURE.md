@@ -79,9 +79,9 @@ Disparo **manual** desde la rocola en vivo (combo de arcade / entrada de menú):
 rocola-install (whiptail, navegable con arcade)
   1. Detecta discos (modelo, tamaño)         → el usuario elige el destino
   2. Doble confirmación anti-borrado          (muestra qué se va a destruir)
-  3. Particiona destino:
-        ESP (FAT32, UEFI) · ROOT (ext4) · DATOS /music (ext4, persistente)
-  4. Clona el SO:  unsquashfs/rsync del rootfs  →  ROOT
+  3. Particiona destino (GPT):
+        BIOSBOOT (ef02, BIOS) · ESP (FAT32, UEFI) · ROOT (ext4) · DATOS /music (ext4, persistente)
+  4. Clona el SO:  rsync del sistema vivo (/)  →  ROOT
   5. Pregunta tipo de monitor (moderno/VGA | 15 kHz) → persiste la elección
   6. Instala GRUB en el destino (BIOS + UEFI x64), genera fstab
   7. Reboot → la PC arranca la rocola sola desde el disco

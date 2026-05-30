@@ -31,6 +31,33 @@ validar (sobre todo en hardware físico). Construido y probado en un host x86-64
    (muestra "Sin música. Importá canciones" = MPD conectado, biblioteca vacía porque este build
    de prueba no llevaba música).
 
+6. **Arranque real en QEMU (UEFI x64, OVMF)** — la cadena completa de firmware también funciona:
+
+   ```
+   OVMF (UEFI x64) → El Torito UEFI → GRUB EFI amd64 → kernel i386 → live-boot
+        → systemd → mpd → Xorg → UI de la rocola a PANTALLA COMPLETA
+   ```
+
+   Confirma la decisión clave del proyecto: **un GRUB de 64 bits carga el kernel i386**. El serial
+   muestra `BdsDxe … → Welcome to GRUB! → Booting 'Rocola'`. Captura:
+   **[screenshots/qemu-uefi-boot-ui.png](screenshots/qemu-uefi-boot-ui.png)**.
+
+7. **Instalador a disco de punta a punta (QEMU)** — flujo completo del appliance:
+
+   ```
+   live + 2º disco vacío → rocola-install (desatendido) → particiona GPT
+        (BIOSBOOT+ESP+ROOT+MUSIC) → rsync del sistema vivo → GRUB BIOS+UEFI → fstab
+   → se arranca el DISCO solo (sin pendrive) → la rocola abre sola, por BIOS y por UEFI
+   ```
+
+   - Instalación: `SELFTEST_RESULT: OK` (particionar + clonar + `grub-install` i386-pc y x86_64-efi
+     + `update-grub` detectando el kernel del destino).
+   - Disco instalado arrancando solo: **[screenshots/installed-bios-boot-ui.png](screenshots/installed-bios-boot-ui.png)**
+     (BIOS) y **[screenshots/installed-uefi-boot-ui.png](screenshots/installed-uefi-boot-ui.png)** (UEFI).
+   - Se automatiza con un modo **desatendido** del instalador (`ROCOLA_UNATTENDED=1`) disparado por
+     `rocola-selftest.service`, que solo actúa si el kernel arranca con `rocola.selftest` en el
+     cmdline (inerte en producción). Scripts en `out/test/` (`installer-selftest.sh`, `boot-installed.sh`).
+
 ### Reproducir
 
 ```bash
@@ -38,7 +65,13 @@ make rootfs && make image
 file out/rocola-i386.img
 docker run --rm -v "$PWD/out":/out rocola-builder \
   xorriso -indev /out/rocola-i386.img -report_el_torito plain      # lista BIOS y UEFI
-qemu-system-i386 -enable-kvm -m 2048 -cdrom out/rocola-i386.img     # arranca a la UI
+# Arranque live a la UI (BIOS):
+qemu-system-i386  -enable-kvm -m 2048 -cdrom out/rocola-i386.img
+# Arranque live a la UI (UEFI x64):
+qemu-system-x86_64 -enable-kvm -m 2048 \
+  -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
+  -drive if=pflash,format=raw,file=/tmp/vars.fd -cdrom out/rocola-i386.img
+# Instalador E2E + arranque del disco instalado: ver out/test/installer-selftest.sh y boot-installed.sh
 ```
 
 ## ⚠️ Bugs encontrados y corregidos durante la verificación
@@ -54,25 +87,26 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
 | Xorg como no-root | `Cannot open virtual console` | `Xwrapper.config` (`needs_root_rights=yes`) |
 | Instalador borraba `/music` | `--zap-all` destruía la partición a conservar | keep-mode no reparticiona, sólo reformatea ESP+ROOT |
 | Faltaba `grub-install` | el instalador no podría poner GRUB | `grub2-common`+`efibootmgr`+`mtools` |
+| **GPT sin BIOS Boot Partition** | `grub-install i386-pc` fallaba ("no BIOS Boot Partition"): la PC **no arrancaría por BIOS** | agregar partición `ef02` (2 MiB) al layout |
+| **Instalador "mentía" éxito** | `{ … } \|\| die` **desactiva `set -e`**: fallos de grub/rsync/mkfs se tragaban y reportaba OK | `trap … ERR` + sacar el `\|\| die` del grupo |
+| **`grub-install` en chroot sin `/dev`** | rsync excluye `/dev,/proc,/sys` → los `mount --bind` fallaban → "is /dev mounted?" | `grub-install` fuera del chroot con `--boot-directory`; `mkdir -p` de los puntos de montaje para `update-grub` |
 | `systemctl enable` en build | podía fallar sin systemd corriendo | symlinks `*.wants/` a mano |
 | red intermitente | `apt` cortaba el build | `Acquire::Retries` + reintento de install |
 | `make image` rebuildeaba todo | doble build del rootfs | guard `ensure-os` |
 
-## ❌ Todavía NO verificado (requiere hardware o pasos manuales)
+## ❌ Todavía NO verificado (requiere hardware físico)
 
-- **Arranque por UEFI x64**: el catálogo El Torito tiene la entrada UEFI, pero **no** se arrancó por
-  UEFI en QEMU todavía. Pendiente: `qemu-system-x86_64 -bios OVMF.fd -cdrom out/rocola-i386.img`.
-- **Instalador a disco** (`rocola-install`): lógica revisada y defensiva, pero **no** se ejecutó una
-  instalación real (particionar + clonar + GRUB) en QEMU con 2º disco. Es destructivo: probar en VM
-  antes que en hardware.
 - **Video 15 kHz (CRT arcade/TV)**: depende de GPU/driver físicos; **no** se valida en QEMU.
 - **Controles de arcade**: el mapeo teclado/joystick está implementado (la UI responde en el render),
   pero no se probó con un encoder USB real.
 - **Importar música desde 2º USB** y **biblioteca precargada**: lógica escrita, no probada en QEMU.
 - **Hardware viejo real** (objetivo final: desktop antigua + CRT + arcade): requiere prueba física.
 
+> Nota: el flujo **keep-music** (conservar `/music` al reinstalar) tiene la lógica revisada pero el
+> camino E2E probado en QEMU fue una instalación **limpia** (sin partición previa que conservar).
+
 ## Próximos pasos sugeridos
 
-1. Boot UEFI en QEMU con OVMF.
-2. Instalación guiada en una VM con 2º disco vacío (validar particionado + reboot desde disco).
-3. Grabar el `.img` a un pendrive (`make flash`) y probar en una desktop vieja real.
+1. Grabar el `.img` a un pendrive (`make flash`) y probar en una desktop vieja real (BIOS y, si hay, UEFI).
+2. Probar en un CRT de 15 kHz real + encoder de arcade.
+3. Validar el import de música desde un 2º USB y la reinstalación conservando `/music`.

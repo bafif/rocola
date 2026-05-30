@@ -67,7 +67,7 @@ RUN set -eux; \
 RUN set -eux; \
     ln -sf /lib/systemd/system/multi-user.target /etc/systemd/system/default.target; \
     mkdir -p /etc/systemd/system/multi-user.target.wants; \
-    for unit in mpd.service rocola-display-setup.service rocola.service; do \
+    for unit in mpd.service rocola-display-setup.service rocola.service rocola-selftest.service; do \
         if   [ -e "/etc/systemd/system/$unit" ]; then src="/etc/systemd/system/$unit"; \
         elif [ -e "/lib/systemd/system/$unit"  ]; then src="/lib/systemd/system/$unit"; \
         else echo "WARN: unit $unit no encontrada, se omite"; continue; fi; \
