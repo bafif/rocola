@@ -57,6 +57,10 @@ validar (sobre todo en hardware físico). Construido y probado en un host x86-64
    - Se automatiza con un modo **desatendido** del instalador (`ROCOLA_UNATTENDED=1`) disparado por
      `rocola-selftest.service`, que solo actúa si el kernel arranca con `rocola.selftest` en el
      cmdline (inerte en producción). Scripts en `out/test/` (`installer-selftest.sh`, `boot-installed.sh`).
+   - **Fiabilidad de arranque**: probados múltiples arranques seguidos del disco instalado —**todos**
+     llegan a la rocola a pantalla completa (esto destapó y corrigió la race de video que dejaba 1 de
+     cada 3 arranques en consola; ver tabla de bugs). **Tiempo a la UI ≈ 55–65 s** en QEMU/KVM tras
+     desactivar la espera de resume del initramfs (~30 s menos por arranque).
 
 ### Reproducir
 
@@ -90,6 +94,11 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
 | **GPT sin BIOS Boot Partition** | `grub-install i386-pc` fallaba ("no BIOS Boot Partition"): la PC **no arrancaría por BIOS** | agregar partición `ef02` (2 MiB) al layout |
 | **Instalador "mentía" éxito** | `{ … } \|\| die` **desactiva `set -e`**: fallos de grub/rsync/mkfs se tragaban y reportaba OK | `trap … ERR` + sacar el `\|\| die` del grupo |
 | **`grub-install` en chroot sin `/dev`** | rsync excluye `/dev,/proc,/sys` → los `mount --bind` fallaban → "is /dev mounted?" | `grub-install` fuera del chroot con `--boot-directory`; `mkdir -p` de los puntos de montaje para `update-grub` |
+| **Race de video → rocola sin UI (intermitente)** | `rocola-display-setup` con `DefaultDependencies=no` corría **antes** del remount-rw → escribir el xorg.conf fallaba ("read-only") → Xorg sin config → **consola en vez de la rocola** (~1 de cada 3 arranques **instalados**) | sacar `DefaultDependencies=no`, ordenar `After=local-fs.target`; script tolerante a `/etc` ro |
+| **rsync aborta install válido** | clonar un sistema VIVO devuelve 24/23 (archivos volátiles) y `set -e` + trap lo tomaba como fatal | aceptar 24/23 como no-fatales |
+| **initramfs espera resume ~30s** | el initrd heredado del live esperaba un dispositivo de suspend/resume inexistente en CADA arranque instalado | `RESUME=none` + `update-initramfs -u` en el chroot |
+| **Arranque en NEGRO ~30s** | la app bloqueaba en `_connect_mpd` (hasta 30s) **antes** del primer `draw` | dibujar primero y conectar MPD en el loop; refrescar biblioteca al conectar |
+| autotest arrastraba `udev-settle` | la unidad de selftest metía un servicio deprecado en cada arranque | quitar el dep; `udevadm settle` dentro del script sólo en autotest |
 | `systemctl enable` en build | podía fallar sin systemd corriendo | symlinks `*.wants/` a mano |
 | red intermitente | `apt` cortaba el build | `Acquire::Retries` + reintento de install |
 | `make image` rebuildeaba todo | doble build del rootfs | guard `ensure-os` |

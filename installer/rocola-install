@@ -101,16 +101,25 @@ log "=== Instalando en $TARGET (keep_music=$KEEP_MUSIC, display=$DISP_MODE) ==="
 # /music (ext4). La BIOS Boot Partition es OBLIGATORIA para arrancar por BIOS
 # desde GPT: GRUB embebe ahí su core.img (en GPT no hay hueco post-MBR como en
 # MBR/msdos). Sin ella, grub-install i386-pc falla ("no BIOS Boot Partition").
-P_BIOS="${TARGET}1"; P_ESP="${TARGET}2"; P_ROOT="${TARGET}3"; P_DATA="${TARGET}4"
+# (part 1 = BIOSBOOT ef02: sin FS y no se monta; grub-install la halla por tipo GPT)
+P_ESP="${TARGET}2"; P_ROOT="${TARGET}3"; P_DATA="${TARGET}4"
 # (para discos nvme/mmc las particiones llevan sufijo pN)
-case "$TARGET" in *nvme*|*mmcblk*) P_BIOS="${TARGET}p1"; P_ESP="${TARGET}p2"; P_ROOT="${TARGET}p3"; P_DATA="${TARGET}p4";; esac
+case "$TARGET" in *nvme*|*mmcblk*) P_ESP="${TARGET}p2"; P_ROOT="${TARGET}p3"; P_DATA="${TARGET}p4";; esac
 
-# ¿Hay un layout previo de rocola (ESP+ROOT+MUSIC) que podamos conservar?
+# ¿Hay un layout previo de rocola (BIOSBOOT+ESP+ROOT+MUSIC) que podamos conservar?
 KEEP_OK=no
-if [ "$KEEP_MUSIC" = yes ] \
-   && blkid "$P_DATA" >/dev/null 2>&1 \
-   && [ "$(blkid -s LABEL -o value "$P_DATA" 2>/dev/null)" = "music" ]; then
-    KEEP_OK=yes
+if [ "$KEEP_MUSIC" = yes ]; then
+    if blkid "$P_DATA" >/dev/null 2>&1 \
+       && [ "$(blkid -s LABEL -o value "$P_DATA" 2>/dev/null)" = "music" ]; then
+        KEEP_OK=yes
+    else
+        # La partición 'music' no está en la posición esperada. Si existe en OTRO
+        # lado (p. ej. un layout de una versión distinta), NO la borramos en
+        # silencio: abortamos pidiendo backup. Si no hay ninguna, se hace layout
+        # nuevo (no hay música que perder).
+        OTHER_MUSIC="$(lsblk -lnpo NAME,LABEL "$TARGET" 2>/dev/null | awk '$2=="music"{print $1; exit}' || true)"
+        [ -z "$OTHER_MUSIC" ] || die "hay una partición 'music' ($OTHER_MUSIC) en un layout no reconocido; hacé backup y reintentá SIN conservar música"
+    fi
 fi
 
 echo "Particionando $TARGET…"
@@ -129,7 +138,10 @@ else
         --new=3:0:+12G   --typecode=3:8300 --change-name=3:ROOT \
         --new=4:0:0      --typecode=4:8300 --change-name=4:MUSIC "$TARGET" >&3 2>&1
 fi
-partprobe "$TARGET"; sleep 2
+# Releer la tabla y ESPERAR a que udev cree /dev/sdaN (en vez de un sleep fijo,
+# frágil en hardware lento: si el nodo no existe aún, el mkfs siguiente abortaría).
+partprobe "$TARGET" || true
+udevadm settle 2>/dev/null || true
 
 echo "Formateando…"; log "mkfs"
 mkfs.vfat -F32 -n ESP "$P_ESP"        >&3 2>&1
@@ -148,12 +160,22 @@ mount "$P_ESP" "$T/boot/efi"
 mount "$P_DATA" "$T/music" || true
 
 echo "Clonando el sistema (puede tardar)…"; log "rsync /"
+# OJO: clonar un sistema VIVO hace que rsync devuelva a menudo 24 (archivos que
+# desaparecen durante la copia) o 23 (algún archivo suelto ilegible: sockets,
+# xattrs). NINGUNO rompe el clon del SO, así que NO deben abortar la instalación
+# (con set -e + trap ERR, cualquier no-cero abortaría). Sólo otros códigos sí.
+rsync_rc=0
 rsync -aHAXx --info=progress2 \
     --exclude=/proc --exclude=/sys --exclude=/dev --exclude=/run \
     --exclude=/tmp --exclude=/mnt --exclude=/media --exclude=/target \
     --exclude=/music --exclude=/lost+found \
     --exclude=/run/live --exclude='/var/cache/apt/archives/*' \
-    / "$T" >&3 2>&1
+    / "$T" >&3 2>&1 || rsync_rc=$?
+case "$rsync_rc" in
+    0) ;;
+    23|24) log "rsync terminó con código $rsync_rc (no fatal: archivos volátiles del sistema vivo)";;
+    *) die "rsync falló (código $rsync_rc)";;
+esac
 
 # fstab por UUID
 echo "Generando fstab…"; log "fstab"
@@ -184,13 +206,24 @@ grub-install --target=x86_64-efi --efi-directory="$T/boot/efi" \
 # los puntos de montaje pueden no existir en el destino -> hay que crearlos
 # (si no, el bind falla y grub corre sin /dev: "is /dev mounted?").
 for fs in proc sys dev dev/pts run; do mkdir -p "$T/$fs"; mount --bind "/$fs" "$T/$fs"; done
+
+# El sistema instalado NO tiene partición de swap/resume. Sin esto, el initramfs
+# (heredado del live) ESPERA ~30s un dispositivo de resume inexistente en CADA
+# arranque ("Waiting for suspend/resume device... Gave up"). Lo desactivamos y
+# regeneramos el initrd del destino antes de generar el grub.cfg.
+echo "Optimizando arranque (initramfs)…"; log "initramfs (RESUME=none)"
+mkdir -p "$T/etc/initramfs-tools/conf.d"
+echo "RESUME=none" > "$T/etc/initramfs-tools/conf.d/resume"
+chroot "$T" /usr/sbin/update-initramfs -u >&3 2>&1
 chroot "$T" /usr/sbin/update-grub >&3 2>&1
 
-# Desmontar
+# Desmontar. Todo guardado: si algo deja un mount "busy", la instalación YA está
+# escrita y correcta -> no debe reportarse como fallida (con set -e abortaría).
 echo "Finalizando…"; log "umount"
 for fs in run dev/pts dev sys proc; do umount "$T/$fs" || true; done
 umount "$T/music" 2>/dev/null || true
-umount "$T/boot/efi"; umount "$T"
+umount "$T/boot/efi" 2>/dev/null || true
+umount "$T" 2>/dev/null || umount -l "$T" 2>/dev/null || true
 log "OK"
 } 2>&3
 trap - ERR   # a partir de acá los prompts pueden devolver no-cero sin abortar

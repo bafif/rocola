@@ -13,6 +13,10 @@ set -u
 # salvo que se pida explícitamente el autotest -> 100% inerte en producción.
 grep -qw rocola.selftest /proc/cmdline || exit 0
 
+# A partir de acá SÍ es un arranque de autotest: esperar a que udev cree los nodos
+# del disco destino (la unidad ya no depende de systemd-udev-settle).
+udevadm settle 2>/dev/null || true
+
 TARGET=/dev/sdb
 for tok in $(cat /proc/cmdline); do
     case "$tok" in rocola.selftest.target=*) TARGET="${tok#*=}";; esac
