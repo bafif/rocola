@@ -6,13 +6,15 @@
 # normales no se pasa ese flag, así que el autotest no hace nada. Sirve para
 # validar el instalador de punta a punta en QEMU/CI (ver docs/12-verificacion.md).
 #
-# Ordenado después de basic.target (udev/discos listos) y ANTES de getty.target,
-# para que en el arranque de autotest corra con la consola serie limpia y la
-# instalación termine (con poweroff) antes de mostrar el login.
+# Ordenado después de basic.target y ANTES de getty.target, para que en el
+# arranque de autotest corra con la consola serie limpia y la instalación termine
+# (con poweroff) antes del login. NO se usa systemd-udev-settle como dependencia:
+# eso es deprecado y se arrastraría a CADA arranque de producción agregando
+# latencia; la espera real a los nodos de disco la hace `udevadm settle` dentro
+# del propio script, sólo cuando el autotest efectivamente corre.
 [Unit]
 Description=Rocola — autotest desatendido del instalador (NO producción)
-After=basic.target systemd-udev-settle.service
-Wants=systemd-udev-settle.service
+After=basic.target
 Before=getty.target
 
 [Service]

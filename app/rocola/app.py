@@ -47,8 +47,11 @@ class RocolaApp:
         self.theme = Theme.load(self.config.theme_dir)
         self.header_h = max(40, self.screen.get_height() // 10)
         self.input.init_joysticks()
-        # En modo captura no esperamos a MPD (1 intento); en runtime reintentamos.
-        self._connect_mpd(retries=1 if self.config.screenshot else 30)
+        # En runtime NO bloqueamos esperando a MPD: la UI tiene que dibujar de
+        # inmediato (si no, el arranque queda en NEGRO hasta que MPD responde, ~30s
+        # en hardware lento). El loop conecta en segundo plano y _on_mpd_connected
+        # puebla la biblioteca al conectar. En modo captura sí intentamos 1 vez.
+        self._connect_mpd(retries=1 if self.config.screenshot else 0)
 
         self.scenes = {
             "library": ui.LibraryScene(self),
@@ -66,10 +69,14 @@ class RocolaApp:
         self.running = True
         while self.running:
             self._handle_events()
-            self._poll_state()
+            # Dibujar PRIMERO: la UI aparece desde el primer frame, sin esperar a
+            # MPD. Recién después sondeamos/(re)conectamos MPD, así un MPD lento o
+            # caído no deja la pantalla en negro al arrancar (sólo la congela un
+            # instante mientras reintenta, ya con la UI visible).
             if self.scene:
                 self.scene.draw(self.screen)
             pygame.display.flip()
+            self._poll_state()
             self.clock.tick(self.config.fps)
 
         self._shutdown()
@@ -147,10 +154,18 @@ class RocolaApp:
         try:
             if not self.mpd.connected:
                 self.mpd.connect()
+                self._on_mpd_connected()  # recién conectado: poblar la biblioteca
             self.state["status"] = self.mpd.status()
             self.state["song"] = self.mpd.current_song()
         except (OSError, MPDError):
             self.mpd.close()
+
+    def _on_mpd_connected(self) -> None:
+        # Al (re)conectar MPD refrescamos la biblioteca: como la UI arranca sin
+        # esperar a MPD, on_enter pudo correr con MPD aún caído y dejarla vacía.
+        lib = self.scenes.get("library")
+        if lib is not None:
+            lib.refresh()
 
     # --- header (branding) -----------------------------------------------
     def draw_header(self, surface, subtitle: str = "") -> None:

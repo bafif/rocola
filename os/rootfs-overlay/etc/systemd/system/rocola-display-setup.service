@@ -2,8 +2,13 @@
 [Unit]
 Description=Rocola — configuración de video (VGA / CRT 15 kHz)
 Before=rocola.service
-DefaultDependencies=no
-After=systemd-udev-settle.service
+# NO usar DefaultDependencies=no: este servicio ESCRIBE en /etc/X11/, así que el
+# rootfs tiene que estar YA remontado read-write. Con DefaultDependencies=no corría
+# antes de systemd-remount-fs y, en el sistema INSTALADO (arranca root=… ro y luego
+# remonta rw), la escritura fallaba de forma intermitente ("read-only filesystem")
+# -> Xorg quedaba sin config -> consola de texto en vez de la rocola. local-fs.target
+# garantiza el rootfs rw antes de correr. (En el live no pasaba: el overlay es rw.)
+After=local-fs.target
 
 [Service]
 Type=oneshot

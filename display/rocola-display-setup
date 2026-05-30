@@ -18,7 +18,16 @@ PREFERRED_RES=
 # shellcheck disable=SC1090
 [ -f "$CONF" ] && . "$CONF" || true
 
-mkdir -p /etc/X11/xorg.conf.d
+mkdir -p /etc/X11/xorg.conf.d 2>/dev/null || true
+
+# Defensa en profundidad (kiosko): si /etc no es escribible —no debería pasar, el
+# servicio ya corre con el rootfs rw (After=local-fs.target)— NO abortamos el
+# arranque. Sin esta config Xorg autodetecta por EDID y la UI igual abre; preferimos
+# eso a dejar la rocola en una consola de texto por un fallo de escritura.
+if ! ( : >> "$OUT" ) 2>/dev/null; then
+    echo "rocola-display-setup: no puedo escribir $OUT (¿/etc read-only?); Xorg autodetectará" >&2
+    exit 0
+fi
 
 write_vga() {
     cat > "$OUT" <<'EOF'
