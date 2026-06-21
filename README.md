@@ -43,7 +43,7 @@ los de 15 kHz de arcade/TV**, sin configuración posterior.
 
    | Herramienta | Cómo |
    |-------------|------|
-   | **Rufus** (Windows) | *Dispositivo* = tu pendrive → *Seleccionar* el `.iso` → *Empezar*. Si pregunta, elegí **"Escribir en modo Imagen DD"** (la imagen es híbrida). |
+   | **Rufus** (Windows) | *Dispositivo* = tu pendrive → *Seleccionar* el `.iso` → *Empezar* → elegí **"Escribir en modo Imagen DD"** (la imagen es híbrida; en modo DD el resto de opciones se ignoran). Guía detallada: [docs/13](docs/13-rufus-windows.md). |
    | **Ventoy** (Windows/Linux) | Instalá Ventoy en el pendrive **una vez** y después **copiá** el `.iso` a su partición. No hace falta reformatear para actualizar. |
    | **balenaEtcher** (multiplataforma) | *Flash from file* → el `.iso` → elegí el pendrive → *Flash*. |
 
@@ -133,6 +133,8 @@ detalle de cada parte.
 | [docs/10-flashing-usb.md](docs/10-flashing-usb.md) | Grabar el pendrive |
 | [docs/11-troubleshooting.md](docs/11-troubleshooting.md) | Resolución de problemas |
 | [docs/12-verificacion.md](docs/12-verificacion.md) | Qué está probado y qué falta validar |
+| [docs/13-rufus-windows.md](docs/13-rufus-windows.md) | Grabar con Rufus en Windows (modo DD, opciones) |
+| [docs/14-audio.md](docs/14-audio.md) | Salida de audio (PipeWire), Bluetooth y selección de salida |
 
 ---
 

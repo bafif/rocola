@@ -1,7 +1,13 @@
 # Configura el modo de video (VGA/moderno o CRT 15 kHz) antes de arrancar la UI.
 [Unit]
 Description=Rocola — configuración de video (VGA / CRT 15 kHz)
-Before=rocola.service
+# Debe escribir la config de Xorg ANTES de que el autologin de tty1 arranque la UI
+# (getty-autologin + startx). Ordenamos contra getty@tty1.service directamente: el
+# template getty@.service YA declara Before=getty.target, así que ordenar contra
+# getty.target nos deja como "hermanos" de ese sync point (pueden correr en paralelo)
+# y NO garantiza correr antes del getty que lanza startx → Xorg podía leer
+# /etc/X11/xorg.conf.d/ a medio escribir. getty@tty1.service es el unit concreto.
+Before=getty@tty1.service
 # NO usar DefaultDependencies=no: este servicio ESCRIBE en /etc/X11/, así que el
 # rootfs tiene que estar YA remontado read-write. Con DefaultDependencies=no corría
 # antes de systemd-remount-fs y, en el sistema INSTALADO (arranca root=… ro y luego

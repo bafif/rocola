@@ -1,0 +1,16 @@
+# Fija hostname + /etc/hosts en runtime (docker export los borra del build, así que
+# no se pueden hornear con COPY). DEBE correr ANTES del autologin/startx: sin un
+# hostname resoluble, startx arma mal la cookie de xauth → "Authorization required"
+# → Xorg crashea → el autologin loopea. Ver /usr/local/bin/rocola-hostname.
+[Unit]
+Description=Rocola — fijar hostname y /etc/hosts (runtime)
+After=local-fs.target
+Before=systemd-user-sessions.service getty.target network-pre.target nss-lookup.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/rocola-hostname
+
+[Install]
+WantedBy=multi-user.target

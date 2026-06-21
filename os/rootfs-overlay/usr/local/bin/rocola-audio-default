@@ -1,0 +1,73 @@
+#!/bin/bash
+# rocola-audio-default — elige el "sink" (salida) de PipeWire por defecto según una
+# heurística realista, o según el override de /etc/rocola/audio.conf.
+#
+# Heurística (OUTPUT=auto): Bluetooth conectado -> USB -> analógica onboard -> HDMI/
+# digital -> primer sink disponible. Razón: un sink BT conectado o una placa USB de
+# audio son señales fuertes de la salida deseada; la analógica onboard "siempre
+# existe" aunque no haya nada enchufado, y muchos HDMI van a monitores sin parlantes.
+#
+# Corre DENTRO de la sesión de 'rocola' (necesita XDG_RUNTIME_DIR y PipeWire arriba).
+# Lo invoca rocola-session; también sirve para re-elegir a mano por SSH:
+#   sudo -u rocola env XDG_RUNTIME_DIR=/run/user/$(id -u rocola) rocola-audio-default
+set -uo pipefail
+
+CONF=/etc/rocola/audio.conf
+OUTPUT=auto
+VOLUME=80
+# shellcheck disable=SC1090
+[ -f "$CONF" ] && . "$CONF" || true
+
+log() { echo "[rocola-audio-default] $*" >&2; }
+
+command -v pactl >/dev/null 2>&1 || { log "pactl no disponible; nada que hacer"; exit 0; }
+
+# Esperar a que PipeWire exponga sinks (recién levantado puede tardar un instante).
+sinks=""
+for _ in $(seq 1 10); do
+    sinks="$(pactl list short sinks 2>/dev/null | awk '{print $2}')"
+    [ -n "$sinks" ] && break
+    sleep 0.5
+done
+if [ -z "$sinks" ]; then
+    log "sin sinks de PipeWire (¿sin placa de audio o adaptador BT?); no elijo nada"
+    exit 0
+fi
+
+# Heurística: primer sink cuyo nombre matchee, por orden de prioridad.
+auto_pick() {
+    local pat cand
+    for pat in 'bluez_output' 'usb' 'analog' 'hdmi|iec958'; do
+        cand="$(printf '%s\n' "$sinks" | grep -iE "$pat" | head -n1)"
+        [ -n "$cand" ] && { printf '%s\n' "$cand"; return; }
+    done
+    printf '%s\n' "$sinks" | head -n1
+}
+
+pick=""
+case "${OUTPUT:-auto}" in
+    ""|auto)
+        pick="$(auto_pick)"
+        ;;
+    *)
+        # Override: primer sink cuyo nombre contenga el texto de OUTPUT.
+        pick="$(printf '%s\n' "$sinks" | grep -iF "$OUTPUT" | head -n1)"
+        if [ -z "$pick" ]; then
+            log "OUTPUT='$OUTPUT' no coincide con ningún sink; caigo a la heurística"
+            pick="$(auto_pick)"
+        fi
+        ;;
+esac
+
+[ -n "$pick" ] || { log "no pude elegir un sink"; exit 0; }
+
+pactl set-default-sink "$pick" 2>/dev/null && log "sink por defecto = $pick"
+pactl set-sink-mute   "$pick" 0            2>/dev/null || true
+pactl set-sink-volume "$pick" "${VOLUME}%" 2>/dev/null || true
+
+# Mover al nuevo sink cualquier stream ya existente (p. ej. MPD si ya sonaba).
+pactl list short sink-inputs 2>/dev/null | awk '{print $1}' | while read -r si; do
+    [ -n "$si" ] && pactl move-sink-input "$si" "$pick" 2>/dev/null || true
+done
+
+exit 0

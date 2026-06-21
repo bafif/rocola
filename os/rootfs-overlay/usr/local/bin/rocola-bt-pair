@@ -1,0 +1,83 @@
+#!/bin/bash
+# rocola-bt-pair — emparejá un parlante o auricular Bluetooth con la rocola.
+#
+# TUI con whiptail (mismo estilo que el instalador). La app lo abre en otra VT
+# (openvt) desde el menú "Salida de audio". Una vez conectado, WirePlumber expone el
+# dispositivo como un "sink" de PipeWire y aparece en el selector de salida.
+#
+# Pensado para parlantes/auriculares BT estándar ("just works", sin PIN). Necesita un
+# adaptador Bluetooth: muchas PCs de escritorio viejas requieren un dongle USB.
+set -uo pipefail
+
+BT=bluetoothctl
+TITLE="Rocola — Emparejar Bluetooth"
+SCAN_SECS=12
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+if ! have whiptail; then echo "whiptail no disponible"; exit 1; fi
+if ! have "$BT"; then
+    whiptail --title "$TITLE" --msgbox "bluetoothctl (paquete bluez) no está instalado." 8 60
+    exit 1
+fi
+
+# Encender el adaptador y verificar que exista alguno.
+$BT power on >/dev/null 2>&1 || true
+if ! $BT list 2>/dev/null | grep -q .; then
+    whiptail --title "$TITLE" --msgbox \
+"No se detectó ningún adaptador Bluetooth.\n\nMuchas PCs de escritorio no traen BT: conectá un dongle USB Bluetooth y reintentá." \
+        12 64
+    exit 1
+fi
+
+# Escaneo (bloqueante; bluetoothctl --timeout sale solo a los SCAN_SECS).
+whiptail --title "$TITLE" --infobox \
+"Buscando dispositivos Bluetooth…\n\nPoné tu parlante/auricular en modo emparejamiento.\n($SCAN_SECS segundos)" 10 64
+$BT --timeout "$SCAN_SECS" scan on >/dev/null 2>&1 || true
+
+# Recolectar dispositivos descubiertos: "Device AA:BB:.. Nombre".
+mapfile -t DEVS < <($BT devices 2>/dev/null | sed -n 's/^Device \([0-9A-F:]\{17\}\) \(.*\)$/\1\t\2/p')
+if [ "${#DEVS[@]}" -eq 0 ]; then
+    whiptail --title "$TITLE" --msgbox \
+"No se encontraron dispositivos.\n\nAsegurate de que el parlante esté encendido y en modo emparejamiento, y reintentá." \
+        11 64
+    exit 1
+fi
+
+# Menú whiptail (tag=MAC, item=Nombre).
+MENU_ARGS=()
+for d in "${DEVS[@]}"; do
+    mac="${d%%$'\t'*}"
+    name="${d#*$'\t'}"
+    [ -n "$name" ] || name="(sin nombre)"
+    MENU_ARGS+=("$mac" "$name")
+done
+
+MAC="$(whiptail --title "$TITLE" --menu "Elegí el dispositivo a emparejar:" 18 64 8 \
+        "${MENU_ARGS[@]}" 3>&1 1>&2 2>&3)" || exit 0
+[ -n "$MAC" ] || exit 0
+
+# Emparejar / confiar / conectar en una sola sesión de bluetoothctl, con agente
+# "NoInputNoOutput" (acepta el emparejamiento "just works" sin pedir PIN).
+whiptail --title "$TITLE" --infobox "Conectando con $MAC…" 8 60
+OUT="$(
+$BT <<EOF 2>&1
+power on
+agent NoInputNoOutput
+default-agent
+pair $MAC
+trust $MAC
+connect $MAC
+EOF
+)"
+
+sleep 2
+if $BT info "$MAC" 2>/dev/null | grep -q "Connected: yes"; then
+    whiptail --title "$TITLE" --msgbox \
+"¡Listo! Dispositivo conectado.\n\nElegilo como salida en el menú \"Salida de audio\"." 10 62
+    exit 0
+fi
+
+whiptail --title "$TITLE" --msgbox \
+"No se pudo conectar.\n\nDetalle:\n$(printf '%s' "$OUT" | tail -n 6)" 16 70
+exit 1

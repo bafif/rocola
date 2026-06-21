@@ -1,12 +1,33 @@
 # Paquetes del SO de la rocola (i386, bookworm). Comentarios con '#'.
 # Mantener MÍNIMO: target 2 GB RAM / i386.
 
+# --- Firmware de hardware (non-free-firmware) ---
+# Amplio, para soportar la gama más variada de PCs. Requiere el componente
+# non-free-firmware habilitado (ver os/Dockerfile). Sin el firmware de GPU,
+# amdgpu/i915/nouveau no inicializan KMS; sin el de audio Intel (SOF) muchas PCs
+# modernas no tienen sonido (clave en una rocola).
+firmware-linux             # metapaquete no-libre (GPU AMD/Intel/varios)
+firmware-linux-free        # firmware libre base
+firmware-amd-graphics      # GPUs AMD/ATI (amdgpu, radeon)
+firmware-misc-nonfree      # GPUs Intel (i915), nouveau y varios
+firmware-sof-signed        # audio Intel SOF (sonido en equipos Intel modernos)
+firmware-intel-sound       # audio Intel (HDA/DSP) adicional
+firmware-realtek           # NICs/wifi Realtek (muy comunes; p. ej. rtl8168)
+firmware-iwlwifi           # wifi Intel
+firmware-atheros           # wifi Atheros/Qualcomm
+firmware-brcm80211         # wifi Broadcom
+wireless-regdb             # base de datos regulatoria de wifi
+
 # --- Núcleo del sistema / arranque ---
 linux-image-686-pae        # kernel i386 (PAE). Fallback no-PAE: linux-image-686
 live-boot                  # arranque live desde squashfs + overlay
 live-boot-initramfs-tools
 initramfs-tools
 systemd-sysv
+dbus                       # bus del sistema: sin él logind no anda y un user no-root
+                           # no puede 'systemctl poweroff' ("Failed to connect to bus")
+polkitd                    # autorización: permite apagar/reiniciar sin contraseña
+                           # desde la sesión local (ver regla 49-rocola-power.rules)
 grub-pc-bin                # GRUB para BIOS (módulos i386-pc)
 grub-efi-amd64-bin         # GRUB para UEFI x64 (carga kernel i386)
 grub2-common               # provee grub-install/update-grub (lo usa el instalador en chroot)
@@ -28,7 +49,13 @@ nano
 pciutils
 usbutils
 util-linux
+iproute2                  # ip(8) — diagnóstico de red (faltaba)
 whiptail                  # TUI del instalador
+
+# --- SSH de troubleshooting (opt-in, APAGADO por defecto) ---
+# sshd se instala pero NO arranca salvo que se bootee con 'rocola.ssh' (entrada
+# de GRUB "Troubleshooting"). Solo-clave, root. Ver os/Dockerfile y rocola-ssh.service.
+openssh-server
 
 # --- Servidor gráfico (mínimo) ---
 xserver-xorg-core
@@ -40,10 +67,23 @@ xinit
 x11-xserver-utils          # xrandr, etc.
 libgl1-mesa-dri
 
-# --- Audio + motor de la rocola ---
-mpd                        # Music Player Daemon (motor de audio)
-mpc                        # cliente CLI para scripts (update, etc.)
-alsa-utils
+# --- Audio: PipeWire + Bluetooth + motor de la rocola ---
+# El audio rutea por PipeWire (servidor moderno): cubre la mayor variedad de
+# salidas (analógica, HDMI/DP, USB y Bluetooth A2DP) con un solo stack. MPD ya NO
+# corre como servicio del sistema: lo lanza la sesión de 'rocola' (ver rocola-session)
+# para compartir el PipeWire de la sesión gráfica. El "sink" por defecto se elige por
+# heurística al boot y se cambia desde el menú de la app.
+mpd                        # Music Player Daemon (motor de audio; corre EN la sesión, no como servicio)
+mpc                        # cliente CLI para scripts (update, volume, etc.)
+alsa-utils                 # amixer/alsactl: red de seguridad para desmutear el mixer de hardware
+pipewire                   # servidor de audio PipeWire
+pipewire-bin               # binarios/daemon de PipeWire (pw-cli, etc.; explícito por --no-install-recommends)
+pipewire-pulse             # capa de compatibilidad PulseAudio (MPD usa 'type "pulse"' contra esto)
+wireplumber                # session manager de PipeWire (política de ruteo + sink por defecto)
+libspa-0.2-bluetooth       # plugin SPA de Bluetooth: expone parlantes/auriculares BT como sinks de PipeWire
+pipewire-alsa              # bridge ALSA -> PipeWire (apps ALSA-nativas rutean por PipeWire)
+pulseaudio-utils           # pactl/paplay: la app y los scripts listan/eligen sinks y reproducen el tono de prueba
+bluez                      # bluetoothd + bluetoothctl (emparejamiento BT). El adaptador BT depende del hardware/dongle.
 
 # --- App de la rocola (SDL2 / pygame-ce) ---
 python3

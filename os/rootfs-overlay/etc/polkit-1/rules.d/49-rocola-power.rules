@@ -1,0 +1,20 @@
+// Rocola (kiosko): permitir apagar/reiniciar/suspender sin contraseña.
+//
+// Una rocola se maneja con controles de arcade, sin teclado para tipear claves.
+// El usuario 'rocola' (sesión local de la UI) tiene que poder apagar la máquina
+// de forma limpia. Por defecto polkit ya permite a la sesión ACTIVA apagar, pero
+// esta regla lo hace explícito e independiente de que la detección de "sesión
+// activa" funcione (p. ej. al apagar desde la app o desde otra VT).
+polkit.addRule(function(action, subject) {
+    if (subject.user !== "rocola") {
+        return;  // no opinamos sobre otros usuarios
+    }
+    if (action.id == "org.freedesktop.login1.power-off" ||
+        action.id == "org.freedesktop.login1.power-off-multiple-sessions" ||
+        action.id == "org.freedesktop.login1.reboot" ||
+        action.id == "org.freedesktop.login1.reboot-multiple-sessions" ||
+        action.id == "org.freedesktop.login1.halt" ||
+        action.id == "org.freedesktop.login1.halt-multiple-sessions") {
+        return polkit.Result.YES;
+    }
+});

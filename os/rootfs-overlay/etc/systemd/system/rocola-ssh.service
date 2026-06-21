@@ -1,0 +1,17 @@
+# Habilita SSH para troubleshooting SÓLO si 'rocola.ssh' está en la cmdline.
+# Habilitada en cada arranque, pero su script sale de inmediato salvo que se haya
+# booteado con 'rocola.ssh' (entrada de GRUB "Troubleshooting (SSH)"). En el
+# arranque normal del ISO público no abre nada. No depende de network-online para
+# no demorar el boot: sshd escucha en wildcard y acepta conexiones cuando el DHCP
+# (systemd-networkd) levanta la IP.
+[Unit]
+Description=Rocola — SSH opt-in para troubleshooting (sólo con rocola.ssh en la cmdline)
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/rocola-ssh-maybe
+
+[Install]
+WantedBy=multi-user.target

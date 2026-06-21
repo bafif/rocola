@@ -1,0 +1,8 @@
+# DHCP en interfaces cableadas. Necesario para que el SSH de troubleshooting sea
+# alcanzable por red (y, en general, para que la rocola tenga red si la hay).
+# Liviano: lo maneja systemd-networkd (ya viene con systemd, sin paquetes extra).
+[Match]
+Name=en* eth*
+
+[Network]
+DHCP=yes

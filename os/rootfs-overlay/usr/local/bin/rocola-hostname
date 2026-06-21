@@ -1,0 +1,24 @@
+#!/bin/bash
+# Fija hostname + /etc/hosts EN RUNTIME (al arrancar).
+#
+# Por qué un servicio y no archivos en el overlay: el build saca el rootfs con
+# `docker export`, y Docker maneja /etc/hostname, /etc/hosts y /etc/resolv.conf
+# como bind-mounts → el export los reemplaza por versiones vacías/propias y
+# NO conserva lo que pongamos vía COPY. Resultado: hostname vacío → "localhost"
+# que no resuelve → `startx` genera mal la cookie de xauth → Xorg tira
+# "Authorization required, but no protocol specified", crashea y el autologin
+# loopea hasta que (con suerte) algún reintento pega. Seteándolo acá, en runtime,
+# queda determinista en cualquier timing de arranque.
+set -euo pipefail
+
+NAME=rocola
+echo "$NAME" > /etc/hostname
+hostname "$NAME" 2>/dev/null || true
+cat > /etc/hosts <<EOF
+127.0.0.1	localhost
+127.0.1.1	$NAME
+::1		localhost ip6-localhost ip6-loopback
+ff02::1		ip6-allnodes
+ff02::2		ip6-allrouters
+EOF
+echo "rocola-hostname: hostname=$NAME y /etc/hosts fijados"
