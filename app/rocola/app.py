@@ -57,6 +57,9 @@ class RocolaApp:
             "library": ui.LibraryScene(self),
             "nowplaying": ui.NowPlayingScene(self),
             "menu": ui.MenuScene(self),
+            "audio": ui.AudioScene(self),
+            "info": ui.InfoScene(self),
+            "btpair": ui.BtPairScene(self),
         }
         self.set_scene(self.config.screenshot_scene if self.config.screenshot else "library")
 

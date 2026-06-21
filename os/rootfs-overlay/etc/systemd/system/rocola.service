@@ -10,8 +10,14 @@ Description=Rocola (UI SDL2 + Xorg en tty1)
 # Arrancar después de que el sistema esté listo, mpd levantado y el video configurado.
 After=systemd-user-sessions.service plymouth-quit-wait.service mpd.service rocola-display-setup.service
 Wants=mpd.service rocola-display-setup.service
-# Kiosko: reintentar indefinidamente sin rate-limit permanente.
-StartLimitIntervalSec=0
+# Rate-limit: reintentar ante fallos transitorios, pero RENDIRSE si el fallo es
+# permanente (p. ej. Xorg no levanta por falta de driver/firmware). Sin esto, con
+# Restart=always + StartLimitIntervalSec=0 el servicio flapea infinito cada 2 s,
+# roba el VT/pantalla y deja la máquina en un login-loop inusable. Tras 5 fallos
+# en 120 s systemd lo marca 'failed' y NO reintenta más: tty1 cae a un login
+# normal (autovt) donde se puede leer 'journalctl -u rocola.service' y depurar.
+StartLimitIntervalSec=120
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -26,7 +32,7 @@ StandardError=journal
 # xinit arranca Xorg en vt1 y, como cliente único, la sesión de la rocola.
 ExecStart=/usr/bin/xinit /usr/local/bin/rocola-session -- :0 vt1 -keeptty -nolisten tcp
 Restart=always
-RestartSec=2
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+#!/bin/bash
+# rocola-ssh-maybe — habilita sshd SOLO si 'rocola.ssh' está en la cmdline del
+# kernel (opt-in para troubleshooting; ver la entrada de GRUB "Troubleshooting").
+#
+# El ISO es un Release público: en el arranque normal NO se abre SSH. sshd queda
+# instalado pero deshabilitado; este script lo prende a pedido. Acceso: root, solo
+# por clave pública (ver /etc/ssh/sshd_config.d/10-rocola.conf y
+# /root/.ssh/authorized_keys).
+set -euo pipefail
+
+grep -qw rocola.ssh /proc/cmdline || exit 0
+
+# Host keys efímeras (el live corre en RAM): se generan en cada arranque con SSH
+# en vez de shippear claves fijas/compartidas en un ISO público. El Dockerfile
+# borra las que crea el postinst de openssh.
+ssh-keygen -A >/dev/null 2>&1 || true
+
+systemctl start ssh.service 2>/dev/null || systemctl start sshd.service 2>/dev/null || true
+echo "rocola-ssh: SSH habilitado por 'rocola.ssh' (root, solo clave pública)"
