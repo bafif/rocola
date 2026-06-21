@@ -19,6 +19,8 @@ Descargá el `.iso` del Release y usá una de estas:
 
 - **Rufus**: *Dispositivo* = tu pendrive → *Seleccionar* el `.iso` → *Empezar*. Si pregunta el modo,
   elegí **"Escribir en modo Imagen DD"** (la ISO es híbrida; el modo DD respeta el MBR/El Torito).
+  Qué significan MBR/GPT, "fixes para BIOS viejo", "UEFI media validation", etc. y por qué en modo
+  DD no hace falta tocarlas: [13 · Grabar con Rufus](13-rufus-windows.md).
 - **Ventoy**: instalá Ventoy en el pendrive **una sola vez** (`Ventoy2Disk.exe`) y después **copiá**
   el `.iso` a la partición de Ventoy. Para actualizar, reemplazás el archivo; no reformateás.
 - **balenaEtcher**: *Flash from file* → el `.iso` → elegí el pendrive → *Flash*.

@@ -29,19 +29,45 @@ if ! ( : >> "$OUT" ) 2>/dev/null; then
     exit 0
 fi
 
+# Elige el driver de Xorg según haya o no KMS. CLAVE para no crashear:
+#  - Con KMS (/dev/dri/card0 presente): 'modesetting' (genérico; sirve para los
+#    modelines de CRT 15 kHz y para GPUs cuyo KMS funciona).
+#  - Sin KMS (arranque con 'nomodeset', o el kernel i386 no soporta la GPU):
+#    'fbdev' sobre el framebuffer del firmware (efifb en UEFI, vesafb en BIOS).
+#    NO dejamos que Xorg autodetecte, porque puede elegir 'vesa', que **se niega a
+#    correr bajo UEFI** ("Refusing to run on UEFI") y tumba el servidor X.
+detect_driver() {
+    if [ -e /dev/dri/card0 ]; then echo modesetting; else echo fbdev; fi
+}
+
+device_section() {
+    local drv; drv="$(detect_driver)"
+    echo 'Section "Device"'
+    echo '    Identifier "rocola-gpu"'
+    printf '    Driver "%s"\n' "$drv"
+    # Con fbdev, apuntar al framebuffer explícitamente: sin esto el driver a veces
+    # tira "Unable to find a valid framebuffer device" sobre efifb y crashea X.
+    [ "$drv" = fbdev ] && echo '    Option "fbdev" "/dev/fb0"'
+    echo 'EndSection'
+    echo "rocola-display-setup: driver de video = $drv $( [ -e /dev/dri/card0 ] && echo '(KMS)' || echo '(sin KMS -> fbdev)')" >&2
+}
+
 write_vga() {
-    cat > "$OUT" <<'EOF'
-# VGA / moderno: Xorg autodetecta los modos por EDID.
-Section "Monitor"
-    Identifier "rocola-vga"
-EndSection
-EOF
+    {
+        echo "# VGA / moderno. Driver forzado (ver detect_driver); Xorg toma los modos por EDID."
+        device_section
+        echo 'Section "Monitor"'
+        echo '    Identifier "rocola-vga"'
+        echo 'EndSection'
+    } > "$OUT"
 }
 
 write_crt15() {
     local pref="${PREFERRED_RES:-640x480i_60}"
     {
-        echo "# CRT 15 kHz — generado por rocola-display-setup (ajustar por monitor)"
+        echo "# CRT 15 kHz — generado por rocola-display-setup (ajustar por monitor)."
+        echo "# El 15 kHz requiere KMS: arrancá la entrada de GRUB 'aceleración GPU / CRT 15 kHz'."
+        device_section
         echo 'Section "Monitor"'
         echo '    Identifier "rocola-crt15"'
         echo '    HorizSync 15.0-16.5'

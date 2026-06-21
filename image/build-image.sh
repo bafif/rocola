@@ -51,17 +51,42 @@ mksquashfs "$ROOTDIR" "$STAGE/live/filesystem.squashfs" \
 # --- 4) grub.cfg del medio LIVE -----------------------------------------------
 log "Escribiendo grub.cfg…"
 cat > "$STAGE/boot/grub/grub.cfg" <<'EOF'
-set timeout=5
+set timeout=8
 set default=0
 insmod all_video
 insmod gfxterm
 
+# Entrada por defecto: video GENÉRICO (fbdev sobre el framebuffer del firmware,
+# efifb/vesafb). 'nomodeset' evita el KMS de la GPU — necesario porque en i386 la
+# aceleración de varias GPU modernas (p. ej. APUs AMD) está rota (rings SDMA), y
+# fbdev anda en casi cualquier placa. gfxpayload=keep le pasa al kernel el
+# framebuffer lineal que armó GRUB (sirve en BIOS y UEFI). loglevel=3 calla el
+# spam de la consola (p. ej. "enp3s0: Link is Up/Down").
 menuentry "Rocola" {
-    linux  /live/vmlinuz boot=live components quiet splash
+    set gfxpayload=keep
+    linux  /live/vmlinuz boot=live components quiet loglevel=3 nomodeset
     initrd /live/initrd.img
 }
-menuentry "Rocola — modo seguro (VGA, sin KMS)" {
-    linux  /live/vmlinuz boot=live components nomodeset vga=788
+# Aceleración por GPU (KMS). NECESARIA para CRT 15 kHz (modelines via modesetting).
+# Usar sólo si tu GPU soporta KMS en i386; si la pantalla queda en negro o loopea,
+# volvé a la entrada "Rocola" (fbdev).
+menuentry "Rocola — aceleración GPU / CRT 15 kHz (KMS)" {
+    linux  /live/vmlinuz boot=live components quiet loglevel=3
+    initrd /live/initrd.img
+}
+menuentry "Rocola — recuperación (consola, sin UI)" {
+    # Arranca a una consola de texto sin lanzar la UI (flag rocola.noui), para
+    # depurar (journalctl, lspci, etc.). Autologin de rocola en tty1.
+    set gfxpayload=keep
+    linux  /live/vmlinuz boot=live components nomodeset rocola.noui
+    initrd /live/initrd.img
+}
+menuentry "Rocola — troubleshooting (SSH por red)" {
+    # Arranca la UI (fbdev) PERO además habilita sshd (root, solo clave) para
+    # depurar por red. SSH se prende SÓLO al elegir esta entrada (flag rocola.ssh);
+    # el arranque normal NUNCA abre SSH. Requiere red con DHCP (systemd-networkd).
+    set gfxpayload=keep
+    linux  /live/vmlinuz boot=live components nomodeset rocola.ssh
     initrd /live/initrd.img
 }
 EOF

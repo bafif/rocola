@@ -1,7 +1,14 @@
 #!/bin/bash
-# Sesión X de la rocola: prepara el entorno y lanza la app SDL2 a pantalla completa.
-# Lo invoca xinit desde rocola.service.
-set -euo pipefail
+# Sesión X de la rocola: prepara el entorno, levanta el audio y lanza la app SDL2 a
+# pantalla completa. Lo invoca xinit/startx (ver ~rocola/.bash_profile).
+#
+# Audio: el stack vive EN esta sesión (PipeWire + WirePlumber + pipewire-pulse) y MPD
+# corre acá también (no como servicio del sistema), así comparten el mismo PipeWire.
+# El ruteo a placas/Bluetooth lo decide PipeWire; el "sink" por defecto lo elige
+# rocola-audio-default por heurística (o por /etc/rocola/audio.conf). Todo el bring-up
+# de audio va en SEGUNDO PLANO para que la UI aparezca al instante: la app ya tolera
+# que MPD no esté listo todavía y reconecta sola (ver app.py).
+set -uo pipefail
 
 # Sin salvapantallas / DPMS (es una rocola, la pantalla queda encendida).
 xset s off -dpms || true
@@ -10,8 +17,68 @@ xset s noblank || true
 # Oculta el cursor si está 'unclutter' disponible (opcional).
 command -v unclutter >/dev/null 2>&1 && unclutter -idle 1 &
 
-# Asegura que MPD esté arriba y la música escaneada.
-command -v mpc >/dev/null 2>&1 && mpc update >/dev/null 2>&1 || true
+# XDG_RUNTIME_DIR lo setea pam_systemd en el autologin; lo aseguramos por las dudas.
+: "${XDG_RUNTIME_DIR:=/run/user/$(id -u)}"
+export XDG_RUNTIME_DIR
+
+# --- Bring-up de audio (en segundo plano, best-effort) --------------------
+audio_bringup() {
+    # 1) Red de seguridad: desmutear el mixer de hardware de cada placa. WirePlumber
+    #    suele hacerlo, pero muchas placas arrancan con Master/Speaker en mute.
+    if command -v amixer >/dev/null 2>&1; then
+        for card in $(awk '/^[[:space:]]*[0-9]+[[:space:]]\[/{print $1}' /proc/asound/cards 2>/dev/null); do
+            for ctl in Master PCM Speaker Headphone Front; do
+                amixer -c "$card" sset "$ctl" unmute >/dev/null 2>&1 || true
+            done
+            # Desactivar el auto-mute (en algunas placas silencia el parlante al
+            # "detectar" auriculares); es un control enumerado, valor 'Disabled'.
+            amixer -c "$card" sset "Auto-Mute Mode" Disabled >/dev/null 2>&1 || true
+            for ctl in Master PCM Speaker Headphone Front; do
+                amixer -c "$card" sset "$ctl" 80% >/dev/null 2>&1 || true
+            done
+        done
+    fi
+
+    # 2) PipeWire arriba. Vía systemd --user (preferido); si no, daemons directos.
+    if ! systemctl --user start pipewire.service pipewire-pulse.service wireplumber.service 2>/dev/null; then
+        pgrep -u "$(id -u)" -x pipewire     >/dev/null 2>&1 || { pipewire      >/dev/null 2>&1 & }
+        sleep 0.3
+        pgrep -u "$(id -u)" -x wireplumber  >/dev/null 2>&1 || { wireplumber   >/dev/null 2>&1 & }
+        pgrep -u "$(id -u)" -x pipewire-pulse >/dev/null 2>&1 || { pipewire-pulse >/dev/null 2>&1 & }
+    fi
+
+    # 3) Esperar a que la capa pulse de PipeWire responda (hasta ~6 s).
+    if command -v pactl >/dev/null 2>&1; then
+        for _ in $(seq 1 12); do
+            pactl info >/dev/null 2>&1 && break
+            sleep 0.5
+        done
+    fi
+
+    # 4) Elegir el sink por defecto (heurística / override de audio.conf).
+    command -v rocola-audio-default >/dev/null 2>&1 && rocola-audio-default || true
+
+    # 5) MPD en la sesión (una sola instancia: guard por si la sesión reinicia).
+    if command -v mpd >/dev/null 2>&1 && ! pgrep -u "$(id -u)" -x mpd >/dev/null 2>&1; then
+        mpd /etc/mpd.conf >/dev/null 2>&1 || true
+    fi
+
+    # 6) Esperar a MPD y dejar un volumen audible + re-escanear /music.
+    if command -v mpc >/dev/null 2>&1; then
+        for _ in $(seq 1 20); do
+            mpc status >/dev/null 2>&1 && break
+            sleep 0.5
+        done
+        vol="$(mpc status 2>/dev/null | grep -oE 'volume:[[:space:]]*[0-9]+' | grep -oE '[0-9]+' | head -n1 || true)"
+        [ "${vol:-0}" -lt 10 ] 2>/dev/null && mpc volume 90 >/dev/null 2>&1 || true
+        mpc update >/dev/null 2>&1 || true
+    fi
+}
+audio_bringup &
+
+# La app no usa audio por SDL (reproduce vía MPD/PipeWire): que SDL no abra ni choque
+# una placa ALSA, ni tire errores de audio al arrancar.
+export SDL_AUDIODRIVER=dummy
 
 # Lanza la app. PYTHONPATH apunta al paquete instalado en /opt/rocola.
 export PYTHONPATH=/opt/rocola
