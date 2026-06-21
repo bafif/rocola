@@ -30,11 +30,39 @@ Dockerfile (`rm -rf /var/lib/apt/lists/*`).
 - Para UEFI muy viejo: usá modo BIOS/CSM.
 
 **Arranca pero queda en consola, no abre la rocola**
+La UI la lanza el autologin de tty1 (`~rocola/.bash_profile` → `startx` → `rocola-session`), no
+`rocola.service`. Para ver el error:
 ```bash
-journalctl -u rocola.service -b      # ver el error
-journalctl -u rocola-display-setup.service -b
+journalctl -u rocola-display-setup.service -b        # config de video
+journalctl -b | grep -iE 'startx|xinit|Xorg|rocola-session'
 ```
 Suele ser video (ver abajo) o que Xorg no levantó.
+
+## SSH de troubleshooting (remoto)
+
+Para depurar una rocola que no abre la UI, el ISO trae un SSH **opt-in y apagado por defecto**. Sólo
+se habilita si arrancás con la entrada de GRUB **"Troubleshooting (SSH)"** (pasa `rocola.ssh` en la
+cmdline); en el arranque normal sshd no se levanta. Es **root, sólo por clave pública** (sin
+contraseñas) y las host keys se generan en RAM en cada arranque (no se shippean claves fijas).
+
+> ⚠️ **El ISO oficial no confía en ninguna clave.** `os/rootfs-overlay/root/.ssh/authorized_keys` se
+> publica **vacío a propósito**: aunque alguien bootee con `rocola.ssh`, no entra nadie. El SSH de
+> troubleshooting es para **tu** build.
+
+**Habilitarlo en tu propio build:**
+1. Pegá tu clave **pública** en `os/rootfs-overlay/root/.ssh/authorized_keys` (una línea, p. ej.
+   `ssh-ed25519 AAAA... vos@tu-pc`). Nunca pongas la clave privada.
+2. Reconstruí y regrabá: `make rootfs && make image`, luego `make flash DEV=/dev/sdX`.
+3. Booteá la PC con la entrada de GRUB **"Troubleshooting (SSH)"**.
+4. La rocola toma IP por DHCP (systemd-networkd). Averiguá la IP (en tu router, o con consola local
+   `ip -4 addr`) y conectate:
+   ```bash
+   ssh -o StrictHostKeyChecking=accept-new root@<ip>
+   ```
+
+Config endurecida en `etc/ssh/sshd_config.d/10-rocola.conf`; el gate por cmdline lo hace el script
+`rocola-ssh-maybe` (lo dispara `rocola-ssh.service` en cada arranque, pero sale de inmediato salvo
+que esté `rocola.ssh`).
 
 ## Video / CRT
 
