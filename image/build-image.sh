@@ -56,6 +56,18 @@ set default=0
 insmod all_video
 insmod gfxterm
 
+# BIOS: GRUB arranca en modo TEXTO, y 'gfxpayload=keep' le pasaba ese modo texto al
+# kernel: sin framebuffer (vesafb/simplefb) no hay /dev/fb0 y Xorg con fbdev muere con
+# "no screens found" (visto en QEMU por BIOS). Pasamos GRUB a un modo gráfico VBE para
+# que el kernel herede un framebuffer lineal. En UEFI el framebuffer (GOP/efifb) ya
+# existe siempre, así que no se toca.
+if [ "${grub_platform}" = "pc" ]; then
+    if loadfont unicode; then
+        set gfxmode=auto
+        terminal_output gfxterm
+    fi
+fi
+
 # Entrada por defecto: video GENÉRICO (fbdev sobre el framebuffer del firmware,
 # efifb/vesafb). 'nomodeset' evita el KMS de la GPU — necesario porque en i386 la
 # aceleración de varias GPU modernas (p. ej. APUs AMD) está rota (rings SDMA), y
