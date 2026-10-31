@@ -5,6 +5,8 @@
 #   make release VERSION=vX.Y.Z   # empaqueta el .iso + checksum para subir a un Release
 #   make flash DEV=/dev/sdX   # escribe la imagen al pendrive (¡destructivo!)
 #   make app-run    # corre la UI de la rocola localmente (dev)
+#   make app-test   # tests de la app (pytest, con uv)
+#   make app-lint   # lint de la app (ruff, con uv)
 #   make clean      # borra artefactos de build
 
 SHELL := /bin/bash
@@ -67,12 +69,20 @@ flash: ## Escribe la imagen al pendrive: make flash DEV=/dev/sdX
 	sync
 
 .PHONY: app-run
-app-run: ## Corre la UI de la rocola localmente (requiere MPD + python3-pygame)
-	cd app && python3 -m rocola
+app-run: ## Corre la UI de la rocola localmente en ventana (requiere un MPD local)
+	cd app && ROCOLA_WINDOWED=$${ROCOLA_WINDOWED:-1} uv run python -m rocola
 
 .PHONY: app-deps
-app-deps: ## Instala deps de desarrollo de la app (pip)
-	cd app && pip install -e .
+app-deps: ## Crea el entorno de desarrollo de la app (uv: pygame-ce, pytest, ruff)
+	cd app && uv sync
+
+.PHONY: app-test
+app-test: ## Corre los tests de la app (pytest, sin display ni audio)
+	cd app && uv run pytest
+
+.PHONY: app-lint
+app-lint: ## Lint de la app (ruff)
+	cd app && uv run ruff check .
 
 .PHONY: clean
 clean: ## Borra artefactos de build

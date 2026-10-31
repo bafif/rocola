@@ -112,7 +112,9 @@ class LibraryScene(Scene):
             surface.blit(msg, (16, top_y))
             return
         if not self.items:
-            msg = body.render("Sin música. Importá canciones (ver menú).", True, self.theme.color("muted"))
+            msg = body.render(
+                "Sin música. Importá canciones (ver menú).", True, self.theme.color("muted")
+            )
             surface.blit(msg, (16, top_y))
             return
 
@@ -431,9 +433,12 @@ class BtPairScene(Scene):
                 self.pair_thread = None
                 self.pair_result = None
                 self.state = "pairing"
-        elif self.state in ("done", "empty", "noadapter"):
-            if action in (actions.SELECT, actions.BACK, actions.MENU):
-                self.app.set_scene("audio")
+        elif self.state in ("done", "empty", "noadapter") and action in (
+            actions.SELECT,
+            actions.BACK,
+            actions.MENU,
+        ):
+            self.app.set_scene("audio")
         # en "pairing" ignoramos el input (está conectando / transicionando)
 
     def draw(self, surface) -> None:
