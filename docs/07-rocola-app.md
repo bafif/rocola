@@ -31,13 +31,23 @@ usa **MPD** como motor de audio.
 | `input.py` | capa de input: teclado + joystick → acciones de la rocola |
 | `ui.py` | widgets/escenas: biblioteca, now-playing, menús |
 | `theme.py` | carga branding desde `assets/` (logo, colores, fuentes) |
-| `config.py` | ajustes y mapeos (defaults + archivo de usuario) |
+| `config.py` | ajustes (defaults + `/etc/rocola/rocola.toml` + variables de entorno) |
+| `audio.py` | salidas de PipeWire vía `pactl`: listar, elegir y recordar la salida |
+| `bt.py` | emparejar parlantes Bluetooth vía `bluetoothctl` |
+| `sysinfo.py` | datos de la pantalla de información (drivers, resolución, IP) |
 
 ## Escenas (UI)
 
-- **Biblioteca**: navegación por artistas/álbumes/carpetas con portadas; selección → encola/reproduce.
-- **Now playing**: portada grande, título/artista, progreso, volumen.
-- **Menú**: ajustes, re-escanear música, acceso al instalador (combo).
+- **Biblioteca**: lista de todas las canciones (artista — título); ↑/↓ de a una, ←/→ de a diez;
+  seleccionar → encola y reproduce.
+- **Now playing**: título, artista, estado y volumen de lo que suena.
+- **Menú** (botón 3 o F10): salida de audio, información del sistema, actualizar la biblioteca e
+  instalar en disco.
+- **Salida de audio**: elegir entre las salidas de PipeWire (analógica, HDMI, USB, Bluetooth) y
+  emparejar un parlante Bluetooth.
+- **Información**: drivers de audio y video, resolución, modo de pantalla, equipo, IP y kernel.
+
+Pendiente: navegar por artista/álbum y mostrar portadas.
 
 ## Render y rendimiento
 
@@ -48,11 +58,26 @@ usa **MPD** como motor de audio.
 ## Desarrollo local
 
 ```bash
-# requiere un MPD corriendo localmente y python3-pygame (pygame-ce)
-make app-run        # = cd app && python3 -m rocola
+make app-deps       # entorno con uv: pygame-ce, pytest, ruff (Python 3.11, como bookworm)
+make app-test       # tests sin pantalla ni audio (SDL dummy, MPD falso)
+make app-lint       # ruff
+make app-run        # la UI en una ventana; necesita un MPD local (por defecto 127.0.0.1:6600)
 ```
 
-Variables/ajustes útiles (ver `config.py`): host/puerto de MPD, ruta de música, tema activo,
-resolución forzada (para probar 640×480 en una pantalla moderna).
+Ajustes: `/etc/rocola/rocola.toml` (o la ruta de `ROCOLA_CONFIG`) y, por encima, variables de
+entorno. Un valor inválido se ignora y queda el default: la app nunca deja de arrancar por la
+configuración.
+
+| Clave en `rocola.toml` | Variable de entorno | Default |
+|------------------------|---------------------|---------|
+| `mpd_host` | `ROCOLA_MPD_HOST` | `127.0.0.1` |
+| `mpd_port` | `ROCOLA_MPD_PORT` | `6600` |
+| `theme` | `ROCOLA_THEME` | `default` |
+| `resolution` (`"640x480"` o `[640, 480]`) | `ROCOLA_RES` | resolución nativa |
+| `windowed` | `ROCOLA_WINDOWED=1` | `false` |
+| `fps` | — | `30` |
+
+`ROCOLA_SCREENSHOT=/ruta.png` (y `ROCOLA_SCREENSHOT_SCENE=library|nowplaying|menu|audio|info|btpair`)
+dibuja una escena, guarda el PNG y sale: así se generan las capturas `docs/screenshots/ui-*.png`.
 
 Siguiente: [08 · Música](08-music-management.md).
