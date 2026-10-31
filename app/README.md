@@ -13,6 +13,10 @@ rocola/
   ui.py         escenas: biblioteca, now-playing, menú
   theme.py      branding (logo, colores, fuentes) desde assets/
   config.py     ajustes (host MPD, resolución, tema…)
+  audio.py      salidas de PipeWire (pactl)
+  bt.py         emparejar Bluetooth (bluetoothctl)
+  sysinfo.py    datos de la pantalla de información
+tests/          pytest (MPD falso, SDL dummy)
 assets/
   logo.svg
   fonts/
@@ -21,11 +25,17 @@ assets/
 
 ## Correr en desarrollo
 
+Con [uv](https://docs.astral.sh/uv/) (Python 3.11, como Debian bookworm):
+
 ```bash
-# Necesita un MPD local (con música en su music_directory) y pygame-ce.
-sudo apt install mpd mpc python3-pygame      # Debian/Ubuntu
-python3 -m rocola
+uv sync                          # pygame-ce, pytest, ruff
+uv run pytest                    # tests sin pantalla ni audio (SDL dummy + MPD falso)
+uv run ruff check .
+ROCOLA_WINDOWED=1 uv run python -m rocola   # necesita un MPD local con música
 ```
+
+Desde la raíz del repo, lo mismo es `make app-deps`, `make app-test`, `make app-lint` y
+`make app-run`.
 
 Ajustes por variables de entorno (ver `config.py`): `ROCOLA_MPD_HOST`, `ROCOLA_MPD_PORT`,
 `ROCOLA_RES` (p. ej. `640x480` para simular CRT), `ROCOLA_THEME`, `ROCOLA_WINDOWED=1`.
