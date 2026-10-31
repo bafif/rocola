@@ -82,5 +82,5 @@ export SDL_AUDIODRIVER=dummy
 
 # Lanza la app. PYTHONPATH apunta al paquete instalado en /opt/rocola.
 export PYTHONPATH=/opt/rocola
-cd /opt/rocola
+cd /opt/rocola || exit 1
 exec python3 -m rocola
