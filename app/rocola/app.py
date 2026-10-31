@@ -185,7 +185,8 @@ class RocolaApp:
         if subtitle:
             sfont = self.theme.font("body", max(14, self.header_h // 3))
             simg = sfont.render(subtitle, True, self.theme.color("background"))
-            surface.blit(simg, (w - simg.get_width() - 12, (self.header_h - simg.get_height()) // 2))
+            sy = (self.header_h - simg.get_height()) // 2
+            surface.blit(simg, (w - simg.get_width() - 12, sy))
 
     # --- instalador -------------------------------------------------------
     def launch_installer(self) -> None:

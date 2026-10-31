@@ -47,7 +47,7 @@ class Theme:
     _logo_cache: dict = field(default_factory=dict)
 
     @classmethod
-    def load(cls, theme_dir: Path) -> "Theme":
+    def load(cls, theme_dir: Path) -> Theme:
         data: dict = {}
         cfg = theme_dir / "theme.toml"
         if tomllib is not None and cfg.is_file():
@@ -77,7 +77,7 @@ class Theme:
     def color(self, name: str) -> Color:
         return self.colors.get(name, (255, 255, 255))
 
-    def font(self, role: str = "body", size: int = 24) -> "pygame.font.Font":
+    def font(self, role: str = "body", size: int = 24) -> pygame.font.Font:
         key = (role, size)
         if key in self._font_cache:
             return self._font_cache[key]
