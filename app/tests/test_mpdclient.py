@@ -120,3 +120,8 @@ def test_play_uri_escapes_quotes(fake_mpd):
 
 def test_esc():
     assert _esc('a"b\\c') == 'a\\"b\\\\c'
+
+
+def test_stats(fake_mpd):
+    client, _ = connect(fake_mpd, {"stats": ["songs: 2", "db_update: 1730000000"]})
+    assert client.stats()["db_update"] == "1730000000"
