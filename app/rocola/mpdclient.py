@@ -90,6 +90,10 @@ class MPDClient:
     def current_song(self) -> Dict[str, str]:
         return self._as_dict(self._send("currentsong"))
 
+    def stats(self) -> Dict[str, str]:
+        """Library stats; `db_update` is the time of the last database update."""
+        return self._as_dict(self._send("stats"))
+
     def play(self, pos: int | None = None) -> None:
         self._send(f"play {pos}" if pos is not None else "play")
 

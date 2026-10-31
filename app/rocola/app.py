@@ -28,6 +28,10 @@ class RocolaApp:
         self.header_h = 48
         self.running = False
         self._last_poll = 0.0
+        # MPD's `db_update` seen last; when it changes (music imported from a USB
+        # stick, auto_update, "Actualizar biblioteca") the library is reloaded.
+        self._db_update: str | None = None
+        self._last_stats = 0.0
 
     # --- ciclo de vida ----------------------------------------------------
     def run(self) -> None:
@@ -157,11 +161,21 @@ class RocolaApp:
         try:
             if not self.mpd.connected:
                 self.mpd.connect()
+                self._db_update = None
                 self._on_mpd_connected()  # recién conectado: poblar la biblioteca
             self.state["status"] = self.mpd.status()
             self.state["song"] = self.mpd.current_song()
+            if now - self._last_stats >= 5.0:
+                self._last_stats = now
+                self._check_library_changed()
         except (OSError, MPDError):
             self.mpd.close()
+
+    def _check_library_changed(self) -> None:
+        db_update = self.mpd.stats().get("db_update")
+        if self._db_update is not None and db_update != self._db_update:
+            self._on_mpd_connected()  # same refresh as on (re)connect
+        self._db_update = db_update
 
     def _on_mpd_connected(self) -> None:
         # Al (re)conectar MPD refrescamos la biblioteca: como la UI arranca sin
