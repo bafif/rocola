@@ -103,6 +103,18 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
 | red intermitente | `apt` cortaba el build | `Acquire::Retries` + reintento de install |
 | `make image` rebuildeaba todo | doble build del rootfs | guard `ensure-os` |
 
+## Verificación del 31/10/2026 (QEMU/KVM, BIOS)
+
+- **Tests de la app**: `make app-test` (pytest, SDL dummy + MPD falso) y CI con ruff y shellcheck.
+- **Import desde un 2º USB**: con un pendrive FAT con dos WAV conectado al arrancar, la biblioteca de
+  la UI muestra las dos canciones (`rocola-usb-music@.service`, disparado por udev).
+- **Carrera de `console-getty`**: sin enmascararlo, el arranque puede caer a `rocola login:` en la
+  consola en vez de abrir la UI (pasó en el primer arranque de la prueba).
+- **Entrada por defecto («Rocola», `nomodeset` + fbdev) por BIOS**: GRUB quedaba en modo texto y el
+  kernel arrancaba sin framebuffer → Xorg «no screens found». Ahora GRUB pasa a `gfxterm` en BIOS y el
+  kernel tiene framebuffer, pero en el VGA estándar de QEMU Xorg con `fbdev` todavía falla en
+  `ScreenInit`. **Falta probarlo en una PC real por BIOS.** La entrada KMS sí abre la UI en QEMU.
+
 ## ❌ Todavía NO verificado (requiere hardware físico)
 
 - **Video 15 kHz (CRT arcade/TV)**: depende de GPU/driver físicos; **no** se valida en QEMU.
