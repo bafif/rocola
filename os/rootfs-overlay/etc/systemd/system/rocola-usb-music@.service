@@ -1,0 +1,11 @@
+# Started by udev (90-rocola-usb-music.rules) for each filesystem on a USB stick.
+# %I is the kernel device name (sdb1, sdc, ...).
+[Unit]
+Description=Rocola — importar música del USB %I
+BindsTo=dev-%i.device
+After=dev-%i.device local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/rocola-usb-music /dev/%I
+TimeoutStartSec=30min

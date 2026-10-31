@@ -27,17 +27,23 @@ pendrive "con música puesta".
 
 ## Vía 2 — Import desde un 2º USB
 
-1. Enchufá un pendrive con tus canciones (idealmente en una carpeta, p. ej. `Música/` o en la raíz).
-2. La rocola **detecta** el USB nuevo y ofrece importarlo (o se dispara desde el menú).
-3. `rocola-music-import` copia las carpetas a `/music`, evitando duplicados.
-4. Dispara un **re-scan** de MPD (`mpc update` / comando `update`) y la biblioteca aparece en la UI.
+1. Enchufá un pendrive con tus canciones (en la raíz o en carpetas, p. ej. `Música/Artista/Álbum/`),
+   con la rocola andando o antes de prenderla. Sirven FAT32, exFAT, NTFS y ext2/3/4.
+2. udev lo detecta (`/etc/udev/rules.d/90-rocola-usb-music.rules`) y arranca
+   `rocola-usb-music@<dispositivo>.service`, que monta cada partición **solo lectura** en
+   `/run/rocola-usb/`. No hay nada que confirmar: el pendrive nunca se modifica.
+3. `rocola-music-import` copia el audio (mp3, flac, ogg, m4a, wav, opus, aac) y las carátulas a
+   `/music`, sin pisar lo que ya está, y pide un re-escaneo a MPD.
+4. La biblioteca de la UI se recarga sola cuando MPD termina de escanear.
+5. El pendrive queda desmontado: se puede sacar cuando termina el servicio
+   (`journalctl -u 'rocola-usb-music@*'` muestra el «done»).
 
-Formatos: lo que soporte MPD (MP3, FLAC, OGG, etc.). Las **carátulas** se toman de tags embebidos o
-de `cover.jpg`/`folder.jpg` en la carpeta del álbum.
+Lo que ya está montado (el propio pendrive de la rocola, o un disco USB donde se instaló el sistema)
+no se toca. En el modo en vivo `/music` vive en RAM: lo importado se pierde al apagar; en el sistema
+instalado queda en la partición de música.
 
 ```
-2º USB (Música/)
-   └─ rocola-music-import ──► /music/… ──► mpc update ──► UI actualizada
+2º USB ──udev──► rocola-usb-music@sdX1 ──mount ro──► rocola-music-import ──► /music/… ──► MPD ──► UI
 ```
 
 ## Organización recomendada

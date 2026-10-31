@@ -1,0 +1,6 @@
+# Import music from a USB stick as soon as it is plugged in (also at boot, on coldplug):
+# any filesystem on a USB block device starts rocola-usb-music@<kernel name>.service,
+# which mounts it read-only, copies the audio to /music and unmounts it.
+# The script skips devices that are already mounted (the live medium itself).
+ACTION=="add", SUBSYSTEM=="block", ENV{ID_BUS}=="usb", ENV{ID_FS_USAGE}=="filesystem", \
+  TAG+="systemd", ENV{SYSTEMD_WANTS}+="rocola-usb-music@%k.service"

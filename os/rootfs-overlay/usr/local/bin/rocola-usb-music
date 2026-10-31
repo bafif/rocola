@@ -1,0 +1,39 @@
+#!/bin/bash
+# Import music from a USB stick plugged in while the jukebox runs (or present at boot).
+# Called by rocola-usb-music@<dev>.service, which udev starts for every filesystem on a
+# USB block device. Mounts it read-only under /run, lets rocola-music-import copy the
+# audio to /music (without duplicates) and re-scan MPD, and unmounts it again, so the
+# stick can be pulled out as soon as the service ends.
+set -euo pipefail
+
+dev="${1:?usage: rocola-usb-music /dev/sdXN}"
+log() { echo "[rocola-usb-music] $*"; }
+
+[ -b "$dev" ] || { log "$dev is not a block device"; exit 0; }
+
+# Never touch what is already mounted: the live medium the jukebox booted from, or a
+# USB disk the system was installed on.
+if findmnt -rn -S "$dev" >/dev/null 2>&1; then
+    log "$dev is already mounted, skipping"
+    exit 0
+fi
+
+fstype="$(blkid -o value -s TYPE "$dev" 2>/dev/null || true)"
+case "$fstype" in
+    vfat|exfat|ntfs|ntfs3|ext2|ext3|ext4) ;;
+    *) log "$dev: filesystem '${fstype:-unknown}' not supported, skipping"; exit 0 ;;
+esac
+[ "$fstype" = ntfs ] && fstype=ntfs3
+
+mnt="/run/rocola-usb/$(basename "$dev")"
+mkdir -p "$mnt"
+if ! mount -t "$fstype" -o ro,nosuid,nodev,noexec "$dev" "$mnt"; then
+    log "could not mount $dev ($fstype)"
+    rmdir "$mnt" 2>/dev/null || true
+    exit 0
+fi
+trap 'umount "$mnt" 2>/dev/null || umount -l "$mnt" 2>/dev/null || true; rmdir "$mnt" 2>/dev/null || true' EXIT
+
+log "importing from $dev ($fstype)"
+/usr/local/bin/rocola-music-import "$mnt"
+log "done; $dev can be removed"
