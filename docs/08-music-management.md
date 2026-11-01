@@ -58,8 +58,9 @@ instalado queda en la partición de música.
       cover.jpg
 ```
 
-No es obligatorio: MPD indexa cualquier carpeta. La UI muestra una lista plana de todas las
-canciones, como «Artista — Título» (o el nombre del archivo si no tiene tags).
+No es obligatorio: MPD indexa cualquier carpeta. La UI agrupa por los **tags** (artista, álbum,
+número de pista), no por las carpetas; un tema sin tags aparece con el nombre del archivo, en
+«(sin artista)». Ver [07](07-rocola-app.md).
 
 ## Re-escanear manualmente
 

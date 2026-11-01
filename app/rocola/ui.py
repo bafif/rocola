@@ -12,7 +12,7 @@ import time
 
 import pygame
 
-from . import audio, bt, sysinfo
+from . import audio, bt, library, sysinfo
 from . import input as actions
 
 
@@ -28,25 +28,38 @@ class Scene:
     def draw(self, surface) -> None: ...
 
 
-def _fmt_song(meta: dict) -> str:
-    title = meta.get("Title") or _basename(meta.get("file", ""))
-    artist = meta.get("Artist")
-    return f"{artist} — {title}" if artist else title
-
-
 def _basename(path: str) -> str:
     return path.rsplit("/", 1)[-1] if path else "(desconocido)"
 
 
+def _fit(font, text: str, max_w: int) -> str:
+    """`text`, cut with "…" so it is at most `max_w` pixels wide in `font`."""
+    if font.size(text)[0] <= max_w:
+        return text
+    lo, hi = 0, len(text)  # longest prefix that fits, by bisection: few size() calls
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if font.size(text[:mid].rstrip() + "…")[0] <= max_w:
+            lo = mid
+        else:
+            hi = mid - 1
+    return text[:lo].rstrip() + "…"
+
+
 class LibraryScene(Scene):
-    """Lista plana de la biblioteca; seleccionar reproduce."""
+    """The library by artist and album (library.py builds the views); selecting a song
+    plays it. Back goes up one level, and from the top to the now playing screen."""
 
     def __init__(self, app):
         super().__init__(app)
-        self.items: list[dict] = []
-        self.index = 0
-        self.top = 0
+        self.songs: list[dict] = []
+        self.stack: list[library.View] = [library.View("", [])]
         self.error: str | None = None
+        self._labels: dict = {}  # (text, width, color) -> fitted label, for draw()
+
+    @property
+    def view(self) -> library.View:
+        return self.stack[-1]
 
     def on_enter(self) -> None:
         self.refresh()
@@ -54,27 +67,27 @@ class LibraryScene(Scene):
     def refresh(self) -> None:
         self.error = None
         try:
-            self.items = self.app.mpd.all_files()
+            self.songs = self.app.mpd.all_files()
         except Exception as exc:  # noqa: BLE001 - mostrar cualquier fallo en pantalla
-            self.items = []
+            self.songs = []
             self.error = str(exc)
-        self.index = min(self.index, max(0, len(self.items) - 1))
+            return  # keep the place: the next refresh reopens it
+        self.stack = library.reopen(self.songs, self.stack)
 
     def handle(self, action: str) -> None:
-        if not self.items:
-            if action == actions.MENU:
-                self.app.open_menu()
-            return
-        if action == actions.UP:
-            self.index = (self.index - 1) % len(self.items)
-        elif action == actions.DOWN:
-            self.index = (self.index + 1) % len(self.items)
-        elif action == actions.LEFT:
-            self.index = max(0, self.index - 10)
-        elif action == actions.RIGHT:
-            self.index = min(len(self.items) - 1, self.index + 10)
-        elif action == actions.SELECT:
-            self._play_current()
+        view = self.view
+        count = len(view.rows)
+        if action in (actions.UP, actions.DOWN, actions.LEFT, actions.RIGHT) and count:
+            if action == actions.UP:
+                view.index = (view.index - 1) % count
+            elif action == actions.DOWN:
+                view.index = (view.index + 1) % count
+            elif action == actions.LEFT:
+                view.index = max(0, view.index - 10)
+            else:
+                view.index = min(count - 1, view.index + 10)
+        elif action == actions.SELECT and count:
+            self._select(view.rows[view.index])
         elif action == actions.PLAYPAUSE:
             self.app.mpd_safe(lambda c: c.toggle())
         elif action == actions.NEXT:
@@ -86,15 +99,30 @@ class LibraryScene(Scene):
         elif action == actions.VOLDOWN:
             self.app.mpd_safe(lambda c: c.change_volume(-5))
         elif action == actions.BACK:
-            self.app.set_scene("nowplaying")
+            if len(self.stack) > 1:
+                self.stack.pop()
+            else:
+                self.app.set_scene("nowplaying")
         elif action == actions.MENU:
             self.app.open_menu()
 
-    def _play_current(self) -> None:
-        uri = self.items[self.index].get("file")
+    def _select(self, row: library.Row) -> None:
+        if row.is_folder:
+            self.stack.append(library.open_row(row))
+            return
+        uri = (row.song or {}).get("file")
         if uri:
             self.app.mpd_safe(lambda c: c.play_uri(uri))
             self.app.set_scene("nowplaying")
+
+    def _label(self, font, text: str, max_w: int, color):
+        key = (text, max_w, color)
+        img = self._labels.get(key)
+        if img is None:
+            if len(self._labels) > 256:
+                self._labels.clear()
+            img = self._labels[key] = font.render(_fit(font, text, max_w), True, color)
+        return img
 
     def draw(self, surface) -> None:
         w, h = surface.get_size()
@@ -105,33 +133,46 @@ class LibraryScene(Scene):
         body = self.theme.font("body", max(16, h // 18))
         line_h = body.get_height() + 6
         top_y = self.app.header_h + 8
-        rows = max(1, (h - top_y - 8) // line_h)
 
         if self.error:
             msg = body.render(f"MPD: {self.error}", True, self.theme.color("accent"))
             surface.blit(msg, (16, top_y))
             return
-        if not self.items:
+        if not self.songs:
             msg = body.render(
                 "Sin música. Importá canciones (ver menú).", True, self.theme.color("muted")
             )
             surface.blit(msg, (16, top_y))
             return
 
-        # Ventana de scroll centrada en la selección.
-        if self.index < self.top:
-            self.top = self.index
-        elif self.index >= self.top + rows:
-            self.top = self.index - rows + 1
+        view = self.view
+        if len(self.stack) > 1:  # breadcrumb: where in the library we are
+            path = " / ".join(v.title for v in self.stack[1:])
+            surface.blit(self._label(body, path, w - 32, self.theme.color("muted")), (16, top_y))
+            top_y += line_h
+        rows = max(1, (h - top_y - 8) // line_h)
 
-        for i in range(self.top, min(self.top + rows, len(self.items))):
-            y = top_y + (i - self.top) * line_h
-            selected = i == self.index
+        # Ventana de scroll que sigue a la selección.
+        if view.index < view.top:
+            view.top = view.index
+        elif view.index >= view.top + rows:
+            view.top = view.index - rows + 1
+
+        for i in range(view.top, min(view.top + rows, len(view.rows))):
+            row = view.rows[i]
+            y = top_y + (i - view.top) * line_h
+            selected = i == view.index
             if selected:
                 surface.fill(self.theme.color("highlight"), (8, y - 2, w - 16, line_h))
             color = bg if selected else self.theme.color("text")
-            text = body.render(_fmt_song(self.items[i]), True, color)
-            surface.blit(text, (16, y))
+            text_w = w - 32
+            if row.is_folder:  # how many songs it holds, at the right
+                count = self._label(
+                    body, str(len(row.songs)), w, bg if selected else self.theme.color("muted")
+                )
+                surface.blit(count, (w - 16 - count.get_width(), y))
+                text_w -= count.get_width() + 12
+            surface.blit(self._label(body, row.label, text_w, color), (16, y))
 
 
 class NowPlayingScene(Scene):
