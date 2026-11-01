@@ -63,7 +63,11 @@ class LibraryScene(Scene):
         return self.stack[-1]
 
     def on_enter(self) -> None:
-        self.refresh()
+        # Only when nothing is loaded yet (or the last load failed). Reloads come from
+        # the app, on (re)connecting and when MPD's db_update changes; re-reading the
+        # whole listallinfo on every visit would freeze old hardware for a moment.
+        if not self.songs or self.error:
+            self.refresh()
 
     def refresh(self) -> None:
         self.error = None
