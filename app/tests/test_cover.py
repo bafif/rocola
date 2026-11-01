@@ -177,3 +177,12 @@ def test_now_playing_without_a_readable_cover(screen):
     scene = ui.NowPlayingScene(FakeApp(theme(), state))
     scene.draw(screen)
     assert scene._cover_img is None
+
+
+def test_now_playing_with_nothing_playing_shows_a_dash(screen, monkeypatch):
+    texts = []
+    real = ui._fit
+    monkeypatch.setattr(ui, "_fit", lambda font, text, w: texts.append(text) or real(font, text, w))
+    scene = ui.NowPlayingScene(FakeApp(theme(), {"song": {}, "status": {}, "cover": None}))
+    scene.draw(screen)
+    assert texts[0] == "—"  # not "(desconocido)", the name of a file without one

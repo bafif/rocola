@@ -240,7 +240,11 @@ class NowPlayingScene(Scene):
         big = self.theme.font("title", max(22, h // 12))
         body = self.theme.font("body", max(16, h // 20))
         lines = [
-            (song.get("Title") or _basename(song.get("file", "")) or "—", big, "text"),
+            (
+                song.get("Title") or (_basename(song["file"]) if song.get("file") else "—"),
+                big,
+                "text",
+            ),
             (song.get("Artist") or "", body, "muted"),
             (song.get("Album") or "", body, "muted"),
             (
