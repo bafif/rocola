@@ -102,8 +102,11 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
 | `systemctl enable` en build | podía fallar sin systemd corriendo | symlinks `*.wants/` a mano |
 | red intermitente | `apt` cortaba el build | `Acquire::Retries` + reintento de install |
 | `make image` rebuildeaba todo | doble build del rootfs | guard `ensure-os` |
+| **Entrada por defecto sin UI (QEMU, BIOS y UEFI)** | `insmod all_video` cargaba el driver `bochs` de GRUB, que toma la VGA de QEMU y dejaba un framebuffer de 800×600×**24 bpp**; el del firmware no cambia de modo y Xorg 21 con `fbdev` no acepta 24 bpp («Specified fbbpp (24) is not a permitted value») → X moría con «FBIOPUT_VSCREENINFO succeeded but modified mode» | GRUB carga solo los drivers de firmware (GOP/UGA, VBE/VGA); por BIOS pide modos de 32 bpp y después de 16 bpp (hay BIOS VBE con modos de 24); con 16/8 bpp `rocola-display-setup` le pone a Xorg `DefaultDepth` igual |
+| **Import desde USB** | `TEMA01.MP3` o `Folder.jpg` no entraban (los filtros de rsync distinguen mayúsculas); se copiaban todas las fotos y todas las carpetas del pendrive | filtros sin mayúsculas, solo audio y `cover.*`/`folder.*`, `--prune-empty-dirs` |
+| initrd con el swap del host | `update-initramfs` en el build tomaba el swap de la máquina que armaba la imagen como dispositivo de resume | `RESUME=none` en el rootfs |
 
-## Verificación del 31/10/2026 (QEMU/KVM, BIOS)
+## Verificación del 31/10/2026 (QEMU/KVM)
 
 - **Tests de la app**: `make app-test` (pytest, SDL dummy + MPD falso) y CI con ruff y shellcheck.
 - **Import desde un 2º USB**: con un pendrive FAT con dos WAV conectado al arrancar, la biblioteca de
@@ -112,15 +115,22 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
   consola en vez de abrir la UI (pasó en el primer arranque de la prueba).
 - **Entrada por defecto («Rocola», `nomodeset` + fbdev) por BIOS**: GRUB quedaba en modo texto y el
   kernel arrancaba sin framebuffer → Xorg «no screens found». Ahora GRUB pasa a `gfxterm` en BIOS y el
-  kernel tiene framebuffer, pero en el VGA estándar de QEMU Xorg con `fbdev` todavía falla en
-  `ScreenInit`. **Falta probarlo en una PC real por BIOS.** La entrada KMS sí abre la UI en QEMU.
+  kernel tiene framebuffer. Después fallaba en `ScreenInit` por la profundidad (24 bpp, ver la tabla
+  de bugs), y lo mismo pasaba por UEFI. Arreglado: **la entrada por defecto abre la UI por BIOS
+  (800×600×32 por VBE; también probado 800×600×16) y por UEFI (GOP de OVMF, 1280×800×32)** en
+  QEMU/KVM, con la ISO armada desde lo commiteado. Falta una PC real por BIOS.
+- **Import en caliente**: con la rocola andando se enchufa un pendrive FAT con `Album/TEMA01.MP3`,
+  `Album/b.flac` y `DCIM/IMG_0001.JPG`; a los segundos la biblioteca muestra las dos canciones y en
+  `/music` no hay ni la foto ni `DCIM/`. Captura:
+  **[screenshots/qemu-bios-usb-import.png](screenshots/qemu-bios-usb-import.png)**.
 
 ## ❌ Todavía NO verificado (requiere hardware físico)
 
 - **Video 15 kHz (CRT arcade/TV)**: depende de GPU/driver físicos; **no** se valida en QEMU.
 - **Controles de arcade**: el mapeo teclado/joystick está implementado (la UI responde en el render),
   pero no se probó con un encoder USB real.
-- **Importar música desde 2º USB** y **biblioteca precargada**: lógica escrita, no probada en QEMU.
+- **Importar música desde 2º USB**: probado en QEMU (al arrancar y en caliente), falta un pendrive real.
+- **Biblioteca precargada**: lógica escrita, no probada.
 - **Hardware viejo real** (objetivo final: desktop antigua + CRT + arcade): requiere prueba física.
 
 > Nota: el flujo **keep-music** (conservar `/music` al reinstalar) tiene la lógica revisada pero el

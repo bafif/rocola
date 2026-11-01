@@ -74,7 +74,8 @@ make release VERSION=v0.1.0-beta   # empaqueta out/release/rocola-i386-<ver>.iso
 > **Estado:** verificado de punta a punta en QEMU/KVM — `make image` genera la ISO y arranca hasta la
 > UI de la rocola a pantalla completa (MPD conectado) por **BIOS y por UEFI x64**; además el
 > **instalador clona a un disco vacío** (particiona, copia el SO, pone GRUB) y ese **disco arranca
-> solo** —sin pendrive— a la rocola, también por BIOS y UEFI. Capturas en
+> solo** —sin pendrive— a la rocola, también por BIOS y UEFI. Las canciones de un pendrive enchufado
+> con la rocola andando aparecen solas en la biblioteca. Capturas en
 > [docs/screenshots/](docs/screenshots/); detalle y bugs corregidos en
 > [docs/12-verificacion.md](docs/12-verificacion.md).
 

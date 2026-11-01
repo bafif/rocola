@@ -38,7 +38,8 @@ monitors and CRTs**, including 15 kHz arcade/TV screens.
 
 Beta. Verified end to end in QEMU/KVM: the ISO boots to the full-screen UI with MPD connected, over
 **BIOS and UEFI x64**, and the installer clones to an empty disk that then boots on its own, also
-over BIOS and UEFI. The live system was also booted on real hardware from Ventoy. Not yet validated
+over BIOS and UEFI. Songs on a USB stick plugged in while it runs show up in the library on their
+own. The live system was also booted on real hardware from Ventoy. Not yet validated
 on physical hardware: 15 kHz video on a real CRT, a real arcade encoder, and music import from a
 second USB stick. Details and the bugs found along the way:
 [docs/12-verificacion.md](docs/12-verificacion.md).
