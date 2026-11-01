@@ -93,9 +93,9 @@ make flash DEV=/dev/sdX     # ⚠️ DESTRUCTIVO: reemplazá sdX por tu pendrive
 
 1. Enchufá el pendrive en la PC vieja y encendéla (configurá el orden de booteo si hace falta).
 2. Arranca la **rocola en vivo**. Ya podés escuchar música.
-3. Para dejarla instalada: abrí el **instalador guiado** (combo de teclas/menú de arcade), elegí el
-   disco destino (**14 GB o más**: 12 GB de sistema y el resto para la música), confirmá, elegí tipo
-   de monitor (moderno/VGA o 15 kHz) y reiniciá.
+3. Para dejarla instalada: abrí el menú (**F10** o el botón 3 de arcade), elegí **Instalar en disco**,
+   elegí el disco destino (**14 GB o más**: 12 GB de sistema y el resto para la música), confirmá,
+   elegí tipo de monitor (moderno/VGA o 15 kHz) y reiniciá.
 4. Sacá el pendrive: la PC ahora **abre la rocola sola** en cada arranque.
 
 ### 4. Cargar música
