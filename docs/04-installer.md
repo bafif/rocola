@@ -5,9 +5,9 @@ explícita: el sistema **nunca** formatea un disco solo.
 
 ## Cómo se dispara
 
-Desde la rocola en vivo, mediante un **combo de arcade** o una entrada de menú (configurable). Lanza
-`rocola-install` (en `os/rootfs-overlay/usr/local/bin/`), una TUI con `whiptail` navegable con los
-controles de arcade/teclado.
+Desde la rocola en vivo: menú (**F10** o el botón 3 de arcade) → **Instalar en disco**. Lanza
+`rocola-install` (fuente en `installer/`, enlazado en `/usr/local/bin/`), una TUI con `whiptail`
+navegable con los controles de arcade/teclado.
 
 ## Flujo
 
