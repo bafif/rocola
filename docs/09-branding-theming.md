@@ -50,8 +50,9 @@ title  = "MI ROCOLA"
 
 ## Cambiar de tema
 
-Setear el tema activo en la config (`config.py` / archivo de usuario) apuntando a una carpeta en
-`themes/`. Se pueden mantener varios temas y elegir uno por instalación.
+El tema activo se elige con `theme` en `/etc/rocola/rocola.toml` (o con la variable
+`ROCOLA_THEME`), con el nombre de una carpeta de `themes/`. Se pueden tener varios temas y elegir
+uno en cada instalación (ver [07](07-rocola-app.md)).
 
 ## Fuentes y licencias
 
