@@ -147,9 +147,16 @@ class MPDClient:
         self._send(f'add "{_esc(uri)}"')
 
     def play_uri(self, uri: str) -> None:
-        """Encola y reproduce un archivo enseguida."""
-        self._send(f'addid "{_esc(uri)}"')
-        self.play()
+        """Queue a file; if nothing is playing, play that file right away.
+
+        While a song plays the new one just waits its turn in the queue (jukebox).
+        Stopped or paused, it starts by id: a bare `play` would resume the paused
+        song, or restart the queue from its first song once it has run out.
+        """
+        song_id = self._as_dict(self._send(f'addid "{_esc(uri)}"')).get("Id")
+        if self.status().get("state") == "play":
+            return
+        self._send(f"playid {song_id}" if song_id else "play")
 
 
 def _esc(text: str) -> str:

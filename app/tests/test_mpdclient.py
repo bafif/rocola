@@ -115,7 +115,24 @@ def test_all_files_skips_directories(fake_mpd):
 def test_play_uri_escapes_quotes(fake_mpd):
     client, srv = connect(fake_mpd)
     client.play_uri('rock/"live".mp3')
-    assert srv.commands[-2:] == ['addid "rock/\\"live\\".mp3"', "play"]
+    assert srv.commands[0] == 'addid "rock/\\"live\\".mp3"'
+
+
+@pytest.mark.parametrize("state", ["stop", "pause"])
+def test_play_uri_starts_the_new_song_when_not_playing(fake_mpd, state):
+    # Stopped after the queue ran out, a bare `play` restarts the queue from its
+    # first song; paused, it resumes the old one. The chosen song is played by id.
+    client, srv = connect(
+        fake_mpd, {'addid "b.mp3"': ["Id: 7"], "status": [f"state: {state}", "song: 0"]}
+    )
+    client.play_uri("b.mp3")
+    assert srv.commands == ['addid "b.mp3"', "status", "playid 7"]
+
+
+def test_play_uri_only_queues_while_another_song_plays(fake_mpd):
+    client, srv = connect(fake_mpd, {'addid "b.mp3"': ["Id: 7"], "status": ["state: play"]})
+    client.play_uri("b.mp3")
+    assert srv.commands == ['addid "b.mp3"', "status"]
 
 
 def test_esc():
