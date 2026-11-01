@@ -130,6 +130,10 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
   (`SELFTEST_RESULT: OK`); el `grub.cfg` del disco lleva `nomodeset` y los modos de 32/16 bpp, y el
   disco solo arranca a la UI por BIOS y por UEFI. Un disco de 6 GB se rechaza con el mensaje de
   tamaño mínimo.
+- **Reinstalar conservando la música** (`rocola.selftest.keep_music=yes`): instalación limpia → el
+  disco instalado importa dos canciones de un pendrive → reinstalación con keep-music («conservando
+  datos en /dev/sda4», `SELFTEST_RESULT: OK`) → el disco arranca sin pendrive y la biblioteca sigue
+  mostrando las dos canciones.
 
 ## ❌ Todavía NO verificado (requiere hardware físico)
 
@@ -140,11 +144,11 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
 - **Biblioteca precargada**: lógica escrita, no probada.
 - **Hardware viejo real** (objetivo final: desktop antigua + CRT + arcade): requiere prueba física.
 
-> Nota: el flujo **keep-music** (conservar `/music` al reinstalar) tiene la lógica revisada pero el
-> camino E2E probado en QEMU fue una instalación **limpia** (sin partición previa que conservar).
+> El flujo **keep-music** (conservar `/music` al reinstalar) se probó en QEMU el 31/10/2026 (ver
+> arriba); falta en un disco real.
 
 ## Próximos pasos sugeridos
 
 1. Grabar el `.img` a un pendrive (`make flash`) y probar en una desktop vieja real (BIOS y, si hay, UEFI).
 2. Probar en un CRT de 15 kHz real + encoder de arcade.
-3. Validar el import de música desde un 2º USB y la reinstalación conservando `/music`.
+3. Validar en hardware real el import desde un 2º USB y la reinstalación conservando `/music`.

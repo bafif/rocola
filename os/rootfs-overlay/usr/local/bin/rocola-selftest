@@ -5,6 +5,7 @@
 # para validar el instalador de punta a punta en QEMU/CI sin intervención manual.
 #
 # Destino: rocola.selftest.target=/dev/sdX en el cmdline; por defecto /dev/sdb.
+# rocola.selftest.keep_music=yes reinstala conservando la partición de música.
 # Imprime todo a la consola (serial) para que el runner capture el resultado.
 set -u
 
@@ -18,18 +19,22 @@ grep -qw rocola.selftest /proc/cmdline || exit 0
 udevadm settle 2>/dev/null || true
 
 TARGET=/dev/sdb
+KEEP_MUSIC=no
 for tok in $(cat /proc/cmdline); do
-    case "$tok" in rocola.selftest.target=*) TARGET="${tok#*=}";; esac
+    case "$tok" in
+        rocola.selftest.target=*) TARGET="${tok#*=}" ;;
+        rocola.selftest.keep_music=*) KEEP_MUSIC="${tok#*=}" ;;
+    esac
 done
 
 # Evitar que la UI/Xorg tome el control mientras instalamos (cosmético).
 systemctl stop rocola.service 2>/dev/null || true
 
 echo "==================== ROCOLA SELFTEST (instalador) ===================="
-echo "[selftest] destino: $TARGET"
+echo "[selftest] destino: $TARGET (keep_music=$KEEP_MUSIC)"
 lsblk -dno NAME,SIZE,TYPE "$TARGET" 2>/dev/null || echo "[selftest] (lsblk del destino falló)"
 
-ROCOLA_UNATTENDED=1 ROCOLA_TARGET="$TARGET" ROCOLA_KEEP_MUSIC=no ROCOLA_DISPLAY=auto \
+ROCOLA_UNATTENDED=1 ROCOLA_TARGET="$TARGET" ROCOLA_KEEP_MUSIC="$KEEP_MUSIC" ROCOLA_DISPLAY=auto \
     /usr/local/bin/rocola-install
 RC=$?
 
