@@ -32,8 +32,10 @@ pendrive "con música puesta".
 2. udev lo detecta (`/etc/udev/rules.d/90-rocola-usb-music.rules`) y arranca
    `rocola-usb-music@<dispositivo>.service`, que monta cada partición **solo lectura** en
    `/run/rocola-usb/`. No hay nada que confirmar: el pendrive nunca se modifica.
-3. `rocola-music-import` copia el audio (mp3, flac, ogg, m4a, wav, opus, aac) y las carátulas a
-   `/music`, sin pisar lo que ya está, y pide un re-escaneo a MPD.
+3. `rocola-music-import` copia el audio (mp3, flac, ogg, m4a, wav, opus, aac, sin importar
+   mayúsculas: `TEMA01.MP3` también entra) y las carátulas de carpeta (`cover.*`, `folder.*`) a
+   `/music`, sin pisar lo que ya está, y pide un re-escaneo a MPD. Otras imágenes (las fotos de
+   un pendrive) y las carpetas sin audio no se copian.
 4. La biblioteca de la UI se recarga sola cuando MPD termina de escanear.
 5. El pendrive queda desmontado: se puede sacar cuando termina el servicio
    (`journalctl -u 'rocola-usb-music@*'` muestra el «done»).
@@ -56,7 +58,8 @@ instalado queda en la partición de música.
       cover.jpg
 ```
 
-No es obligatorio: MPD también navega por carpetas sueltas. La UI puede mostrar por carpeta o por tags.
+No es obligatorio: MPD indexa cualquier carpeta. La UI muestra una lista plana de todas las
+canciones, como «Artista — Título» (o el nombre del archivo si no tiene tags).
 
 ## Re-escanear manualmente
 
