@@ -2,7 +2,7 @@
 # arrancar. Sin esto, la música precargada en la imagen nunca llegaba a MPD (que
 # escanea /music), y la biblioteca quedaba vacía. Corre una vez por arranque;
 # rocola-music-import sólo copia la precargada si /music está vacío (no pisa la
-# música del usuario en el sistema instalado, donde /music es una partición aparte).
+# música en el sistema instalado, donde /music es una partición aparte).
 [Unit]
 Description=Rocola — importar música precargada a /music y escanear MPD
 After=mpd.service local-fs.target
