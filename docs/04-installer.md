@@ -13,7 +13,8 @@ controles de arcade/teclado.
 
 ```
 1. Detección de discos   → lista modelo + tamaño de cada /dev/sdX, /dev/nvmeX, etc.
-2. Selección             → el usuario elige el disco destino
+                           (los de menos de 14 GB salen marcados como «muy chico»)
+2. Selección             → el usuario elige el disco destino (mínimo 14 GB)
 3. Confirmación          → muestra QUÉ se va a borrar; pide confirmación explícita ("BORRAR")
 4. Particionado destino (GPT):
      ┌─────────┬──────────┬──────────────┬───────────────────────────┐
@@ -23,7 +24,10 @@ controles de arcade/teclado.
 5. Clonado               → rsync del sistema vivo (/) → ROOT (excluye /proc,/sys,/dev,/music…)
 6. Tipo de monitor       → moderno/VGA | 15 kHz  → se persiste (ver doc 05)
 7. Bootloader            → GRUB BIOS (i386-pc, embebido en BIOSBOOT) + GRUB-EFI amd64
-                           (BOOTX64.EFI en la ESP, --removable); /etc/fstab por UUID
+                           (BOOTX64.EFI en la ESP, --removable); /etc/fstab por UUID.
+                           Si el pendrive arrancó con la entrada por defecto (nomodeset)
+                           y el monitor no es de 15 kHz, el disco arranca igual: mismo
+                           video genérico (/etc/default/grub.d/rocola-video.cfg).
 8. Reboot                → la PC arranca la rocola desde el disco, sola
 ```
 
