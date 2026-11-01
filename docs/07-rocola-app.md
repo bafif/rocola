@@ -43,7 +43,8 @@ reciente de pygame hay que probarlo en la ISO.
 ## Escenas (UI)
 
 - **Biblioteca**: lista de todas las canciones (artista — título); ↑/↓ de a una, ←/→ de a diez;
-  seleccionar → encola y reproduce.
+  seleccionar → si no suena nada (o está en pausa) reproduce esa canción; si ya suena otra, la
+  suma al final de la cola.
 - **Now playing**: título, artista, estado y volumen de lo que suena.
 - **Menú** (botón 3 o F10): salida de audio, información del sistema, probar controles, actualizar
   la biblioteca e instalar en disco.
