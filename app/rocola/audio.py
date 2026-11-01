@@ -6,6 +6,7 @@ y elegir el sink por defecto, y disparar un tono de prueba. Todo por subprocess
 liviano (sin dependencias nuevas) y best-effort: si PipeWire/pactl no están, las
 funciones devuelven vacío en vez de romper la UI.
 """
+
 from __future__ import annotations
 
 import glob
@@ -22,8 +23,8 @@ _TIMEOUT = 4.0
 
 @dataclass
 class Sink:
-    name: str          # nombre PipeWire (estable), p. ej. alsa_output.usb-...analog-stereo
-    description: str   # texto legible, p. ej. "USB Audio Analog Stereo"
+    name: str  # nombre PipeWire (estable), p. ej. alsa_output.usb-...analog-stereo
+    description: str  # texto legible, p. ej. "USB Audio Analog Stereo"
     is_default: bool = False
 
     @property
@@ -82,8 +83,9 @@ def list_sinks() -> list[Sink]:
         return sinks
     descs = _sink_descriptions()
     for name in names:
-        sinks.append(Sink(name=name, description=descs.get(name, name),
-                          is_default=(name == default)))
+        sinks.append(
+            Sink(name=name, description=descs.get(name, name), is_default=(name == default))
+        )
     return sinks
 
 

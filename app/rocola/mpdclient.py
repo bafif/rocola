@@ -5,6 +5,7 @@ reproducción, volumen, y listado de la biblioteca. El protocolo MPD es texto
 plano: se envían comandos terminados en '\\n' y se leen líneas 'clave: valor'
 hasta 'OK' o 'ACK ...'.
 """
+
 from __future__ import annotations
 
 import socket

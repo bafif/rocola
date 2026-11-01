@@ -1,4 +1,5 @@
 """Configuración de la rocola: valores por defecto + overrides por entorno/archivo."""
+
 from __future__ import annotations
 
 import os

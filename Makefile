@@ -81,8 +81,8 @@ app-test: ## Corre los tests de la app (pytest, sin display ni audio)
 	cd app && uv run pytest
 
 .PHONY: app-lint
-app-lint: ## Lint de la app (ruff)
-	cd app && uv run ruff check .
+app-lint: ## Lint y formato de la app (ruff)
+	cd app && uv run ruff check . && uv run ruff format --check .
 
 .PHONY: clean
 clean: ## Borra artefactos de build

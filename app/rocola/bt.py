@@ -6,6 +6,7 @@ del grupo `bluetooth` (ver os/rootfs-overlay/etc/dbus-1/system.d/rocola-bluetoot
 Todo best-effort: si no hay adaptador o `bluetoothctl`, las funciones degradan a vacío/False
 en vez de romper la UI. La UI (BtPairScene) maneja el escaneo y la selección con flechas.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -39,7 +40,8 @@ def start_scan(seconds: int):
     try:
         return subprocess.Popen(
             ["bluetoothctl", "--timeout", str(seconds), "scan", "on"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
     except OSError:
         return None

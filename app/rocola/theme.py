@@ -3,6 +3,7 @@
 El código nunca hardcodea estética: todo sale de theme.toml (con fallbacks
 seguros si falta el archivo, una fuente o el logo).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -105,8 +106,6 @@ class Theme:
             return None
         if max_height and img.get_height() > max_height:
             scale = max_height / img.get_height()
-            img = pygame.transform.smoothscale(
-                img, (int(img.get_width() * scale), max_height)
-            )
+            img = pygame.transform.smoothscale(img, (int(img.get_width() * scale), max_height))
         self._logo_cache[key] = img
         return img
