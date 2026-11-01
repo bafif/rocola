@@ -8,9 +8,11 @@ Firmware (BIOS o UEFI x64)
       └─ kernel i386 (686-pae) + initrd con live-boot
           └─ monta filesystem.squashfs + overlay (tmpfs)   ← corre en RAM, no escribe el USB
               └─ systemd
-                  ├─ autologin del usuario `rocola` (getty)
-                  ├─ rocola-display-setup.service   (modo VGA / 15 kHz)
-                  └─ rocola.service                 (Xorg + app)  →  mpd.service
+                  ├─ rocola-display-setup.service   (driver y modo de video: VGA / 15 kHz)
+                  └─ getty@tty1 con autologin de `rocola`
+                      └─ ~/.bash_profile → startx → rocola-session
+                          ├─ PipeWire + WirePlumber + MPD   (audio, en la sesión)
+                          └─ app SDL2 a pantalla completa
 ```
 
 ## live-boot + squashfs + overlay
@@ -29,21 +31,25 @@ al **instalar** en disco, donde el root es read-write y `/music` es una partici�
 
 No hay entorno de escritorio. Para que sea liviano en i386/2 GB:
 
-- `getty` con **autologin** del usuario `rocola` en un VT.
-- El perfil de login dispara `rocola.service`, que lanza **Xorg mínimo** y, como única "sesión", la
-  **app SDL2 a pantalla completa**. Sin window manager pesado.
-- `mpd.service` corre como demonio de sistema/usuario y la app lo controla.
+- `getty@tty1` con **autologin** del usuario `rocola`.
+- Su `~/.bash_profile` lanza `startx` con `rocola-session` como único cliente: **Xorg mínimo** y la
+  **app SDL2 a pantalla completa**, sin window manager. Si X o la app terminan, el login se cierra,
+  getty vuelve a entrar solo y la UI arranca de nuevo (kiosco).
+- El audio vive en esa misma sesión: `rocola-session` levanta PipeWire, WirePlumber y **MPD** (MPD
+  no es un servicio del sistema; `mpd.service` está enmascarado) y la app se conecta a MPD.
 
 Archivos relevantes (en `os/rootfs-overlay/`):
 
 ```
 etc/systemd/system/getty@tty1.service.d/autologin.conf
-etc/systemd/system/rocola.service
 etc/systemd/system/rocola-display-setup.service
-etc/systemd/system/mpd.service.d/override.conf
+home/rocola/.bash_profile        (autologin → startx)
 opt/rocola/                      (la app)
-usr/local/bin/rocola-session     (arranca Xorg + app)
+usr/local/bin/rocola-session     (audio + MPD + app, dentro de X)
 ```
+
+`etc/systemd/system/rocola.service` es el mecanismo anterior (un servicio que tomaba tty1): queda
+en el árbol pero no se habilita.
 
 ## BIOS y UEFI x64
 
@@ -53,7 +59,11 @@ usr/local/bin/rocola-session     (arranca Xorg + app)
 
 ## Recuperación / depuración
 
-- Agregar `rocola.debug` a la cmdline de GRUB para caer a una consola en vez de la app (planeado).
-- `journalctl -u rocola.service` para ver por qué no arrancó la UI.
+- Entrada de GRUB **«Rocola — recuperación (consola, sin UI)»**: pasa `rocola.noui`, el autologin
+  queda en la consola de tty1 y no se lanza X.
+- Entrada **«Rocola — troubleshooting (SSH por red)»**: la UI normal más `sshd` (ver
+  [11](11-troubleshooting.md)).
+- Para ver por qué no arrancó la UI: `journalctl -b | grep -iE 'startx|xinit|Xorg|rocola-session'`
+  y `/var/log/Xorg.0.log`.
 
 Siguiente: [04 · Instalador](04-installer.md).
