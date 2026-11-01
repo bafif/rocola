@@ -1,4 +1,4 @@
-# Autotest del instalador — NO actúa en producción.
+# Autotest del instalador — no actúa en producción.
 #
 # La unidad está HABILITADA (corre en cada arranque) pero su script sale de
 # inmediato salvo que el kernel haya arrancado con `rocola.selftest` en el
@@ -6,10 +6,10 @@
 # normales no se pasa ese flag, así que el autotest no hace nada. Sirve para
 # validar el instalador de punta a punta en QEMU/CI (ver docs/12-verificacion.md).
 #
-# Ordenado después de basic.target y ANTES de getty.target, para que en el
+# Ordenado después de basic.target y antes de getty.target, para que en el
 # arranque de autotest corra con la consola serie limpia y la instalación termine
-# (con poweroff) antes del login. NO se usa systemd-udev-settle como dependencia:
-# eso es deprecado y se arrastraría a CADA arranque de producción agregando
+# (con poweroff) antes del login. No se usa systemd-udev-settle como dependencia:
+# eso es deprecado y se arrastraría a cada arranque de producción agregando
 # latencia; la espera real a los nodos de disco la hace `udevadm settle` dentro
 # del propio script, sólo cuando el autotest efectivamente corre.
 [Unit]

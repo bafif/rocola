@@ -7,7 +7,7 @@
 # audio son señales fuertes de la salida deseada; la analógica onboard "siempre
 # existe" aunque no haya nada enchufado, y muchos HDMI van a monitores sin parlantes.
 #
-# Corre DENTRO de la sesión de 'rocola' (necesita XDG_RUNTIME_DIR y PipeWire arriba).
+# Corre dentro de la sesión de 'rocola' (necesita XDG_RUNTIME_DIR y PipeWire arriba).
 # Lo invoca rocola-session; también sirve para re-elegir a mano por SSH:
 #   sudo -u rocola env XDG_RUNTIME_DIR=/run/user/$(id -u rocola) rocola-audio-default
 set -uo pipefail

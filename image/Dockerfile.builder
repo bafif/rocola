@@ -1,6 +1,6 @@
 # Builder de la imagen booteable de la rocola.
 # Consume out/rootfs.tar (exportado del SO) y produce rocola-i386.img.
-# Usa grub-mkrescue (xorriso + mtools): NO requiere privilegios ni loop devices,
+# Usa grub-mkrescue (xorriso + mtools): no requiere privilegios ni loop devices,
 # así funciona en WSL2/CI. Genera una ISO híbrida booteable por BIOS y UEFI x64.
 FROM debian:bookworm
 

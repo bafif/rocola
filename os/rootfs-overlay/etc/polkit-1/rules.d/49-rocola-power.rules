@@ -2,7 +2,7 @@
 //
 // Una rocola se maneja con controles de arcade, sin teclado para tipear claves.
 // El usuario 'rocola' (sesión local de la UI) tiene que poder apagar la máquina
-// de forma limpia. Por defecto polkit ya permite a la sesión ACTIVA apagar, pero
+// de forma limpia. Por defecto polkit ya permite a la sesión activa apagar, pero
 // esta regla lo hace explícito e independiente de que la detección de "sesión
 // activa" funcione (p. ej. al apagar desde la app o desde otra VT).
 polkit.addRule(function(action, subject) {

@@ -14,7 +14,7 @@ Wants=mpd.service rocola-display-setup.service
 # permanente (p. ej. Xorg no levanta por falta de driver/firmware). Sin esto, con
 # Restart=always + StartLimitIntervalSec=0 el servicio flapea infinito cada 2 s,
 # roba el VT/pantalla y deja la máquina en un login-loop inusable. Tras 5 fallos
-# en 120 s systemd lo marca 'failed' y NO reintenta más: tty1 cae a un login
+# en 120 s systemd lo marca 'failed' y no reintenta más: tty1 cae a un login
 # normal (autovt) donde se puede leer 'journalctl -u rocola.service' y depurar.
 StartLimitIntervalSec=120
 StartLimitBurst=5

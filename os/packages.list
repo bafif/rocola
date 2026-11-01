@@ -53,7 +53,7 @@ iproute2                  # ip(8) — diagnóstico de red (faltaba)
 whiptail                  # TUI del instalador
 
 # --- SSH de troubleshooting (opt-in, APAGADO por defecto) ---
-# sshd se instala pero NO arranca salvo que se bootee con 'rocola.ssh' (entrada
+# sshd se instala pero no arranca salvo que se bootee con 'rocola.ssh' (entrada
 # de GRUB "Troubleshooting"). Solo-clave, root. Ver os/Dockerfile y rocola-ssh.service.
 openssh-server
 
@@ -69,11 +69,11 @@ libgl1-mesa-dri
 
 # --- Audio: PipeWire + Bluetooth + motor de la rocola ---
 # El audio rutea por PipeWire (servidor moderno): cubre la mayor variedad de
-# salidas (analógica, HDMI/DP, USB y Bluetooth A2DP) con un solo stack. MPD ya NO
+# salidas (analógica, HDMI/DP, USB y Bluetooth A2DP) con un solo stack. MPD ya no
 # corre como servicio del sistema: lo lanza la sesión de 'rocola' (ver rocola-session)
 # para compartir el PipeWire de la sesión gráfica. El "sink" por defecto se elige por
 # heurística al boot y se cambia desde el menú de la app.
-mpd                        # Music Player Daemon (motor de audio; corre EN la sesión, no como servicio)
+mpd                        # Music Player Daemon (motor de audio; corre en la sesión, no como servicio)
 mpc                        # cliente CLI para scripts (update, volume, etc.)
 alsa-utils                 # amixer/alsactl: red de seguridad para desmutear el mixer de hardware
 pipewire                   # servidor de audio PipeWire

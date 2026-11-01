@@ -56,7 +56,7 @@ class RocolaApp:
         self.input.keymap = rin.build_keymap(self.config.keys)
         self.input.buttonmap = rin.build_buttonmap(self.config.buttons)
         self.input.init_joysticks()
-        # En runtime NO bloqueamos esperando a MPD: la UI tiene que dibujar de
+        # En runtime no bloqueamos esperando a MPD: la UI tiene que dibujar de
         # inmediato (si no, el arranque queda en NEGRO hasta que MPD responde, ~30s
         # en hardware lento). El loop conecta en segundo plano y _on_mpd_connected
         # puebla la biblioteca al conectar. En modo captura sí intentamos 1 vez.

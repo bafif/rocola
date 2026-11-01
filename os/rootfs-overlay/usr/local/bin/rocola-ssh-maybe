@@ -1,8 +1,8 @@
 #!/bin/bash
-# rocola-ssh-maybe — habilita sshd SOLO si 'rocola.ssh' está en la cmdline del
+# rocola-ssh-maybe — habilita sshd solo si 'rocola.ssh' está en la cmdline del
 # kernel (opt-in para troubleshooting; ver la entrada de GRUB "Troubleshooting").
 #
-# El ISO es un Release público: en el arranque normal NO se abre SSH. sshd queda
+# El ISO es un Release público: en el arranque normal no se abre SSH. sshd queda
 # instalado pero deshabilitado; este script lo prende a pedido. Acceso: root, solo
 # por clave pública (ver /etc/ssh/sshd_config.d/10-rocola.conf y
 # /root/.ssh/authorized_keys).

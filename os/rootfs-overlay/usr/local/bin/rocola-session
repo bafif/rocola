@@ -2,7 +2,7 @@
 # Sesión X de la rocola: prepara el entorno, levanta el audio y lanza la app SDL2 a
 # pantalla completa. Lo invoca xinit/startx (ver ~rocola/.bash_profile).
 #
-# Audio: el stack vive EN esta sesión (PipeWire + WirePlumber + pipewire-pulse) y MPD
+# Audio: el stack vive en esta sesión (PipeWire + WirePlumber + pipewire-pulse) y MPD
 # corre acá también (no como servicio del sistema), así comparten el mismo PipeWire.
 # El ruteo a placas/Bluetooth lo decide PipeWire; el "sink" por defecto lo elige
 # rocola-audio-default por heurística (o por /etc/rocola/audio.conf). Todo el bring-up

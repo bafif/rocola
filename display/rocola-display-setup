@@ -1,8 +1,8 @@
 #!/bin/bash
 # rocola-display-setup — configura el video de la rocola según el tipo de monitor.
 #
-# Lo corre un servicio oneshot ANTES de arrancar Xorg/la UI. Como X todavía no
-# está corriendo, NO usa xrandr: genera un snippet de Xorg con los modelines
+# Lo corre un servicio oneshot antes de arrancar Xorg/la UI. Como X todavía no
+# está corriendo, no usa xrandr: genera un snippet de Xorg con los modelines
 # adecuados (VGA/moderno por EDID, o CRT 15 kHz con modelines fijos).
 #
 # Lee /etc/rocola/display.conf (MODE = auto|vga|crt15). Ver docs/05.
@@ -21,7 +21,7 @@ PREFERRED_RES=
 mkdir -p /etc/X11/xorg.conf.d 2>/dev/null || true
 
 # Defensa en profundidad (kiosko): si /etc no es escribible —no debería pasar, el
-# servicio ya corre con el rootfs rw (After=local-fs.target)— NO abortamos el
+# servicio ya corre con el rootfs rw (After=local-fs.target)— no abortamos el
 # arranque. Sin esta config Xorg autodetecta por EDID y la UI igual abre; preferimos
 # eso a dejar la rocola en una consola de texto por un fallo de escritura.
 if ! ( : >> "$OUT" ) 2>/dev/null; then
@@ -34,8 +34,8 @@ fi
 #    modelines de CRT 15 kHz y para GPUs cuyo KMS funciona).
 #  - Sin KMS (arranque con 'nomodeset', o el kernel i386 no soporta la GPU):
 #    'fbdev' sobre el framebuffer del firmware (efifb en UEFI, vesafb en BIOS).
-#    NO dejamos que Xorg autodetecte, porque puede elegir 'vesa', que **se niega a
-#    correr bajo UEFI** ("Refusing to run on UEFI") y tumba el servidor X.
+#    No dejamos que Xorg autodetecte, porque puede elegir 'vesa', que se niega a
+#    correr bajo UEFI ("Refusing to run on UEFI") y tumba el servidor X.
 detect_driver() {
     if [ -e /dev/dri/card0 ]; then echo modesetting; else echo fbdev; fi
 }
@@ -115,7 +115,7 @@ case "$MODE" in
         write_vga
         ;;
     auto | *)
-        # Autodetección. Los CRT de 15 kHz NO entregan EDID confiable, así que
+        # Autodetección. Los CRT de 15 kHz no entregan EDID confiable, así que
         # 'auto' siempre escribe una config VGA segura (Xorg elige el mejor modo
         # por EDID si lo hay). El 15 kHz se activa explícitamente con MODE=crt15.
         # El chequeo de EDID sólo sirve para dejar una pista útil en el log.

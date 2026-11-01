@@ -1,7 +1,7 @@
 #!/bin/bash
 # rocola-selftest — corre el instalador en modo DESATENDIDO contra un disco de
 # prueba y apaga. Solo se dispara si el kernel arrancó con `rocola.selftest` en el
-# cmdline (ver rocola-selftest.service). NO forma parte del flujo normal: existe
+# cmdline (ver rocola-selftest.service). No forma parte del flujo normal: existe
 # para validar el instalador de punta a punta en QEMU/CI sin intervención manual.
 #
 # Destino: rocola.selftest.target=/dev/sdX en el cmdline; por defecto /dev/sdb.
@@ -14,7 +14,7 @@ set -u
 # salvo que se pida explícitamente el autotest -> 100% inerte en producción.
 grep -qw rocola.selftest /proc/cmdline || exit 0
 
-# A partir de acá SÍ es un arranque de autotest: esperar a que udev cree los nodos
+# A partir de acá sí es un arranque de autotest: esperar a que udev cree los nodos
 # del disco destino (la unidad ya no depende de systemd-udev-settle).
 udevadm settle 2>/dev/null || true
 
