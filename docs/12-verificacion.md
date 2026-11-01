@@ -137,6 +137,8 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
 - **Biblioteca precargada**: con dos archivos en `os/rootfs-overlay/opt/rocola/music/` antes de
   `make rootfs`, el live arranca y la biblioteca los muestra sin conectar nada.
 - **Mapeos desde `rocola.toml`**: con `[keys]` `m = "menu"` en la imagen, la tecla `m` abre el menú.
+- **Probar controles**: F10 → «Probar controles»; `n` y la barra aparecen como `Tecla «n» -> next` y
+  `Tecla «space» -> playpause`, y a los 15 s sin tocar nada vuelve sola al menú.
 
 ## ❌ Todavía NO verificado (requiere hardware físico)
 
