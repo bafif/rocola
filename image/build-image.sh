@@ -61,9 +61,15 @@ insmod gfxterm
 # "no screens found" (visto en QEMU por BIOS). Pasamos GRUB a un modo gráfico VBE para
 # que el kernel herede un framebuffer lineal. En UEFI el framebuffer (GOP/efifb) ya
 # existe siempre, así que no se toca.
+# La profundidad importa: con 'auto', GRUB eligió 800x600x24 en QEMU, y Xorg 21 con
+# fbdev NO soporta framebuffers de 24 bpp ("Specified fbbpp (24) is not a permitted
+# value"); el framebuffer del firmware tampoco puede cambiar de modo, así que X moría.
+# Pedimos 32 bpp y, si la placa no los tiene, 16 bpp (rocola-display-setup le dice a
+# Xorg qué profundidad usar). 800x600 primero: lo soporta cualquier monitor SVGA, CRT
+# incluido; VBE no consulta al monitor, así que no conviene arrancar más alto.
 if [ "${grub_platform}" = "pc" ]; then
     if loadfont unicode; then
-        set gfxmode=auto
+        set gfxmode=800x600x32,1024x768x32,640x480x32,800x600x16,1024x768x16,640x480x16,auto
         terminal_output gfxterm
     fi
 fi
