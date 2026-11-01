@@ -40,14 +40,15 @@ Suele ser video (ver abajo) o que Xorg no levantó.
 
 ## SSH de troubleshooting (remoto)
 
-Para depurar una rocola que no abre la UI, el ISO trae un SSH **opt-in y apagado por defecto**. Sólo
-se habilita si arrancás con la entrada de GRUB **"Troubleshooting (SSH)"** (pasa `rocola.ssh` en la
-cmdline); en el arranque normal sshd no se levanta. Es **root, sólo por clave pública** (sin
-contraseñas) y las host keys se generan en RAM en cada arranque (no se shippean claves fijas).
+Para depurar una rocola que no abre la UI, el ISO trae un SSH que está apagado por defecto. Solo
+se habilita si arrancás con la entrada de GRUB **«Troubleshooting (SSH)»** (que pasa `rocola.ssh`
+en la línea de comandos del kernel); en el arranque normal sshd no se levanta. Entra como root y
+solo con clave pública, sin contraseñas, y las host keys se generan en RAM en cada arranque, así que
+la imagen no lleva claves fijas.
 
-> ⚠️ **El ISO oficial no confía en ninguna clave.** `os/rootfs-overlay/root/.ssh/authorized_keys` se
-> publica **vacío a propósito**: aunque alguien bootee con `rocola.ssh`, no entra nadie. El SSH de
-> troubleshooting es para **tu** build.
+El ISO oficial no confía en ninguna clave: `os/rootfs-overlay/root/.ssh/authorized_keys` está vacío
+a propósito, y aunque alguien arranque con `rocola.ssh` no entra nadie. Este SSH es para tu propio
+build.
 
 **Habilitarlo en tu propio build:**
 1. Pegá tu clave **pública** en `os/rootfs-overlay/root/.ssh/authorized_keys` (una línea, p. ej.
@@ -80,9 +81,10 @@ Verificá que `display.conf` no esté forzando 15 kHz; debería usar EDID.
 ## Audio
 
 **No suena nada**
-- `mpc status` para ver si MPD reproduce; `mpc outputs` para ver salidas.
-- Revisá el mixer (`alsamixer`): puede estar en mute o volumen 0.
-- En PCs viejas con varias salidas, fijá la tarjeta correcta en `mpd.conf`.
+- `mpc status` para ver si MPD reproduce y `mpc outputs` para ver sus salidas.
+- Revisá el mixer (`alsamixer`): puede estar en mute o con el volumen en 0.
+- En PCs con varias salidas, elegí la correcta desde el menú («Salida de audio») o fijala en
+  `/etc/rocola/audio.conf`. Los comandos para revisarlo por SSH están en [14](14-audio.md).
 
 ## Controles
 
@@ -99,7 +101,8 @@ Verificá que `display.conf` no esté forzando 15 kHz; debería usar EDID.
 ## Instalación
 
 **El instalador no lista mi disco**
-- Discos NVMe/RAID exóticos pueden necesitar módulos extra; reportar el modelo.
+- Algunos discos NVMe o RAID poco comunes pueden necesitar módulos extra; si te pasa, abrí un issue
+  con el modelo.
 - El propio pendrive de instalación se excluye a propósito.
 
 ¿Algo no cubierto? Abrí un issue en el repo con la salida de `journalctl -b` y el modelo de hardware.
