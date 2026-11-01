@@ -45,11 +45,14 @@ reciente de pygame hay que probarlo en la ISO.
 - **Biblioteca**: lista de todas las canciones (artista — título); ↑/↓ de a una, ←/→ de a diez;
   seleccionar → encola y reproduce.
 - **Now playing**: título, artista, estado y volumen de lo que suena.
-- **Menú** (botón 3 o F10): salida de audio, información del sistema, actualizar la biblioteca e
-  instalar en disco.
+- **Menú** (botón 3 o F10): salida de audio, información del sistema, probar controles, actualizar
+  la biblioteca e instalar en disco.
 - **Salida de audio**: elegir entre las salidas de PipeWire (analógica, HDMI, USB, Bluetooth) y
   emparejar un parlante Bluetooth.
 - **Información**: drivers de audio y video, resolución, modo de pantalla, equipo, IP y kernel.
+- **Probar controles**: muestra qué manda cada tecla o botón (el nombre o el índice que va en
+  `[keys]`/`[buttons]`, ver [06](06-arcade-controls.md)) y qué acción le toca. Se sale con Atrás dos
+  veces seguidas o a los 15 s sin tocar nada.
 
 Pendiente: navegar por artista/álbum y mostrar portadas.
 
@@ -82,7 +85,7 @@ configuración.
 | `fps` | — | `30` |
 | `[keys]`, `[buttons]` (mapeos de controles, ver [06](06-arcade-controls.md)) | — | los de `input.py` |
 
-`ROCOLA_SCREENSHOT=/ruta.png` (y `ROCOLA_SCREENSHOT_SCENE=library|nowplaying|menu|audio|info|btpair`)
+`ROCOLA_SCREENSHOT=/ruta.png` (y `ROCOLA_SCREENSHOT_SCENE=library|nowplaying|menu|audio|info|inputtest|btpair`)
 dibuja una escena, guarda el PNG y sale: así se generan las capturas `docs/screenshots/ui-*.png`.
 
 Siguiente: [08 · Música](08-music-management.md).

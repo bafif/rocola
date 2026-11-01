@@ -10,6 +10,8 @@ from __future__ import annotations
 import threading
 import time
 
+import pygame
+
 from . import audio, bt, sysinfo
 from . import input as actions
 
@@ -181,6 +183,7 @@ class MenuScene(Scene):
     OPTIONS = [
         ("Salida de audio", "audio"),
         ("Información del sistema", "info"),
+        ("Probar controles", "inputtest"),
         ("Actualizar biblioteca", "update"),
         ("Instalar en disco", "install"),
         ("Volver", "back"),
@@ -208,6 +211,8 @@ class MenuScene(Scene):
             self.app.set_scene("audio")
         elif key == "info":
             self.app.set_scene("info")
+        elif key == "inputtest":
+            self.app.set_scene("inputtest")
         elif key == "update":
             self.app.mpd_safe(lambda c: c.update())
             self.app.set_scene("library")
@@ -369,6 +374,80 @@ class InfoScene(Scene):
 
         hint = self.theme.font("body", max(13, h // 26))
         himg = hint.render("Esc: volver", True, self.theme.color("muted"))
+        surface.blit(himg, (16, h - himg.get_height() - 6))
+
+
+def describe_event(event) -> str | None:
+    """What an input event is, in the words rocola.toml uses ([keys] names, [buttons] indexes)."""
+    if event.type == pygame.KEYDOWN:
+        return f"Tecla «{pygame.key.name(event.key)}»"
+    if event.type == pygame.JOYBUTTONDOWN:
+        return f"Joystick {event.joy} · botón {event.button}"
+    if event.type == pygame.JOYHATMOTION:
+        return (
+            None
+            if tuple(event.value) == (0, 0)
+            else f"Joystick {event.joy} · cruceta {event.value}"
+        )
+    if event.type == pygame.JOYAXISMOTION:
+        return f"Joystick {event.joy} · eje {event.axis} ({event.value:+.1f})"
+    return None
+
+
+class InputTestScene(Scene):
+    """Muestra qué manda cada tecla o botón y qué acción le toca, para armar [keys]/[buttons].
+
+    Recibe TODOS los eventos de input por record() (la app no le pasa acciones), así se
+    puede probar también Atrás. Se sale con Atrás dos veces seguidas o tras IDLE_EXIT_S
+    sin tocar nada: con un encoder mal mapeado nadie tiene que quedar atrapado acá.
+    """
+
+    IDLE_EXIT_S = 15.0
+    MAX_LINES = 8
+
+    def __init__(self, app):
+        super().__init__(app)
+        self.lines: list[str] = []
+        self.last_action: str | None = None
+        self.last_input = time.monotonic()
+
+    def on_enter(self) -> None:
+        self.lines = []
+        self.last_action = None
+        self.last_input = time.monotonic()
+
+    def record(self, event, action: str | None) -> None:
+        desc = describe_event(event)
+        if desc is None or (event.type == pygame.JOYAXISMOTION and action is None):
+            return  # centro de la cruceta, o un eje que sigue apretado
+        self.last_input = time.monotonic()
+        self.lines.append(f"{desc}  ->  {action or 'sin acción'}")
+        del self.lines[: -self.MAX_LINES]
+        if action == actions.BACK and self.last_action == actions.BACK:
+            self.app.set_scene("menu")
+        self.last_action = action
+
+    def draw(self, surface) -> None:
+        if time.monotonic() - self.last_input > self.IDLE_EXIT_S:
+            self.app.set_scene("menu")
+            return
+        w, h = surface.get_size()
+        surface.fill(self.theme.color("background"))
+        self.app.draw_header(surface, "CONTROLES")
+
+        font = self.theme.font("body", max(15, h // 22))
+        line_h = font.get_height() + 8
+        y = self.app.header_h + 12
+        intro = "Apretá teclas o botones."
+        surface.blit(font.render(intro, True, self.theme.color("muted")), (16, y))
+        y += line_h + 6
+        for line in self.lines or ["Esperando..."]:
+            surface.blit(font.render(line, True, self.theme.color("text")), (16, y))
+            y += line_h
+
+        hint = self.theme.font("body", max(13, h // 26))
+        text = "Volver: Atrás dos veces o 15 s sin tocar nada"
+        himg = hint.render(text, True, self.theme.color("muted"))
         surface.blit(himg, (16, h - himg.get_height() - 6))
 
 
