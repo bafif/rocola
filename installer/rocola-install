@@ -191,6 +191,25 @@ mkdir -p "$T/etc/rocola"
 sed -i "s/^MODE=.*/MODE=$DISP_MODE/" "$T/etc/rocola/display.conf" 2>/dev/null \
     || echo "MODE=$DISP_MODE" > "$T/etc/rocola/display.conf"
 
+# Video del sistema instalado = el del arranque en vivo. La entrada por defecto del
+# pendrive usa 'nomodeset' (fbdev sobre el framebuffer del firmware) porque el KMS de
+# algunas GPU está roto en i386; sin esto, update-grub (sin /etc/default/grub) armaba
+# el disco SIEMPRE con KMS y en esas PCs la rocola instalada quedaba sin UI. Mismo
+# modo de GRUB que el live (32/16 bpp, ver image/build-image.sh). El CRT de 15 kHz
+# necesita KMS, así que ahí no se fuerza.
+if grep -qw nomodeset /proc/cmdline && [ "$DISP_MODE" != crt15 ]; then
+    log "grub: nomodeset + framebuffer del firmware (como el arranque en vivo)"
+    mkdir -p "$T/etc/default/grub.d"
+    cat > "$T/etc/default/grub.d/rocola-video.cfg" <<'EOC'
+# Written by rocola-install: boot with the generic video path (Xorg fbdev on the
+# firmware framebuffer), like the default entry of the USB stick did.
+GRUB_CMDLINE_LINUX_DEFAULT="quiet loglevel=3 nomodeset"
+GRUB_TERMINAL_OUTPUT=gfxterm
+GRUB_GFXMODE=800x600x32,1024x768x32,640x480x32,800x600x16,1024x768x16,640x480x16,auto
+GRUB_GFXPAYLOAD_LINUX=keep
+EOC
+fi
+
 # Bootloader. grub-install corre FUERA del chroot, con --boot-directory apuntando
 # al /boot del sistema clonado: así grub-probe resuelve el disco destino con el
 # /proc/mounts real del sistema vivo. (Dentro de un chroot, /proc/mounts no mapea
