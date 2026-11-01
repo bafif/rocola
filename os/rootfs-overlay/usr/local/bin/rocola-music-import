@@ -21,18 +21,30 @@ fi
 
 # 2) Música desde USB. Se pasa el punto de montaje como argumento, o se intenta
 #    autodetectar discos USB con sistemas de archivos montables.
+
+# Patrón de rsync que no distingue mayúsculas: "mp3" -> "[mM][pP]3". Los filtros de
+# rsync sí las distinguen, y en un pendrive FAT es común "TEMA01.MP3" o "Folder.jpg".
+ci() {
+    local s="$1" out="" c lc uc i
+    for ((i = 0; i < ${#s}; i++)); do
+        c="${s:i:1}"; lc="${c,,}"; uc="${c^^}"
+        if [ "$lc" != "$uc" ]; then out+="[$lc$uc]"; else out+="$c"; fi
+    done
+    printf '%s' "$out"
+}
+
 import_from() {
-    local src="$1"
+    local src="$1" ext name
     [ -d "$src" ] || return 0
     log "Importando desde $src…"
-    # Copia carpetas/archivos de audio evitando duplicados (--ignore-existing).
-    rsync -a --ignore-existing \
-        --include='*/' \
-        --include='*.mp3' --include='*.flac' --include='*.ogg' --include='*.m4a' \
-        --include='*.wav' --include='*.opus' --include='*.aac' \
-        --include='cover.*' --include='folder.*' --include='*.jpg' --include='*.png' \
-        --exclude='*' \
-        "$src"/ "$DEST"/ || true
+    # Solo audio y las portadas de carpeta (cover.*/folder.*), nunca otras imágenes:
+    # un pendrive con fotos no tiene que llenar /music. --prune-empty-dirs evita crear
+    # las carpetas del pendrive que no tienen audio. --ignore-existing evita duplicados.
+    local filters=(--include='*/')
+    for ext in mp3 flac ogg m4a wav opus aac; do filters+=(--include="*.$(ci "$ext")"); done
+    for name in cover folder; do filters+=(--include="$(ci "$name").*"); done
+    filters+=(--exclude='*')
+    rsync -a --ignore-existing --prune-empty-dirs "${filters[@]}" "$src"/ "$DEST"/ || true
 }
 
 if [ "${1:-}" != "" ]; then
