@@ -105,6 +105,9 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
 | **Entrada por defecto sin UI (QEMU, BIOS y UEFI)** | `insmod all_video` cargaba el driver `bochs` de GRUB, que toma la VGA de QEMU y dejaba un framebuffer de 800×600×**24 bpp**; el del firmware no cambia de modo y Xorg 21 con `fbdev` no acepta 24 bpp («Specified fbbpp (24) is not a permitted value») → X moría con «FBIOPUT_VSCREENINFO succeeded but modified mode» | GRUB carga solo los drivers de firmware (GOP/UGA, VBE/VGA); por BIOS pide modos de 32 bpp y después de 16 bpp (hay BIOS VBE con modos de 24); con 16/8 bpp `rocola-display-setup` le pone a Xorg `DefaultDepth` igual |
 | **Import desde USB** | `TEMA01.MP3` o `Folder.jpg` no entraban (los filtros de rsync distinguen mayúsculas); se copiaban todas las fotos y todas las carpetas del pendrive | filtros sin mayúsculas, solo audio y `cover.*`/`folder.*`, `--prune-empty-dirs` |
 | initrd con el swap del host | `update-initramfs` en el build tomaba el swap de la máquina que armaba la imagen como dispositivo de resume | `RESUME=none` en el rootfs |
+| Disco instalado siempre con KMS | sin `/etc/default/grub`, `update-grub` armaba el disco sin `nomodeset` aunque el live hubiera arrancado con la entrada por defecto | el instalador escribe `/etc/default/grub.d/rocola-video.cfg` con el mismo video que el live (salvo CRT 15 kHz) |
+| El pendrive de instalación aparecía como destino | con el medio montado como dispositivo entero, `LIVE_DISK` quedaba en `/dev/` | si no hay disco padre, el disco es el propio medio |
+| Disco chico → error críptico | ROOT es de 12 GiB fijos; con menos, `sgdisk` fallaba a mitad de camino | mínimo 14 GB, marcado en el menú y rechazado con un mensaje claro |
 
 ## Verificación del 31/10/2026 (QEMU/KVM)
 
@@ -123,6 +126,10 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
   `Album/b.flac` y `DCIM/IMG_0001.JPG`; a los segundos la biblioteca muestra las dos canciones y en
   `/music` no hay ni la foto ni `DCIM/`. Captura:
   **[screenshots/qemu-bios-usb-import.png](screenshots/qemu-bios-usb-import.png)**.
+- **Instalador desde la entrada por defecto**: instalación desatendida a un disco de 16 GB
+  (`SELFTEST_RESULT: OK`); el `grub.cfg` del disco lleva `nomodeset` y los modos de 32/16 bpp, y el
+  disco solo arranca a la UI por BIOS y por UEFI. Un disco de 6 GB se rechaza con el mensaje de
+  tamaño mínimo.
 
 ## ❌ Todavía NO verificado (requiere hardware físico)
 
