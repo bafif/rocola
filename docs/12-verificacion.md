@@ -108,6 +108,8 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
 | Disco instalado siempre con KMS | sin `/etc/default/grub`, `update-grub` armaba el disco sin `nomodeset` aunque el live hubiera arrancado con la entrada por defecto | el instalador escribe `/etc/default/grub.d/rocola-video.cfg` con el mismo video que el live (salvo CRT 15 kHz) |
 | El pendrive de instalación aparecía como destino | con el medio montado como dispositivo entero, `LIVE_DISK` quedaba en `/dev/` | si no hay disco padre, el disco es el propio medio |
 | Disco chico → error críptico | ROOT es de 12 GiB fijos; con menos, `sgdisk` fallaba a mitad de camino | mínimo 14 GB, marcado en el menú y rechazado con un mensaje claro |
+| Elegir una canción con la cola terminada | sonaba la primera de la cola, no la elegida (MPD queda sin canción actual y `play` arranca de la posición 0); con pausa, se reanudaba la anterior | `playid` de la canción elegida si no suena nada |
+| Portadas del pendrive invisibles | el `albumart` de MPD solo busca `cover.png/jpg/webp` escrito así, no `Folder.jpg` | el import le agrega un `cover.<ext>` (enlace duro) a cada carpeta |
 
 ## Verificación del 31/10/2026 (QEMU/KVM)
 
