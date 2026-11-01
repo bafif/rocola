@@ -228,3 +228,37 @@ def test_long_labels_are_cut_to_the_width():
     assert fitted.endswith("…")
     assert font.size(fitted)[0] <= 120
     assert _fit(font, "Jazz", 120) == "Jazz"
+
+
+def test_scene_does_not_reload_the_library_on_every_visit():
+    from rocola.ui import LibraryScene
+
+    app = FakeApp(LIBRARY)
+    calls = []
+    real = app.mpd.all_files
+    app.mpd.all_files = lambda: calls.append(1) or real()
+    scene = LibraryScene(app)
+    scene.on_enter()
+    scene.on_enter()  # back from the now playing screen
+    assert len(calls) == 1
+    scene.refresh()  # what the app calls when MPD's database changes
+    assert len(calls) == 2
+
+
+def test_scene_retries_on_enter_after_a_failed_load():
+    from rocola.ui import LibraryScene
+
+    app = FakeApp(LIBRARY)
+    real = app.mpd.all_files
+
+    def broken():
+        raise OSError("connection refused")
+
+    app.mpd.all_files = broken
+    scene = LibraryScene(app)
+    scene.on_enter()
+    assert scene.error
+    app.mpd.all_files = real
+    scene.on_enter()
+    assert scene.error is None
+    assert scene.view.rows
