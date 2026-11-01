@@ -1,4 +1,4 @@
-# Habilita SSH para troubleshooting SÓLO si 'rocola.ssh' está en la cmdline.
+# Habilita SSH para troubleshooting solo si 'rocola.ssh' está en la cmdline.
 # Habilitada en cada arranque, pero su script sale de inmediato salvo que se haya
 # booteado con 'rocola.ssh' (entrada de GRUB "Troubleshooting (SSH)"). En el
 # arranque normal del ISO público no abre nada. No depende de network-online para

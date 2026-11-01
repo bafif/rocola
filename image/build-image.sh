@@ -8,7 +8,7 @@
 #   - UEFI x64 (imagen EFI El Torito + /EFI/BOOT/BOOTX64.EFI)
 # Se graba con `dd` a un pendrive y bootea en ambos firmwares.
 #
-# Usa grub-mkrescue (xorriso + mtools): TODO en espacio de usuario, sin loop
+# Usa grub-mkrescue (xorriso + mtools): todo en espacio de usuario, sin loop
 # devices ni mount. Así funciona en WSL2, contenedores y CI donde losetup falla.
 #
 # El sistema arranca "live" (live-boot) montando /live/filesystem.squashfs con
@@ -40,8 +40,8 @@ cp "$KIMG" "$STAGE/live/vmlinuz"
 cp "$IIMG" "$STAGE/live/initrd.img"
 
 # --- 3) squashfs del rootfs ---------------------------------------------------
-# NO excluir /boot: el instalador clona desde la raíz viva (este squashfs) al
-# disco destino, así que el kernel+initrd deben estar DENTRO del squashfs para
+# No excluir /boot: el instalador clona desde la raíz viva (este squashfs) al
+# disco destino, así que el kernel+initrd deben estar dentro del squashfs para
 # que el sistema instalado tenga con qué arrancar. (En /live van aparte sólo
 # para el arranque live del pendrive.)
 log "Creando filesystem.squashfs (puede tardar)…"
@@ -73,7 +73,7 @@ insmod gfxterm
 # que el kernel herede un framebuffer lineal. En UEFI el framebuffer (GOP/efifb) ya
 # existe siempre, así que no se toca.
 # La profundidad importa: el framebuffer del firmware no puede cambiar de modo, y Xorg
-# 21 con fbdev NO soporta 24 bpp ("Specified fbbpp (24) is not a permitted value").
+# 21 con fbdev no soporta 24 bpp ("Specified fbbpp (24) is not a permitted value").
 # Muchas BIOS VBE ofrecen modos de 24 bpp, así que no dejamos que 'auto' elija: pedimos
 # 32 bpp y, si la placa no los tiene, 16 bpp (rocola-display-setup le dice a Xorg qué
 # profundidad usar). 800x600 primero: lo soporta cualquier monitor SVGA, CRT incluido;
@@ -112,8 +112,8 @@ menuentry "Rocola — recuperación (consola, sin UI)" {
 }
 menuentry "Rocola — troubleshooting (SSH por red)" {
     # Arranca la UI (fbdev) PERO además habilita sshd (root, solo clave) para
-    # depurar por red. SSH se prende SÓLO al elegir esta entrada (flag rocola.ssh);
-    # el arranque normal NUNCA abre SSH. Requiere red con DHCP (systemd-networkd).
+    # depurar por red. SSH se prende solo al elegir esta entrada (flag rocola.ssh);
+    # el arranque normal nunca abre SSH. Requiere red con DHCP (systemd-networkd).
     set gfxpayload=keep
     linux  /live/vmlinuz boot=live components nomodeset rocola.ssh
     initrd /live/initrd.img
@@ -121,7 +121,7 @@ menuentry "Rocola — troubleshooting (SSH por red)" {
 EOF
 
 # --- 5) Ensamblar imagen híbrida BIOS+UEFI con grub-mkrescue ------------------
-# El volid se pasa a xorriso/mkisofs DESPUÉS de '--' y con sintaxis mkisofs
+# El volid se pasa a xorriso/mkisofs después de '--' y con sintaxis mkisofs
 # (-volid VALUE, separado por espacio; '--volid=' no es válido).
 log "Generando imagen híbrida (grub-mkrescue)…"
 grub-mkrescue --output="$OUT_IMG" "$STAGE" -- -volid ROCOLA

@@ -87,7 +87,7 @@ def pair_connect(mac: str) -> bool:
     """Empareja, confía y conecta un dispositivo. Bloquea unos segundos (la UI muestra
     'Conectando…' antes). El agente 'NoInputNoOutput' acepta el pairing 'just works'.
     """
-    # 'pair' tiene que ir en la MISMA sesión donde se registra el agente (vía stdin).
+    # 'pair' tiene que ir en la misma sesión donde se registra el agente (vía stdin).
     pair_seq = f"power on\nagent NoInputNoOutput\ndefault-agent\npair {mac}\n"
     try:
         _run(["bluetoothctl"], timeout=20.0, stdin=pair_seq)
