@@ -22,7 +22,7 @@ los de 15 kHz de arcade/TV**, sin configuración posterior.
   (PCs de 32 y 64 bits) y por **UEFI x64**.
 - **Soporte CRT real**: monitores VGA (31 kHz) **y** arcade/TV de 15 kHz vía `switchres` + modelines.
 - **Controles de arcade**: encoders USB que se presentan como **teclado y/o joystick**, autodetectados.
-- **UI propia y brandeable**: interfaz "rocola" hecha a medida con **SDL2** (Python + pygame-ce)
+- **UI propia y brandeable**: interfaz "rocola" hecha a medida con **SDL2** (Python + pygame)
   sobre **MPD** como motor de audio. Logos, fuentes y tema reemplazables.
 - **Tu música, fácil**: biblioteca **precargada** en la imagen **+** import desde un **segundo USB**
   a una **partición de datos persistente** que sobrevive reinstalaciones.
@@ -111,7 +111,7 @@ make flash DEV=/dev/sdX     # ⚠️ DESTRUCTIVO: reemplazá sdX por tu pendrive
 ```
 os/         SO de la rocola (Dockerfile FROM i386/debian:bookworm + overlay de archivos)
 image/      Empaquetado: rootfs -> imagen booteable (squashfs + GRUB BIOS/UEFI)
-app/        UI de la rocola (Python + pygame-ce/SDL2) + cliente MPD + input
+app/        UI de la rocola (Python + pygame/SDL2) + cliente MPD + input
 installer/  Instalador guiado (TUI whiptail) que clona el SO al disco
 display/    Modelines 15 kHz + autodetección/selección VGA vs CRT (switchres)
 docs/       Documentación detallada por subsistema
