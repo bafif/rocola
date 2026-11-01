@@ -65,9 +65,10 @@ directamente.
 
 La app lee el joystick por **índice de botón** (la API de joystick de SDL, no la de GameController),
 así que un mapping de SDL_GameControllerDB no cambia nada. Para un encoder con otra numeración hay
-que ajustar `[buttons]`. Para ver qué índice manda cada botón, conectá el encoder a otra PC
-con Linux y usá `jstest /dev/input/js0` (paquete `joystick`) o `evtest`: la imagen no los trae. Una
-pantalla de test de input dentro de la app no existe todavía.
+que ajustar `[buttons]`. Para ver qué índice manda cada botón: menú → **Probar controles**. Cada
+tecla o botón aparece con el nombre o el índice que va en `[keys]`/`[buttons]` y la acción que le
+toca hoy. Se sale con Atrás dos veces seguidas o a los 15 s sin tocar nada, así un encoder mal
+mapeado no deja a nadie adentro.
 
 ## Acceso al instalador
 

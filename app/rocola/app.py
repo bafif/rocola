@@ -67,6 +67,7 @@ class RocolaApp:
             "menu": ui.MenuScene(self),
             "audio": ui.AudioScene(self),
             "info": ui.InfoScene(self),
+            "inputtest": ui.InputTestScene(self),
             "btpair": ui.BtPairScene(self),
         }
         self.set_scene(self.config.screenshot_scene if self.config.screenshot else "library")
@@ -117,7 +118,10 @@ class RocolaApp:
                 pygame.JOYHATMOTION,
             ):
                 action = self.input.translate(event)
-                if action and self.scene:
+                record = getattr(self.scene, "record", None)
+                if record is not None:
+                    record(event, action)  # la prueba de controles recibe todo, crudo
+                elif action and self.scene:
                     self.scene.handle(action)
             elif event.type in (pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED):
                 self.input.init_joysticks()

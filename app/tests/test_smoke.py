@@ -37,7 +37,9 @@ def no_binary(*_args, **_kwargs):
     raise FileNotFoundError
 
 
-@pytest.mark.parametrize("scene", ["library", "nowplaying", "menu", "audio", "info", "btpair"])
+@pytest.mark.parametrize(
+    "scene", ["library", "nowplaying", "menu", "audio", "info", "btpair", "inputtest"]
+)
 def test_scene_renders(scene, fake_mpd, monkeypatch, tmp_path):
     srv = fake_mpd(MPD_REPLIES)
     # Never touch the host's PipeWire, BlueZ or network tools from a test.
