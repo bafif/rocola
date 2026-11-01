@@ -28,8 +28,8 @@ monitors and CRTs**, including 15 kHz arcade/TV screens.
 - **Arcade controls**: USB encoders that show up as a keyboard or as a joystick both work, at the
   same time, with no setup.
 - **Its own UI**: a full-screen jukebox interface written with **SDL2** (Python + pygame) on top
-  of **MPD**. Browse the library by artist and album. Logo, fonts and colors come from a
-  replaceable theme.
+  of **MPD**. Browse the library by artist and album, with album covers on the now playing
+  screen. Logo, fonts and colors come from a replaceable theme.
 - **Audio outputs**: analog, HDMI, USB and **Bluetooth** speakers through PipeWire, selectable
   from the UI; on an installed system the choice survives reboots.
 - **Your music**: preloaded in the image, plus import from a second USB stick into a persistent

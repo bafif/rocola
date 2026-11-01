@@ -25,7 +25,8 @@ class RocolaApp:
         self.clock = None
         self.scenes: dict = {}
         self.scene = None
-        self.state: dict = {"song": {}, "status": {}}
+        self.state: dict = {"song": {}, "status": {}, "cover": None}
+        self._cover_uri: str | None = None  # song whose cover is in state["cover"]
         self.header_h = 48
         self.running = False
         self._last_poll = 0.0
@@ -173,11 +174,19 @@ class RocolaApp:
                 self._on_mpd_connected()  # recién conectado: poblar la biblioteca
             self.state["status"] = self.mpd.status()
             self.state["song"] = self.mpd.current_song()
+            self._update_cover()
             if now - self._last_stats >= 5.0:
                 self._last_stats = now
                 self._check_library_changed()
         except (OSError, MPDError):
             self.mpd.close()
+
+    def _update_cover(self) -> None:
+        """Fetch the cover once per song, when the song changes (bytes, or None)."""
+        uri = self.state["song"].get("file")
+        if uri != self._cover_uri:
+            self.state["cover"] = self.mpd.cover_art(uri) if uri else None
+            self._cover_uri = uri  # after the fetch: if it fails, the next poll retries
 
     def _check_library_changed(self) -> None:
         db_update = self.mpd.stats().get("db_update")

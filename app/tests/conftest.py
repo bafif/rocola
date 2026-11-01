@@ -18,7 +18,8 @@ class FakeMPD:
     """Answers MPD protocol commands from a dict of canned responses.
 
     `responses` maps a full command line to the body lines (without the final "OK").
-    A value starting with "ACK" is sent as the error line instead of "OK".
+    A value starting with "ACK" is sent as the error line instead of "OK"; a bytes
+    value is sent as is (binary answers), so it must end with its own "OK".
     Every received command is recorded in `commands`.
     """
 
@@ -46,7 +47,9 @@ class FakeMPD:
                 cmd = raw.decode("utf-8").rstrip("\n")
                 self.commands.append(cmd)
                 reply = self.responses.get(cmd, [])
-                if isinstance(reply, str) and reply.startswith("ACK"):
+                if isinstance(reply, bytes):  # raw answer (binary), "OK" included
+                    f.write(reply)
+                elif isinstance(reply, str) and reply.startswith("ACK"):
                     f.write((reply + "\n").encode())
                 else:
                     for line in reply:
