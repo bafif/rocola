@@ -1,42 +1,42 @@
 # 13 · Grabar con Rufus (Windows)
 
 [Rufus](https://rufus.ie) es la forma más común de grabar el `.iso` a un pendrive en Windows. La
-imagen de la rocola es una **ISO 9660 híbrida (isohybrid)**: ya trae MBR protectivo + GPT,
-`grub2-mbr` para BIOS, partición EFI (`/efi.img`) para UEFI x64 y El Torito con *boot-info-table*.
-O sea: **el medio booteable está completo dentro del archivo**. Lo único que hay que hacer es
-copiarlo tal cual.
+imagen de la rocola es una ISO 9660 híbrida (isohybrid): ya trae MBR protectivo y GPT,
+`grub2-mbr` para BIOS, la partición EFI (`/efi.img`) para UEFI x64 y El Torito con *boot-info-table*.
+O sea, el medio booteable entero ya está dentro del archivo y lo único que hay que hacer es copiarlo
+tal cual.
 
-Por eso Rufus pregunta menos de lo que parece: la respuesta corta es **grabar en modo DD**, y en
-ese modo **todas las demás opciones se deshabilitan y se ignoran**.
+Por eso Rufus pregunta menos de lo que parece: alcanza con **grabar en modo DD**, y en ese modo
+todas las demás opciones se deshabilitan y se ignoran.
 
-## TL;DR
+## Los pasos
 
-1. **Device** → tu pendrive (¡el correcto! se borra entero).
-2. **Boot selection** → *Disk or ISO image* → **SELECT** → `rocola-i386-<versión>.iso`.
+1. **Device**: tu pendrive. Fijate bien cuál es, porque se borra entero.
+2. **Boot selection**: *Disk or ISO image*, después **SELECT** y elegí `rocola-i386-<versión>.iso`.
 3. **START**.
-4. Aparece *ISOHybrid image detected*. Elegí **"Escribir en modo Imagen DD" (Write in DD Image mode)**.
-5. Confirmá el borrado → esperá → listo.
+4. Aparece *ISOHybrid image detected*. Elegí **«Escribir en modo Imagen DD» (Write in DD Image mode)**.
+5. Confirmá el borrado y esperá a que termine.
 
-En modo DD, Rufus clona la imagen **byte a byte** — idéntico a `dd if=…iso of=/dev/sdX`, que es
-como se verificó el arranque (BIOS y UEFI) en QEMU. No tenés que elegir MBR/GPT, file system,
-cluster, formato ni "fixes": Rufus no arma nada, solo copia.
+En modo DD, Rufus copia la imagen byte a byte, igual que `dd if=…iso of=/dev/sdX`, que es como probé
+el arranque por BIOS y por UEFI en QEMU. No hace falta elegir MBR o GPT, sistema de archivos,
+cluster, formato ni «fixes»: Rufus no arma nada, solo copia.
 
 ## ¿Por qué modo DD y no modo ISO?
 
 Rufus solo ofrece esta elección con imágenes híbridas:
 
-- **Modo DD** — copia la imagen byte a byte. Preserva el MBR, la GPT, la partición EFI y el GRUB
-  embebido exactamente como se construyeron. Es lo que queremos para esta imagen.
-- **Modo ISO** — Rufus **descarta** la estructura del ISO, crea su propia partición FAT, copia los
-  archivos y le instala su propio gestor de arranque. Para imágenes basadas en GRUB (como ésta,
-  hecha con `grub-mkrescue`) eso puede **no reproducir** bien el arranque y fallar al bootear.
+- **Modo DD**: copia la imagen byte a byte y deja el MBR, la GPT, la partición EFI y el GRUB
+  embebido exactamente como se construyeron. Es lo que necesita esta imagen.
+- **Modo ISO**: Rufus descarta la estructura del ISO, crea su propia partición FAT, copia los
+  archivos y les instala su propio gestor de arranque. Con imágenes basadas en GRUB, como esta
+  (hecha con `grub-mkrescue`), el arranque puede no quedar bien y fallar.
 
-> Regla práctica: imagen de la rocola → **siempre modo DD**.
+Para la rocola, entonces, siempre modo DD.
 
 ## Qué significa cada opción (y por qué no la tocás en modo DD)
 
-Todas estas viven en la ventana de Rufus (algunas bajo *Show advanced drive/format properties*).
-**En modo DD quedan deshabilitadas/ignoradas**; solo importan si grabaras en modo ISO.
+Todas están en la ventana de Rufus (algunas en *Show advanced drive/format properties*). En modo DD
+quedan deshabilitadas o se ignoran; solo importarían si grabaras en modo ISO.
 
 | Opción de Rufus | Qué hace | En modo DD |
 |-----------------|----------|------------|
@@ -47,25 +47,24 @@ Todas estas viven en la ventana de Rufus (algunas bajo *Show advanced drive/form
 | **File system / Cluster size** | Qué FAT/NTFS y tamaño de cluster usa la partición que crea Rufus. | Ignorado: el contenido lo define el ISO. |
 | **Quick format** | Formato rápido (solo metadata) vs completo (chequea bloques dañados, lento). | Irrelevante. |
 
-## "Pero vos ya le pusiste los fixes a la imagen, ¿no?"
+## «¿Pero la imagen no trae ya los fixes?»
 
 Sí y no, y conviene tener clara la diferencia:
 
-- **Sí**: la imagen ya es **completamente booteable** por BIOS (32/64-bit) y por UEFI x64, sin
-  ayuda externa. Eso viene del layout que arma `grub-mkrescue` (ver
+- Sí, porque la imagen ya arranca sola por BIOS (de 32 y 64 bits) y por UEFI x64, sin ayuda de
+  nadie. Eso sale del esquema que arma `grub-mkrescue` (ver
   [02 · Build pipeline](02-build-pipeline.md) y [12 · Verificación](12-verificacion.md)).
-- **No**: el casillero *"Add fixes for old BIOSes"* de Rufus es una intervención **de Rufus en
-  modo ISO**, no algo que esté "dentro" de la imagen. Como grabás en modo DD, ese casillero ni
-  participa.
+- No, porque el casillero *«Add fixes for old BIOSes»* es algo que hace Rufus en modo ISO, no algo
+  que esté dentro de la imagen. Como grabás en modo DD, ese casillero no participa.
 
-## UEFI y Secure Boot (importante)
+## UEFI y Secure Boot
 
-En PCs con **UEFI**, **desactivá Secure Boot** en el firmware antes de bootear: el
-`EFI/BOOT/BOOTX64.EFI` de la imagen es de `grub-efi-amd64` y **no está firmado**, así que con Secure
-Boot activo el arranque UEFI se bloquea. Por **BIOS / Legacy** esto no aplica.
+En una PC con UEFI hay que **desactivar Secure Boot** en el firmware antes de arrancar: el
+`EFI/BOOT/BOOTX64.EFI` de la imagen es de `grub-efi-amd64` y no está firmado, así que con Secure
+Boot activo el arranque UEFI se bloquea. Por BIOS (Legacy) esto no aplica.
 
-> *Aclaración:* el cargador UEFI x64 carga un kernel **i386**. UEFI 32-bit queda fuera de alcance
-> (ver [ARCHITECTURE.md](../ARCHITECTURE.md)).
+El cargador UEFI x64 carga un kernel i386; UEFI de 32 bits queda fuera del proyecto (ver
+[ARCHITECTURE.md](../ARCHITECTURE.md)).
 
 ## Verificar la descarga
 
@@ -84,8 +83,9 @@ El valor debe coincidir con el de `SHA256SUMS.txt`.
 Es raro con esta imagen, pero si solo te deja modo ISO (o el arranque falla), usá una herramienta
 que siempre escribe en crudo:
 
-- **balenaEtcher** (multiplataforma): *Flash from file* → el `.iso` → pendrive → *Flash*. Siempre DD.
-- **Ventoy**: instalalo una vez en el pendrive y **copiá** el `.iso` a su partición (ver
+- **balenaEtcher** (multiplataforma): *Flash from file*, el `.iso`, el pendrive y *Flash*. Siempre
+  graba en crudo.
+- **Ventoy**: instalalo una vez en el pendrive y copiá el `.iso` a su partición (ver
   [10 · Grabar el pendrive](10-flashing-usb.md)).
 - En Linux/macOS: `dd if=rocola-i386-<versión>.iso of=/dev/sdX bs=4M status=progress conv=fsync`.
 
