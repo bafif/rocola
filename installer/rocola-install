@@ -37,9 +37,25 @@ log() { echo "[$(date +%T)] $*" >&3; }
 LIVE_SRC="$(findmnt -n -o SOURCE /run/live/medium 2>/dev/null || true)"
 LIVE_DISK=""
 if [ -n "$LIVE_SRC" ]; then
-    LIVE_DISK="/dev/$(lsblk -no PKNAME "$LIVE_SRC" 2>/dev/null | head -1)"
+    # Si el medio es una partición, el disco es su padre; si live-boot montó el
+    # dispositivo entero (la ISO híbrida se ve como iso9660 también en /dev/sdX, o un
+    # CD /dev/sr0), no hay padre y el disco es el propio medio. Antes quedaba "/dev/"
+    # y el pendrive de instalación no se excluía de los destinos.
+    LIVE_PARENT="$(lsblk -no PKNAME "$LIVE_SRC" 2>/dev/null | head -1)"
+    LIVE_DISK="${LIVE_PARENT:+/dev/$LIVE_PARENT}"
+    LIVE_DISK="${LIVE_DISK:-$LIVE_SRC}"
 fi
 log "Media live: ${LIVE_SRC:-?} (disco ${LIVE_DISK:-?})"
+
+# Tamaño mínimo del destino: BIOSBOOT 2 MiB + ESP 256 MiB + ROOT 12 GiB (fijos, ver el
+# particionado) y algo de lugar para /music. Con menos, sgdisk fallaba a mitad de camino
+# con un error críptico ("Could not create partition 3").
+MIN_BYTES=14000000000
+too_small() { [ "$(blockdev --getsize64 "$1" 2>/dev/null || echo 0)" -lt "$MIN_BYTES" ]; }
+check_size() {
+    too_small "$1" && die "$1 tiene $(lsblk -dno SIZE "$1" | tr -d ' '): la rocola necesita un disco de al menos 14 GB (12 GB de sistema y el resto para la música)"
+    return 0
+}
 
 # --- Selección de destino y opciones -----------------------------------------
 if [ "$UNATTENDED" = 1 ]; then
@@ -47,6 +63,7 @@ if [ "$UNATTENDED" = 1 ]; then
     TARGET="${ROCOLA_TARGET:?ROCOLA_TARGET requerido en modo desatendido}"
     [ -b "$TARGET" ] || die "ROCOLA_TARGET=$TARGET no es un dispositivo de bloque"
     [ "$TARGET" = "$LIVE_DISK" ] && die "ROCOLA_TARGET es la media de instalación"
+    check_size "$TARGET"
     KEEP_MUSIC="${ROCOLA_KEEP_MUSIC:-no}"
     DISP_MODE="${ROCOLA_DISPLAY:-auto}"
     log "modo desatendido: destino=$TARGET keep_music=$KEEP_MUSIC display=$DISP_MODE"
@@ -58,13 +75,15 @@ else
         [ "$d" = "$LIVE_DISK" ] && continue          # excluir el pendrive de instalación
         size="$(lsblk -dno SIZE "$d")"
         model="$(lsblk -dno MODEL "$d" | tr -s ' ')"
-        MENU_ITEMS+=("$d" "${size}  ${model:-disco}")
+        note=""; too_small "$d" && note="  (muy chico: mínimo 14 GB)"
+        MENU_ITEMS+=("$d" "${size}  ${model:-disco}${note}")
     done
     [ "${#MENU_ITEMS[@]}" -gt 0 ] || die "no se encontraron discos destino (¿solo está el pendrive?)"
 
     TARGET="$(whiptail --title "$TITLE" --menu \
         "Elegí el disco DESTINO.\nSe BORRARÁ por completo (salvo que conserves /music)." \
         20 74 8 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3)" || exit 0
+    check_size "$TARGET"
 
     # --- Conservar /music existente ------------------------------------------
     KEEP_MUSIC=no
