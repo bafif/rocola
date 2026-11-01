@@ -59,10 +59,9 @@ Encendido + pendrive
    └─► GRUB (BIOS o UEFI x64)
          └─► kernel i386 + initrd (live-boot)
                └─► monta filesystem.squashfs con overlay en RAM/tmpfs  (no escribe el USB)
-                     └─► systemd: autologin del usuario `rocola` en un VT
-                           └─► rocola-display-setup  (elige modo VGA/15 kHz)
-                                 └─► Xorg mínimo  →  app SDL2 fullscreen
-                                       └─► MPD (servicio) reproduce; la UI lo controla
+                     └─► systemd: rocola-display-setup (driver y modo VGA/15 kHz)
+                           └─► autologin de `rocola` en tty1 → startx → rocola-session
+                                 └─► PipeWire + MPD (en la sesión)  +  app SDL2 fullscreen
 ```
 
 - **Live-boot + squashfs + overlay**: el sistema corre en RAM, minimizando escrituras y desgaste
@@ -73,17 +72,17 @@ Detalle: [docs/03-boot-and-live.md](docs/03-boot-and-live.md).
 
 ## 4. Instalador guiado (clonado al disco)
 
-Disparo **manual** desde la rocola en vivo (combo de arcade / entrada de menú):
+Disparo **manual** desde la rocola en vivo (menú → «Instalar en disco»; F10 o botón 3 de arcade):
 
 ```
 rocola-install (whiptail, navegable con arcade)
-  1. Detecta discos (modelo, tamaño)         → el usuario elige el destino
+  1. Detecta discos (modelo, tamaño)         → el usuario elige el destino (mínimo 14 GB)
   2. Doble confirmación anti-borrado          (muestra qué se va a destruir)
   3. Particiona destino (GPT):
         BIOSBOOT (ef02, BIOS) · ESP (FAT32, UEFI) · ROOT (ext4) · DATOS /music (ext4, persistente)
   4. Clona el SO:  rsync del sistema vivo (/)  →  ROOT
   5. Pregunta tipo de monitor (moderno/VGA | 15 kHz) → persiste la elección
-  6. Instala GRUB en el destino (BIOS + UEFI x64), genera fstab
+  6. Instala GRUB en el destino (BIOS + UEFI x64), genera fstab; mismo modo de video que el live
   7. Reboot → la PC arranca la rocola sola desde el disco
 ```
 
@@ -107,7 +106,8 @@ Detalle: [docs/05-display-crt-15khz.md](docs/05-display-crt-15khz.md).
 
 - Los encoders USB típicos (iPAC/Xin-Mo/zero-delay) se presentan como **teclado** y/o **joystick**.
 - La app usa **SDL2** para leer ambos y **autodetecta** el dispositivo presente.
-- Mapeo de acciones (arriba/abajo, seleccionar, atrás, volumen, etc.) configurable.
+- Mapeo de acciones (arriba/abajo, seleccionar, atrás, volumen, etc.) fijo en `app/rocola/input.py`;
+  todavía no se lee de la configuración.
 
 Detalle: [docs/06-arcade-controls.md](docs/06-arcade-controls.md).
 

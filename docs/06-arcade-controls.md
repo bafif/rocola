@@ -46,8 +46,11 @@ requiere editar ese archivo y reconstruir la imagen: todavía no se leen de `roc
 
 ## Calibración
 
-- Para joysticks "raros", se puede generar/editar un mapping estilo SDL_GameControllerDB.
-- Una pantalla de **test de input** (planeada) permite ver qué evento manda cada botón para mapearlo.
+La app lee el joystick por **índice de botón** (la API de joystick de SDL, no la de GameController),
+así que un mapping de SDL_GameControllerDB no cambia nada. Para un encoder con otra numeración hay
+que ajustar `DEFAULT_BUTTONMAP`. Para ver qué índice manda cada botón, conectá el encoder a otra PC
+con Linux y usá `jstest /dev/input/js0` (paquete `joystick`) o `evtest`: la imagen no los trae. Una
+pantalla de test de input dentro de la app no existe todavía.
 
 ## Acceso al instalador
 
