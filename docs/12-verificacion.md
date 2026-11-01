@@ -134,6 +134,8 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
   disco instalado importa dos canciones de un pendrive → reinstalación con keep-music («conservando
   datos en /dev/sda4», `SELFTEST_RESULT: OK`) → el disco arranca sin pendrive y la biblioteca sigue
   mostrando las dos canciones.
+- **Biblioteca precargada**: con dos archivos en `os/rootfs-overlay/opt/rocola/music/` antes de
+  `make rootfs`, el live arranca y la biblioteca los muestra sin conectar nada.
 
 ## ❌ Todavía NO verificado (requiere hardware físico)
 
@@ -141,7 +143,7 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
 - **Controles de arcade**: el mapeo teclado/joystick está implementado (la UI responde en el render),
   pero no se probó con un encoder USB real.
 - **Importar música desde 2º USB**: probado en QEMU (al arrancar y en caliente), falta un pendrive real.
-- **Biblioteca precargada**: lógica escrita, no probada.
+- **Biblioteca precargada**: probada en QEMU en el modo en vivo (abajo); falta en hardware real.
 - **Hardware viejo real** (objetivo final: desktop antigua + CRT + arcade): requiere prueba física.
 
 > El flujo **keep-music** (conservar `/music` al reinstalar) se probó en QEMU el 31/10/2026 (ver
