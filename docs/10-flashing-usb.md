@@ -1,6 +1,6 @@
 # 10 · Grabar el pendrive
 
-Cómo pasar la imagen de la rocola a un pendrive. **Esto borra el pendrive por completo.**
+Cómo pasar la imagen de la rocola a un pendrive. Tené en cuenta que el pendrive se borra entero.
 
 La imagen es una **ISO 9660 híbrida (isohybrid)**: el mismo archivo arranca por **BIOS y UEFI x64**
 y se puede grabar con `dd`, Rufus o balenaEtcher, o copiar a Ventoy. `make image` la deja como
@@ -31,15 +31,17 @@ Verificá la descarga antes de grabar (PowerShell):
 Get-FileHash rocola-i386-*.iso -Algorithm SHA256   # comparar con SHA256SUMS.txt del Release
 ```
 
-## Identificar el dispositivo (¡con cuidado!)
+## Identificar el dispositivo
 
 ```bash
 lsblk -dpo NAME,SIZE,MODEL,TRAN      # buscá tu pendrive por tamaño/modelo, TRAN=usb
 ```
 
-Anotá el **device del disco entero** (p. ej. `/dev/sdb`), **no** una partición (`/dev/sdb1`).
+Anotá el dispositivo del disco entero (por ejemplo `/dev/sdb`), no el de una partición
+(`/dev/sdb1`).
 
-> ⚠️ Elegir el disco equivocado destruye sus datos. Verificá dos veces (tamaño + modelo + que sea USB).
+Si elegís el disco equivocado, perdés lo que tenga. Antes de grabar fijate dos veces el tamaño, el
+modelo y que sea USB.
 
 ## Opción A — `make flash`
 
@@ -73,7 +75,7 @@ sudo cmp -n $(stat -c%s out/rocola-i386.img) out/rocola-i386.img /dev/sdb && ech
 
 ```bash
 qemu-system-i386 -hda out/rocola-i386.img -m 2048                                   # BIOS
-qemu-system-i386 -bios /usr/share/ovmf/OVMF.fd -hda out/rocola-i386.img -m 2048     # UEFI x64
+qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -hda out/rocola-i386.img -m 2048   # UEFI x64
 ```
 
 ## Bootear en la PC vieja
