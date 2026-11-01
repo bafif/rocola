@@ -59,7 +59,35 @@ else
     done
 fi
 
-# 3) Re-escanear la biblioteca de MPD.
+# 3) Portadas con el nombre que busca MPD. Su `albumart` solo encuentra cover.png,
+#    cover.jpg y cover.webp escritos exactamente así, y un pendrive suele traer
+#    Folder.jpg o COVER.JPG. A cada carpeta que no tiene uno se le agrega un
+#    cover.<ext> que apunta a su portada (enlace duro: no ocupa lugar; si no se puede,
+#    copia). Corre sobre todo /music, así cubre también lo importado antes.
+find_art() {
+    local dir="$1" name="$2"
+    find "$dir" -maxdepth 1 -type f \( -iname "$name.jpg" -o -iname "$name.jpeg" \
+        -o -iname "$name.png" -o -iname "$name.webp" \) -print -quit
+}
+
+add_cover_names() {
+    local dir img ext
+    while IFS= read -r -d '' dir; do
+        if [ -e "$dir/cover.jpg" ] || [ -e "$dir/cover.png" ] || [ -e "$dir/cover.webp" ]; then
+            continue
+        fi
+        img=$(find_art "$dir" cover)
+        [ -n "$img" ] || img=$(find_art "$dir" folder)
+        [ -n "$img" ] || continue
+        ext="${img##*.}"
+        ext="${ext,,}"
+        [ "$ext" = jpeg ] && ext=jpg
+        ln "$img" "$dir/cover.$ext" 2>/dev/null || cp "$img" "$dir/cover.$ext" || true
+    done < <(find "$DEST" -type d -print0)
+}
+add_cover_names || true
+
+# 4) Re-escanear la biblioteca de MPD.
 if command -v mpc >/dev/null 2>&1; then
     log "Actualizando biblioteca de MPD…"
     mpc update >/dev/null 2>&1 || true
