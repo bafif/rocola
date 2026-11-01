@@ -40,15 +40,15 @@ Un **pendrive booteable** que convierte una PC de escritorio vieja en una **roco
         PENDRIVE booteable
 ```
 
-Decisiones clave:
-- **El SO se define como una imagen Docker** (fiel a la consigna): todo el userland, configs y la
-  app viven en `os/`. El kernel, `live-boot` y GRUB se instalan dentro de esa imagen para que el
-  rootfs exportado sea autosuficiente.
-- **El empaquetado a `.img`** (`mksquashfs` + `grub-mkrescue`) corre en un contenedor builder con un
-  `docker run` **normal**: `grub-mkrescue` arma la ISO híbrida en espacio de usuario (xorriso +
-  mtools), **sin loop devices ni privilegios**. Así el build funciona en WSL2/CI y no hace falta
-  tooling especial en el host (solo Docker). La instalación a disco (particionar/`grub-install`) la
-  hace el instalador en el sistema ya booteado, donde sí hay `/dev/sdX` real.
+Las dos decisiones que más pesan:
+- **El SO es una imagen Docker.** Todo el userland, la configuración y la app están en `os/`. El
+  kernel, `live-boot` y GRUB se instalan dentro de esa misma imagen para que el rootfs exportado
+  alcance por sí solo.
+- **El empaquetado a `.img`** (`mksquashfs` y `grub-mkrescue`) corre en un contenedor aparte con un
+  `docker run` común: `grub-mkrescue` arma la ISO híbrida en espacio de usuario (xorriso y mtools),
+  sin loop devices ni privilegios. Por eso el build anda en WSL2 y en el CI, y en el host no hace
+  falta nada más que Docker. La instalación a disco (particionar, `grub-install`) la hace el
+  instalador en el sistema ya arrancado, donde sí hay un `/dev/sdX` real.
 
 Detalle: [docs/02-build-pipeline.md](docs/02-build-pipeline.md).
 
@@ -64,9 +64,10 @@ Encendido + pendrive
                                  └─► PipeWire + MPD (en la sesión)  +  app SDL2 fullscreen
 ```
 
-- **Live-boot + squashfs + overlay**: el sistema corre en RAM, minimizando escrituras y desgaste
-  del pendrive, y permite "probar antes de instalar".
-- **Autostart** sin escritorio: solo `Xorg` + la app a pantalla completa (liviano para 2 GB i386).
+- **Live-boot, squashfs y overlay**: el sistema corre en RAM, así que casi no escribe en el
+  pendrive ni lo gasta, y se puede probar todo antes de instalar.
+- **Arranque directo, sin escritorio**: solo `Xorg` y la app a pantalla completa, que es lo que
+  aguanta bien una máquina i386 con 2 GB.
 
 Detalle: [docs/03-boot-and-live.md](docs/03-boot-and-live.md).
 
@@ -76,7 +77,7 @@ Disparo **manual** desde la rocola en vivo (menú → «Instalar en disco»; F10
 
 ```
 rocola-install (whiptail, navegable con arcade)
-  1. Detecta discos (modelo, tamaño)         → el usuario elige el destino (mínimo 14 GB)
+  1. Detecta discos (modelo, tamaño)         → se elige el destino (mínimo 14 GB)
   2. Doble confirmación anti-borrado          (muestra qué se va a destruir)
   3. Particiona destino (GPT):
         BIOSBOOT (ef02, BIOS) · ESP (FAT32, UEFI) · ROOT (ext4) · DATOS /music (ext4, persistente)
@@ -86,19 +87,21 @@ rocola-install (whiptail, navegable con arcade)
   7. Reboot → la PC arranca la rocola sola desde el disco
 ```
 
-Seguridad: **nunca** formatea sin selección y confirmación explícitas del usuario.
+El instalador nunca formatea un disco sin que alguien lo haya elegido y confirmado.
 
 Detalle: [docs/04-installer.md](docs/04-installer.md).
 
 ## 5. Subsistema de video (VGA + 15 kHz)
 
-El requisito "ambos tipos de tubo sin configuración" se resuelve así:
+La idea es que los dos tipos de monitor de tubo anden sin configurar nada después de instalar:
 
-- En monitores con **EDID útil** (VGA/moderno) se usan modos estándar.
-- En **CRT 15 kHz** (arcade/TV, sin EDID confiable) se fuerzan **modelines 15 kHz** + `switchres`.
-- El **tipo de monitor se elige una vez** en el instalador y se **persiste**; luego es automático en
-  cada arranque → cumple "sin configuración una vez instalado".
-- **Salvedad honesta**: 15 kHz real depende de GPU/driver compatibles; hay fallback a VGA seguro.
+- En monitores con un EDID que sirve (VGA o modernos) se usan los modos estándar.
+- En un CRT de 15 kHz (arcade o TV, sin un EDID confiable) se fuerzan modelines de 15 kHz con
+  `switchres`.
+- El tipo de monitor se elige una sola vez, en el instalador, y queda guardado; de ahí en adelante
+  cada arranque lo aplica solo.
+- Los 15 kHz dependen de que la placa de video y el driver los acepten. Si no, el sistema vuelve a
+  un modo VGA seguro.
 
 Detalle: [docs/05-display-crt-15khz.md](docs/05-display-crt-15khz.md).
 
@@ -135,13 +138,13 @@ Detalle: [docs/07-rocola-app.md](docs/07-rocola-app.md).
 |-----------|----|-----|--------------------|
 | ESP | FAT32 | arranque UEFI | n/a |
 | ROOT | ext4 | sistema (clon del SO) | se reescribe |
-| DATOS `/music` | ext4 | música del usuario | **sí** |
+| DATOS `/music` | ext4 | la música | **sí** |
 
-Reinstalar/actualizar el SO **no borra** la música del usuario.
+Reinstalar o actualizar el SO no borra la música.
 
 Detalle: [docs/08-music-management.md](docs/08-music-management.md).
 
 ## 9. Estructura del repositorio
 
-Ver [README.md](README.md#cómo-está-organizado). Cada carpeta de nivel superior mapea a un
+Ver [README.es.md](README.es.md#cómo-está-organizado). Cada carpeta de nivel superior mapea a un
 subsistema de esta arquitectura y tiene su doc correspondiente en [`docs/`](docs/).
