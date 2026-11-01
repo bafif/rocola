@@ -377,7 +377,7 @@ class AudioScene(Scene):
             # draw() corta acá mostrando "PipeWire no responde… Reintentá": damos a
             # Enter ese sentido (re-chequear) y a Esc volver. Sin esta guarda, Enter
             # caía en _select() y, con la lista de sinks vacía, la fila "Emparejar
-            # Bluetooth" es el índice 0 → saltaba a emparejar sin que el usuario lo pida.
+            # Bluetooth" es el índice 0 → saltaba a emparejar sin que nadie lo pidiera.
             if action in (actions.BACK, actions.MENU):
                 self.app.set_scene("menu")
             elif action == actions.SELECT:
