@@ -53,7 +53,18 @@ log "Escribiendo grub.cfg…"
 cat > "$STAGE/boot/grub/grub.cfg" <<'EOF'
 set timeout=8
 set default=0
-insmod all_video
+# Solo los drivers de video del FIRMWARE (GOP/UGA en UEFI, VBE/VGA en BIOS): son los que
+# dejan un framebuffer que el kernel hereda con 'gfxpayload=keep' (efifb/vesafb), que es
+# lo que usa Xorg/fbdev en la entrada por defecto. 'all_video' sumaba los drivers
+# 'bochs' y 'cirrus' de GRUB, que toman la placa de video emulada de QEMU y dejaban un
+# framebuffer de 24 bpp, por BIOS y por UEFI, con el que X no arranca (ver abajo).
+if [ "${grub_platform}" = "efi" ]; then
+    insmod efi_gop
+    insmod efi_uga
+else
+    insmod vbe
+    insmod vga
+fi
 insmod gfxterm
 
 # BIOS: GRUB arranca en modo TEXTO, y 'gfxpayload=keep' le pasaba ese modo texto al
@@ -61,12 +72,12 @@ insmod gfxterm
 # "no screens found" (visto en QEMU por BIOS). Pasamos GRUB a un modo gráfico VBE para
 # que el kernel herede un framebuffer lineal. En UEFI el framebuffer (GOP/efifb) ya
 # existe siempre, así que no se toca.
-# La profundidad importa: con 'auto', GRUB eligió 800x600x24 en QEMU, y Xorg 21 con
-# fbdev NO soporta framebuffers de 24 bpp ("Specified fbbpp (24) is not a permitted
-# value"); el framebuffer del firmware tampoco puede cambiar de modo, así que X moría.
-# Pedimos 32 bpp y, si la placa no los tiene, 16 bpp (rocola-display-setup le dice a
-# Xorg qué profundidad usar). 800x600 primero: lo soporta cualquier monitor SVGA, CRT
-# incluido; VBE no consulta al monitor, así que no conviene arrancar más alto.
+# La profundidad importa: el framebuffer del firmware no puede cambiar de modo, y Xorg
+# 21 con fbdev NO soporta 24 bpp ("Specified fbbpp (24) is not a permitted value").
+# Muchas BIOS VBE ofrecen modos de 24 bpp, así que no dejamos que 'auto' elija: pedimos
+# 32 bpp y, si la placa no los tiene, 16 bpp (rocola-display-setup le dice a Xorg qué
+# profundidad usar). 800x600 primero: lo soporta cualquier monitor SVGA, CRT incluido;
+# VBE no consulta al monitor, así que no conviene arrancar más alto.
 if [ "${grub_platform}" = "pc" ]; then
     if loadfont unicode; then
         set gfxmode=800x600x32,1024x768x32,640x480x32,800x600x16,1024x768x16,640x480x16,auto
