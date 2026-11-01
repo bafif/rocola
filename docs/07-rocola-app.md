@@ -1,7 +1,11 @@
 # 07 · La app (UI SDL2 + MPD)
 
-La rocola en sí: una **UI propia** a pantalla completa hecha con **SDL2** (Python + pygame-ce) que
+La rocola en sí: una **UI propia** a pantalla completa hecha con **SDL2** (Python + pygame) que
 usa **MPD** como motor de audio.
+
+En la imagen corre el `python3-pygame` de Debian bookworm (pygame 2.1.2). El entorno de desarrollo
+y la CI usan **pygame-ce**, que mantiene la misma API pero es más nuevo: lo que use una función
+reciente de pygame hay que probarlo en la ISO.
 
 ## Por qué esta arquitectura
 
@@ -60,7 +64,7 @@ Pendiente: navegar por artista/álbum y mostrar portadas.
 ```bash
 make app-deps       # entorno con uv: pygame-ce, pytest, ruff (Python 3.11, como bookworm)
 make app-test       # tests sin pantalla ni audio (SDL dummy, MPD falso)
-make app-lint       # ruff
+make app-lint       # ruff (lint y formato)
 make app-run        # la UI en una ventana; necesita un MPD local (por defecto 127.0.0.1:6600)
 ```
 

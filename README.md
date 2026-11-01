@@ -27,7 +27,7 @@ monitors and CRTs**, including 15 kHz arcade/TV screens.
   with a safe VGA fallback. The monitor type is chosen once, at install time.
 - **Arcade controls**: USB encoders that show up as a keyboard or as a joystick both work, at the
   same time, with no setup.
-- **Its own UI**: a full-screen jukebox interface written with **SDL2** (Python + pygame-ce) on top
+- **Its own UI**: a full-screen jukebox interface written with **SDL2** (Python + pygame) on top
   of **MPD**. Logo, fonts and colors come from a replaceable theme.
 - **Audio outputs**: analog, HDMI, USB and **Bluetooth** speakers through PipeWire, selectable
   from the UI; on an installed system the choice survives reboots.
@@ -136,7 +136,7 @@ exits. Reference: [docs/07-rocola-app.md](docs/07-rocola-app.md).
 ```
 os/         the OS: Dockerfile (FROM i386/debian:bookworm) + files overlaid on the root filesystem
 image/      packaging: rootfs -> bootable hybrid ISO (squashfs + GRUB BIOS/UEFI)
-app/        the jukebox UI (Python + pygame-ce/SDL2), MPD client, input, themes, tests
+app/        the jukebox UI (Python + pygame/SDL2), MPD client, input, themes, tests
 installer/  guided installer (whiptail TUI) that clones the system to disk
 display/    15 kHz modelines and VGA/CRT detection (switchres)
 docs/       one document per subsystem
