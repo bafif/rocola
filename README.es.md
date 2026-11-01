@@ -1,161 +1,181 @@
-# 🎵 Rocola
+# Rocola
 
 *[English](README.md) · Español*
 
-> Convertí cualquier computadora de escritorio vieja en una **rocola (jukebox)** dedicada con un solo pendrive.
+> Convertí cualquier computadora de escritorio vieja en una rocola dedicada con un solo pendrive.
 
-**Rocola** es un sistema operativo mínimo basado en **Debian i386** que se distribuye como un
-**pendrive booteable**. Al encender una PC con el pendrive, arranca una rocola lista para usar; y
-con un disparo manual podés **clonar** ese sistema al disco interno para que la máquina quede
-convertida en una rocola permanente que **abre sola al prender**, se maneja con **controles de
-arcade** y funciona tanto en **monitores modernos** como en **monitores de tubo (CRT), incluyendo
-los de 15 kHz de arcade/TV**, sin configuración posterior.
+**Rocola** es un sistema operativo mínimo basado en **Debian i386** que se distribuye como una
+**imagen booteable para pendrive**. Se arranca una PC vieja desde el pendrive y aparece una rocola
+lista para sonar. Cuando lo decidís, un instalador guiado **clona** el sistema al disco interno y la
+máquina queda como rocola permanente: **abre sola al prenderla**, se maneja con **controles de
+arcade** y funciona en **monitores modernos y de tubo**, incluidos los de 15 kHz de arcade o de TV.
 
----
+| Biblioteca | Reproduciendo |
+|---|---|
+| ![Biblioteca por artista](docs/screenshots/ui-library.png) | ![Pantalla de reproducción con la portada del álbum](docs/screenshots/ui-nowplaying.png) |
+| **Menú** | **Probar controles** |
+| ![Pantalla del menú](docs/screenshots/ui-menu.png) | ![Pantalla para probar los controles](docs/screenshots/ui-inputtest.png) |
 
-## ✨ Características
+Las capturas usan una biblioteca de demostración inventada.
 
-- **Pendrive todo-en-uno**: arranca una rocola "en vivo" sin tocar el disco de la PC.
-- **Instalador guiado de disparo manual**: clona el sistema al disco interno solo cuando vos lo
-  decidís, con confirmación anti-borrado. Nunca formatea automáticamente.
-- **Hardware viejo**: pensado para PCs de ~2 GB de RAM, CPU de 32 bits (i386). Arranca por **BIOS**
-  (PCs de 32 y 64 bits) y por **UEFI x64**.
-- **Soporte CRT real**: monitores VGA (31 kHz) **y** arcade/TV de 15 kHz vía `switchres` + modelines.
-- **Controles de arcade**: encoders USB que se presentan como **teclado y/o joystick**, autodetectados.
-- **UI propia y brandeable**: interfaz "rocola" hecha a medida con **SDL2** (Python + pygame)
-  sobre **MPD** como motor de audio. La biblioteca se recorre por artista y álbum, con la portada
-  del disco en «Reproduciendo». Logos, fuentes y tema reemplazables.
-- **Tu música, fácil**: biblioteca **precargada** en la imagen **+** import desde un **segundo USB**
-  a una **partición de datos persistente** que sobrevive reinstalaciones.
-- **Open source**: 100% software libre, licencia MIT.
-- **Probado**: tests de la app (`make app-test`) y del import de música (`make os-test`), y CI con
-  ruff y shellcheck.
+## Qué tiene
 
----
+- **Todo en un pendrive**: arranca una rocola en vivo sin tocar el disco de la PC (el sistema en
+  vivo corre en RAM).
+- **Instalador guiado y manual**: clona el sistema al disco interno solo cuando se lo pedís y con
+  una confirmación explícita. Nunca formatea un disco por su cuenta, y al reinstalar puede conservar
+  la partición de la música.
+- **Pensado para hardware viejo**: CPU de 32 bits (i386) y unos 2 GB de RAM. Arranca por **BIOS**
+  (PCs de 32 y de 64 bits) y por **UEFI x64**.
+- **Monitores de tubo**: VGA (31 kHz) y monitores de arcade o TV de 15 kHz con `switchres` y
+  modelines, con un modo VGA seguro de respaldo. El tipo de monitor se elige una sola vez, al
+  instalar.
+- **Controles de arcade**: los encoders USB que se presentan como teclado o como joystick andan los
+  dos, a la vez y sin configurar nada.
+- **Interfaz propia**: una pantalla completa de rocola hecha con **SDL2** (Python y pygame) sobre
+  **MPD**. La biblioteca se recorre por artista y álbum, con la portada del disco en «Reproduciendo».
+  El logo, las fuentes y los colores salen de un tema que se puede reemplazar.
+- **Salidas de audio**: analógica, HDMI, USB y parlantes **Bluetooth** con PipeWire, elegibles desde
+  la UI; en un sistema instalado la elección se mantiene entre reinicios.
+- **Tu música**: precargada en la imagen y, además, importada desde un segundo pendrive a una
+  partición `/music` persistente que sobrevive a las reinstalaciones.
 
-## ⬇️ Descargar y grabar (sin compilar)
+## Estado
 
-¿Solo querés el pendrive? No hace falta compilar nada ni tener Docker.
+Beta. Está probada de punta a punta en QEMU/KVM: la ISO arranca hasta la UI a pantalla completa con
+MPD conectado, por **BIOS y por UEFI x64**, y el instalador clona a un disco vacío que después
+arranca solo, también por BIOS y por UEFI. Las canciones de un pendrive enchufado con la rocola
+andando aparecen solas en la biblioteca. El sistema en vivo también arrancó en hardware real desde
+Ventoy. Todavía no probé en hardware físico el video de 15 kHz en un CRT, un encoder de arcade real
+ni el import de música desde un segundo pendrive. El detalle y los problemas que fueron apareciendo
+están en [docs/12-verificacion.md](docs/12-verificacion.md).
 
-1. Descargá el archivo `rocola-i386-<versión>.iso` (~405 MB) desde la página de
-   **[Releases](https://github.com/bafif/rocola/releases/latest)**.
-2. *(Opcional, recomendado)* verificá la descarga contra el `SHA256SUMS.txt` del Release:
-   - **Windows (PowerShell):** `Get-FileHash rocola-i386-*.iso -Algorithm SHA256`
-   - **Linux / macOS:** `sha256sum -c SHA256SUMS.txt`
+## Descargar y grabar (sin compilar)
 
-   y comprobá que el hash coincida con el publicado.
-3. Grabá el `.iso` a un pendrive (≥ 1 GB; **se borra entero**):
+1. Bajá `rocola-i386-<versión>.iso` (unos 405 MB) de
+   [Releases](https://github.com/bafif/rocola/releases).
+2. Si querés, comprobalo contra el `SHA256SUMS.txt` del release:
+   - Linux o macOS: `sha256sum -c SHA256SUMS.txt`
+   - Windows (PowerShell): `Get-FileHash rocola-i386-*.iso -Algorithm SHA256`
+3. Grabalo en un pendrive de 1 GB o más (**el pendrive se borra entero**):
 
    | Herramienta | Cómo |
    |-------------|------|
-   | **Rufus** (Windows) | *Dispositivo* = tu pendrive → *Seleccionar* el `.iso` → *Empezar* → elegí **"Escribir en modo Imagen DD"** (la imagen es híbrida; en modo DD el resto de opciones se ignoran). Guía detallada: [docs/13](docs/13-rufus-windows.md). |
-   | **Ventoy** (Windows/Linux) | Instalá Ventoy en el pendrive **una vez** y después **copiá** el `.iso` a su partición. No hace falta reformatear para actualizar. |
-   | **balenaEtcher** (multiplataforma) | *Flash from file* → el `.iso` → elegí el pendrive → *Flash*. |
+   | **Rufus** (Windows) | Elegí el pendrive y el `.iso`, y después **«Escribir en modo Imagen DD»**. Guía paso a paso: [docs/13](docs/13-rufus-windows.md). |
+   | **Ventoy** (Windows/Linux) | Instalá Ventoy en el pendrive una vez y después **copiá** el `.iso` adentro. |
+   | **balenaEtcher** | *Flash from file*, elegí el `.iso` y el pendrive, *Flash*. |
+   | **dd** (Linux) | `make flash DEV=/dev/sdX` desde un clon de este repo, o `dd` a mano. |
 
-4. Booteá la PC vieja desde el pendrive (BIOS o UEFI x64) y seguí desde [Usar](#3-usar).
+El archivo es una imagen ISO 9660 híbrida (isohybrid): el mismo `.iso` arranca por BIOS y por UEFI
+x64 y se puede grabar con cualquiera de las herramientas de arriba.
 
-> El archivo es una **ISO 9660 híbrida (isohybrid)**: arranca por **BIOS y por UEFI x64**, y se
-> puede grabar con `dd`, Rufus o balenaEtcher, o copiar a Ventoy — todo desde el mismo `.iso`.
+## Usarla
 
----
+1. Enchufá el pendrive en la PC vieja y arrancá desde él (cambiá el orden de arranque si hace falta).
+2. Arranca la rocola en vivo: ya puede sonar música.
+3. Para instalarla: abrí el menú (**F10** o el botón 3 de arcade), elegí **Instalar en disco**, elegí
+   el disco de destino (**14 GB o más**: 12 GB para el sistema y el resto para la música), confirmá,
+   elegí el tipo de monitor (moderno/VGA o 15 kHz) y reiniciá.
+4. Sacá el pendrive: desde ese momento la PC arranca directo en la rocola.
 
-## 🚀 Inicio rápido
+Controles por defecto (teclado o arcade):
 
-### 1. Construir la imagen
+| Acción | Teclado | Joystick (índice de botón de SDL) |
+|--------|---------|-----------------------------------|
+| Moverse | flechas | palanca / cruceta |
+| Elegir / reproducir | Enter | 0 |
+| Volver | Esc / Backspace | 1 |
+| Reproducir / pausa | Espacio | 2 |
+| Menú | F10 | 3 |
+| Anterior / siguiente | P / N | 4 / 5 |
+| Volumen − / + | − / + | 6 / 7 |
 
-Requisitos en la máquina de build: **Docker** y `make`. (En CPUs x86-64 Docker corre los
-contenedores i386 nativo; en otros hosts, instalá binfmt una vez —ver
-[docs/02](docs/02-build-pipeline.md)—.)
+Hay más en [docs/06-arcade-controls.md](docs/06-arcade-controls.md).
 
-```bash
-make rootfs         # construye el SO (imagen Docker i386); la primera vez tarda
-make image          # produce out/rocola-i386.img: ISO híbrida booteable BIOS + UEFI x64
-make release VERSION=v0.1.0-beta   # empaqueta out/release/rocola-i386-<ver>.iso + SHA256SUMS.txt
-```
-
-> **Estado:** verificado de punta a punta en QEMU/KVM — `make image` genera la ISO y arranca hasta la
-> UI de la rocola a pantalla completa (MPD conectado) por **BIOS y por UEFI x64**; además el
-> **instalador clona a un disco vacío** (particiona, copia el SO, pone GRUB) y ese **disco arranca
-> solo** —sin pendrive— a la rocola, también por BIOS y UEFI. Las canciones de un pendrive enchufado
-> con la rocola andando aparecen solas en la biblioteca. Capturas en
-> [docs/screenshots/](docs/screenshots/); detalle y bugs corregidos en
-> [docs/12-verificacion.md](docs/12-verificacion.md).
-
-### 2. Grabar el pendrive
-
-```bash
-make flash DEV=/dev/sdX     # ⚠️ DESTRUCTIVO: reemplazá sdX por tu pendrive
-# o con tu herramienta gráfica favorita (p. ej. balenaEtcher) usando out/rocola-i386.img
-```
-
-> En Windows usá **Rufus**, **Ventoy** o **balenaEtcher** con el `.iso` del Release; ver
-> [Descargar y grabar (sin compilar)](#️-descargar-y-grabar-sin-compilar).
-
-### 3. Usar
-
-1. Enchufá el pendrive en la PC vieja y encendéla (configurá el orden de booteo si hace falta).
-2. Arranca la **rocola en vivo**. Ya podés escuchar música.
-3. Para dejarla instalada: abrí el menú (**F10** o el botón 3 de arcade), elegí **Instalar en disco**,
-   elegí el disco destino (**14 GB o más**: 12 GB de sistema y el resto para la música), confirmá,
-   elegí tipo de monitor (moderno/VGA o 15 kHz) y reiniciá.
-4. Sacá el pendrive: la PC ahora **abre la rocola sola** en cada arranque.
-
-### 4. Cargar música
+## Cargar música
 
 - **Precargada**: poné carpetas en `os/rootfs-overlay/opt/rocola/music/` antes de `make rootfs`.
-- **Desde USB**: enchufá un pendrive con tus canciones; la rocola lo detecta y las importa a la
-  partición de datos (`/music`). Ver [docs/08-music-management.md](docs/08-music-management.md).
+- **Desde un pendrive**: enchufá un pendrive con canciones; la rocola lo detecta y las importa a la
+  partición de datos (`/music`). Más en [docs/08-music-management.md](docs/08-music-management.md).
 
----
+## Compilar desde el código
 
-## 🧱 Cómo está organizado
+Hace falta **Docker** y `make`. Todo lo demás corre dentro de contenedores: no se necesita
+`debootstrap`, ni loop devices, ni `--privileged`, así que también anda en WSL2 y en el CI. En un
+host x86-64, Docker corre los contenedores i386 de forma nativa; en otros hosts hay que registrar
+binfmt una vez (ver [docs/02-build-pipeline.md](docs/02-build-pipeline.md)).
+
+```bash
+make rootfs                        # arma el SO como imagen Docker (FROM i386/debian:bookworm)
+make image                         # out/rocola-i386.img: ISO híbrida, BIOS + UEFI x64
+make release VERSION=v0.1.2-beta   # out/release/rocola-i386-<versión>.iso + SHA256SUMS.txt
+make flash DEV=/dev/sdX            # DESTRUCTIVO: graba la imagen en el pendrive
+```
+
+`make image` reutiliza la imagen del SO si ya existe; después de cambiar algo en `os/`, `app/`,
+`installer/` o `display/` hay que volver a correr `make rootfs`.
+
+Para probarla sin pendrive:
+
+```bash
+qemu-system-i386 -enable-kvm -m 2048 -cdrom out/rocola-i386.img
+```
+
+## Desarrollar la UI
+
+La app está en [`app/`](app/) y usa [uv](https://docs.astral.sh/uv/) con Python 3.11 (la versión de
+Debian bookworm).
+
+```bash
+make app-deps   # uv sync: pygame-ce, pytest, ruff
+make app-test   # tests sin pantalla (driver dummy de SDL y un servidor MPD falso)
+make os-test    # tests de los scripts del SO que corren sin root (import de música)
+make app-lint   # ruff
+make app-run    # la UI en una ventana; necesita un MPD local en 127.0.0.1:6600
+```
+
+La configuración sale de `/etc/rocola/rocola.toml` y de las variables de entorno `ROCOLA_*`
+(`ROCOLA_RES=640x480` simula un CRT). `ROCOLA_SCREENSHOT=out.png` dibuja una escena en un PNG y
+sale. Referencia: [docs/07-rocola-app.md](docs/07-rocola-app.md).
+
+## Cómo está organizado
 
 ```
-os/         SO de la rocola (Dockerfile FROM i386/debian:bookworm + overlay de archivos)
-image/      Empaquetado: rootfs -> imagen booteable (squashfs + GRUB BIOS/UEFI)
-app/        UI de la rocola (Python + pygame/SDL2) + cliente MPD + input
-installer/  Instalador guiado (TUI whiptail) que clona el SO al disco
-display/    Modelines 15 kHz + autodetección/selección VGA vs CRT (switchres)
-docs/       Documentación detallada por subsistema
+os/         el SO: Dockerfile (FROM i386/debian:bookworm) + archivos que se superponen a la raíz
+image/      empaquetado: rootfs -> ISO híbrida booteable (squashfs + GRUB BIOS/UEFI)
+app/        la UI de la rocola (Python + pygame/SDL2), cliente MPD, entrada, temas, tests
+installer/  instalador guiado (TUI con whiptail) que clona el sistema al disco
+display/    modelines de 15 kHz y detección VGA/CRT (switchres)
+docs/       un documento por subsistema
 ```
 
-Ver **[ARCHITECTURE.md](ARCHITECTURE.md)** para el diseño completo y **[docs/](docs/)** para el
-detalle de cada parte.
+El diseño completo está en [ARCHITECTURE.md](ARCHITECTURE.md).
 
----
-
-## 📚 Documentación
+## Documentación
 
 | Doc | Tema |
 |-----|------|
-| [docs/01-overview.md](docs/01-overview.md) | Visión general y objetivos |
-| [docs/02-build-pipeline.md](docs/02-build-pipeline.md) | Pipeline de build (Docker → img) |
-| [docs/03-boot-and-live.md](docs/03-boot-and-live.md) | Boot, live-boot, autologin, autostart |
-| [docs/04-installer.md](docs/04-installer.md) | Instalador guiado y particionado |
-| [docs/05-display-crt-15khz.md](docs/05-display-crt-15khz.md) | Video: VGA y CRT 15 kHz |
-| [docs/06-arcade-controls.md](docs/06-arcade-controls.md) | Controles de arcade |
-| [docs/07-rocola-app.md](docs/07-rocola-app.md) | La app (UI SDL2 + MPD) |
-| [docs/08-music-management.md](docs/08-music-management.md) | Gestión de música |
-| [docs/09-branding-theming.md](docs/09-branding-theming.md) | Branding y temas |
-| [docs/10-flashing-usb.md](docs/10-flashing-usb.md) | Grabar el pendrive |
-| [docs/11-troubleshooting.md](docs/11-troubleshooting.md) | Resolución de problemas |
-| [docs/12-verificacion.md](docs/12-verificacion.md) | Qué está probado y qué falta validar |
-| [docs/13-rufus-windows.md](docs/13-rufus-windows.md) | Grabar con Rufus en Windows (modo DD, opciones) |
-| [docs/14-audio.md](docs/14-audio.md) | Salida de audio (PipeWire), Bluetooth y selección de salida |
+| [01](docs/01-overview.md) | Visión general y objetivos |
+| [02](docs/02-build-pipeline.md) | Pipeline de build (de Docker a la imagen) |
+| [03](docs/03-boot-and-live.md) | Arranque, sistema en vivo, autologin, autostart |
+| [04](docs/04-installer.md) | Instalador guiado y particionado |
+| [05](docs/05-display-crt-15khz.md) | Video: VGA y CRT de 15 kHz |
+| [06](docs/06-arcade-controls.md) | Controles de arcade |
+| [07](docs/07-rocola-app.md) | La app (UI SDL2 + MPD) |
+| [08](docs/08-music-management.md) | Manejo de la música |
+| [09](docs/09-branding-theming.md) | Branding y temas |
+| [10](docs/10-flashing-usb.md) | Grabar el pendrive |
+| [11](docs/11-troubleshooting.md) | Problemas comunes |
+| [12](docs/12-verificacion.md) | Qué está probado y qué falta |
+| [13](docs/13-rufus-windows.md) | Grabar con Rufus en Windows |
+| [14](docs/14-audio.md) | Salida de audio (PipeWire), Bluetooth y elección de la salida |
 
----
+## Salvedades
 
-## ⚠️ Salvedades
+- La salida de 15 kHz depende de una placa de video y un driver que acepten modelines de baja
+  frecuencia; donde no los hay, el sistema vuelve a un modo VGA seguro.
+- `make flash` **borra** el dispositivo de destino: revisá `DEV` dos veces.
 
-- El soporte **15 kHz** depende de una **GPU/driver compatibles** con modelines de baja frecuencia;
-  donde no haya, el sistema cae a un modo VGA seguro. Ver
-  [docs/05-display-crt-15khz.md](docs/05-display-crt-15khz.md).
-- El armado de la imagen usa `grub-mkrescue` (xorriso + mtools): **no requiere privilegios** ni loop
-  devices, así que funciona en WSL2/CI con un `docker run` normal.
-- `make flash` **borra** el dispositivo destino: verificá `DEV` dos veces.
-
----
-
-## 📄 Licencia
+## Licencia
 
 [MIT](LICENSE) © 2026 Bautista D. Fiori
