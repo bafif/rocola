@@ -23,7 +23,8 @@ los de 15 kHz de arcade/TV**, sin configuración posterior.
 - **Soporte CRT real**: monitores VGA (31 kHz) **y** arcade/TV de 15 kHz vía `switchres` + modelines.
 - **Controles de arcade**: encoders USB que se presentan como **teclado y/o joystick**, autodetectados.
 - **UI propia y brandeable**: interfaz "rocola" hecha a medida con **SDL2** (Python + pygame)
-  sobre **MPD** como motor de audio. Logos, fuentes y tema reemplazables.
+  sobre **MPD** como motor de audio. La biblioteca se recorre por artista y álbum. Logos, fuentes y
+  tema reemplazables.
 - **Tu música, fácil**: biblioteca **precargada** en la imagen **+** import desde un **segundo USB**
   a una **partición de datos persistente** que sobrevive reinstalaciones.
 - **Open source**: 100% software libre, licencia MIT.

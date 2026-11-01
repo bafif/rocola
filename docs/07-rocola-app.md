@@ -34,6 +34,7 @@ reciente de pygame hay que probarlo en la ISO.
 | `mpdclient.py` | cliente MPD por socket (sin dependencias externas) |
 | `input.py` | capa de input: teclado + joystick → acciones de la rocola |
 | `ui.py` | widgets/escenas: biblioteca, now-playing, menús |
+| `library.py` | vistas de la biblioteca por artista y álbum (sin pygame, se prueba sola) |
 | `theme.py` | carga branding desde `assets/` (logo, colores, fuentes) |
 | `config.py` | ajustes (defaults + `/etc/rocola/rocola.toml` + variables de entorno) |
 | `audio.py` | salidas de PipeWire vía `pactl`: listar, elegir y recordar la salida |
@@ -42,9 +43,17 @@ reciente de pygame hay que probarlo en la ISO.
 
 ## Escenas (UI)
 
-- **Biblioteca**: lista de todas las canciones (artista — título); ↑/↓ de a una, ←/→ de a diez;
-  seleccionar → si no suena nada (o está en pausa) reproduce esa canción; si ya suena otra, la
-  suma al final de la cola.
+- **Biblioteca**: por artista y álbum. Arriba, «Todas las canciones» y los artistas (por nombre;
+  los temas sin tag de artista van al final, en «(sin artista)»), con cuántas canciones tiene cada
+  uno. Un artista muestra «Todas de …» y sus álbumes, del más viejo al más nuevo según el tag
+  `Date`; si tiene un solo álbum, se abre ese álbum directamente. Un álbum lista sus temas por
+  disco y número de pista. Se agrupa por `AlbumArtist` si está (así un compilado queda junto) y
+  si no por `Artist`. Con un solo artista (o ninguno con tags) queda la lista plana de canciones.
+  ↑/↓ de a una, ←/→ de a diez; Atrás sube un nivel y, desde arriba, va a «Reproduciendo». Al
+  recargarse la biblioteca (pendrive, «Actualizar biblioteca») se vuelve al mismo lugar.
+  Seleccionar una canción → si no suena nada (o está en pausa) la reproduce; si ya suena otra, la
+  suma al final de la cola. Todo sale del `listallinfo` que ya se carga: navegar no le pide nada
+  más a MPD.
 - **Now playing**: título, artista, estado y volumen de lo que suena.
 - **Menú** (botón 3 o F10): salida de audio, información del sistema, probar controles, actualizar
   la biblioteca e instalar en disco.
@@ -55,7 +64,7 @@ reciente de pygame hay que probarlo en la ISO.
   `[keys]`/`[buttons]`, ver [06](06-arcade-controls.md)) y qué acción le toca. Se sale con Atrás dos
   veces seguidas o a los 15 s sin tocar nada.
 
-Pendiente: navegar por artista/álbum y mostrar portadas.
+Pendiente: mostrar portadas.
 
 ## Render y rendimiento
 
