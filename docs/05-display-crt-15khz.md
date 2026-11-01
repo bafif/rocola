@@ -1,7 +1,8 @@
 # 05 · Video: VGA y CRT 15 kHz
 
-El objetivo es funcionar en **monitores modernos/VGA (31 kHz+)** y en **CRT de arcade/TV (15 kHz)**
-sin configuración una vez instalado. Esto es lo más delicado del proyecto; acá va el enfoque honesto.
+La rocola tiene que andar en **monitores modernos o VGA (31 kHz o más)** y en **CRT de arcade o TV
+(15 kHz)** sin configurar nada después de instalar. Es la parte más delicada del proyecto, y acá
+cuento cómo la encaré y hasta dónde llega.
 
 ## El problema
 
@@ -14,11 +15,10 @@ sin configuración una vez instalado. Esto es lo más delicado del proyecto; ac�
 
 1. **Detección**: `rocola-display-setup` lee EDID. Si hay EDID válido de monitor multisync/VGA →
    usa modos estándar.
-2. **15 kHz**: si el usuario indicó CRT 15 kHz (o no hay EDID), aplica **modelines 15 kHz** desde
-   `display/modelines/` e integra **switchres** para elegir el mejor modo por contenido.
-3. **Elección única al instalar**: el instalador pregunta el tipo de monitor y **persiste** la
-   decisión (`/etc/rocola/display.conf`). A partir de ahí, **automático en cada arranque** →
-   cumple "sin configuración una vez instalado".
+2. **15 kHz**: si al instalar se eligió un CRT de 15 kHz (o no hay EDID), aplica los modelines de
+   15 kHz de `display/modelines/` y usa **switchres** para elegir el mejor modo según el contenido.
+3. **Una sola elección, al instalar**: el instalador pregunta el tipo de monitor y guarda la
+   respuesta en `/etc/rocola/display.conf`. De ahí en adelante, cada arranque la aplica solo.
 4. **Fallback seguro**: si algo falla, cae a 640×480/800×600 VGA para no quedar a ciegas.
 
 ```
@@ -35,18 +35,20 @@ arranque → rocola-display-setup
 - **switchres**: genera/cambia modelines para acercarse a la resolución/refresh ideales del CRT.
 - **Xorg**: config mínima que admite modelines custom; la app SDL2 renderiza al modo activo.
 
-## Salvedad importante (hardware)
+## El límite del hardware
 
-El 15 kHz **no es universal**: depende de **GPU + driver** que soporten modelines de baja frecuencia
-por la salida correcta (VGA analógico típicamente). Tarjetas/drivers históricamente buenos para esto
-son los documentados por la comunidad de arcade (GroovyArcade/CRT_EmuDriver). En hardware no
-compatible, el sistema **funciona igual en VGA/moderno** y degrada el 15 kHz a un modo seguro.
+Los 15 kHz no andan en cualquier máquina: hace falta una placa de video y un driver que acepten
+modelines de baja frecuencia por la salida correcta (normalmente la VGA analógica). Las placas y
+drivers que mejor se portan con esto son los que documenta la comunidad de arcade (GroovyArcade,
+CRT_EmuDriver). En hardware que no los acepta, la rocola funciona igual con un monitor VGA o moderno
+y, si se eligió 15 kHz, vuelve a un modo seguro.
 
-> No prometemos 15 kHz en cualquier placa. Sí: VGA/moderno siempre; 15 kHz donde el hardware lo permita.
+O sea, con VGA o un monitor moderno anda siempre; con 15 kHz, donde el hardware lo permita.
 
 ## La app y la baja resolución
 
-La UI SDL2 renderiza **nativo** a 320×240 / 640×480, por lo que se ve bien en CRT sin escalados
-feos. El branding y los layouts se diseñan teniendo en cuenta el "title-safe area" de los CRT.
+La UI SDL2 dibuja directamente a 320×240 o 640×480, así que en un CRT se ve bien, sin escalados
+feos. El branding y la disposición de las pantallas tienen en cuenta el «title-safe area» de los
+CRT.
 
 Siguiente: [06 · Controles de arcade](06-arcade-controls.md).
