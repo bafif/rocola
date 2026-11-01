@@ -52,10 +52,36 @@ device_section() {
     echo "rocola-display-setup: driver de video = $drv $( [ -e /dev/dri/card0 ] && echo '(KMS)' || echo '(sin KMS -> fbdev)')" >&2
 }
 
+# Con fbdev, Xorg tiene que usar EXACTAMENTE el formato de píxel del framebuffer del
+# firmware (efifb/vesafb), que no puede cambiar de modo. Por defecto Xorg pide depth 24
+# sobre 32 bpp; sobre un framebuffer de 16 bpp X muere con "FBIOPUT_VSCREENINFO
+# succeeded but modified mode" / "AddScreen/ScreenInit failed". Con 24 bpp no hay
+# arreglo de este lado (Xorg 21 no acepta fbbpp 24): por eso GRUB pide 32 o 16 bpp por
+# BIOS (image/build-image.sh). Con KMS (modesetting) el driver elige el modo.
+screen_section() {
+    [ "$(detect_driver)" = fbdev ] || return 0
+    local bpp depth
+    bpp="$(cat /sys/class/graphics/fb0/bits_per_pixel 2>/dev/null || true)"
+    case "$bpp" in
+        16) depth=16 ;;
+        8)  depth=8 ;;
+        24) echo "rocola-display-setup: framebuffer de 24 bpp: Xorg/fbdev no lo soporta; probá la entrada de GRUB KMS" >&2
+            return 0 ;;
+        *)  return 0 ;;   # 32 bpp (lo que Xorg usa por defecto) o desconocido
+    esac
+    echo 'Section "Screen"'
+    echo '    Identifier "rocola-screen"'
+    echo '    Device "rocola-gpu"'
+    echo "    DefaultDepth $depth"
+    echo 'EndSection'
+    echo "rocola-display-setup: framebuffer de $bpp bpp -> Xorg con DefaultDepth $depth" >&2
+}
+
 write_vga() {
     {
         echo "# VGA / moderno. Driver forzado (ver detect_driver); Xorg toma los modos por EDID."
         device_section
+        screen_section
         echo 'Section "Monitor"'
         echo '    Identifier "rocola-vga"'
         echo 'EndSection'
@@ -68,6 +94,7 @@ write_crt15() {
         echo "# CRT 15 kHz — generado por rocola-display-setup (ajustar por monitor)."
         echo "# El 15 kHz requiere KMS: arrancá la entrada de GRUB 'aceleración GPU / CRT 15 kHz'."
         device_section
+        screen_section
         echo 'Section "Monitor"'
         echo '    Identifier "rocola-crt15"'
         echo '    HorizSync 15.0-16.5'
