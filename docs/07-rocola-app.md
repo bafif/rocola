@@ -54,7 +54,11 @@ reciente de pygame hay que probarlo en la ISO.
   Seleccionar una canción → si no suena nada (o está en pausa) la reproduce; si ya suena otra, la
   suma al final de la cola. Todo sale del `listallinfo` que ya se carga: navegar no le pide nada
   más a MPD.
-- **Now playing**: título, artista, estado y volumen de lo que suena.
+- **Now playing**: título, artista, álbum, estado y volumen de lo que suena, con la **portada** a
+  la izquierda si la canción tiene una: la de su carpeta (`cover.jpg`, `cover.png` o `cover.webp`,
+  lo que busca el `albumart` de MPD) o, si no, la embebida en el archivo (`readpicture`). Se pide
+  una vez por canción, en bloques de 1 MiB (`binarylimit`), y se ignora si pesa más de 8 MB. Los
+  textos largos se cortan con «…».
 - **Menú** (botón 3 o F10): salida de audio, información del sistema, probar controles, actualizar
   la biblioteca e instalar en disco.
 - **Salida de audio**: elegir entre las salidas de PipeWire (analógica, HDMI, USB, Bluetooth) y
@@ -63,8 +67,6 @@ reciente de pygame hay que probarlo en la ISO.
 - **Probar controles**: muestra qué manda cada tecla o botón (el nombre o el índice que va en
   `[keys]`/`[buttons]`, ver [06](06-arcade-controls.md)) y qué acción le toca. Se sale con Atrás dos
   veces seguidas o a los 15 s sin tocar nada.
-
-Pendiente: mostrar portadas.
 
 ## Render y rendimiento
 

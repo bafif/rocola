@@ -7,6 +7,7 @@ superficie principal.
 
 from __future__ import annotations
 
+import io
 import threading
 import time
 
@@ -175,7 +176,36 @@ class LibraryScene(Scene):
             surface.blit(self._label(body, row.label, text_w, color), (16, y))
 
 
+def _load_cover(data: bytes, side: int):
+    """Decode a cover image and fit it in a `side` x `side` square; None if unreadable."""
+    try:
+        img = pygame.image.load(io.BytesIO(data))
+        if pygame.display.get_surface() is not None:
+            img = img.convert()  # display format: faster blits on old hardware
+    except (pygame.error, ValueError, OSError):
+        return None
+    iw, ih = img.get_size()
+    if not iw or not ih:
+        return None
+    scale = side / max(iw, ih)
+    size = (max(1, round(iw * scale)), max(1, round(ih * scale)))
+    try:
+        return pygame.transform.smoothscale(img, size)
+    except ValueError:  # smoothscale only takes 24/32-bit surfaces
+        return pygame.transform.scale(img, size)
+
+
 class NowPlayingScene(Scene):
+    """What is playing: the cover (if the song has one), title, artist, album, state."""
+
+    MARGIN = 16
+
+    def __init__(self, app):
+        super().__init__(app)
+        self._cover_src: bytes | None = None  # the bytes the cached image came from
+        self._cover_side = 0
+        self._cover_img = None
+
     def handle(self, action: str) -> None:
         if action in (actions.BACK, actions.SELECT):
             self.app.set_scene("library")
@@ -192,6 +222,14 @@ class NowPlayingScene(Scene):
         elif action == actions.MENU:
             self.app.open_menu()
 
+    def _cover(self, side: int):
+        """The current song's cover scaled to `side`, decoded once per song."""
+        data = self.app.state.get("cover")
+        if data is not self._cover_src or side != self._cover_side:
+            self._cover_src, self._cover_side = data, side
+            self._cover_img = _load_cover(data, side) if data else None
+        return self._cover_img
+
     def draw(self, surface) -> None:
         w, h = surface.get_size()
         surface.fill(self.theme.color("background"))
@@ -199,24 +237,44 @@ class NowPlayingScene(Scene):
 
         song = self.app.state.get("song", {})
         status = self.app.state.get("status", {})
-
         big = self.theme.font("title", max(22, h // 12))
         body = self.theme.font("body", max(16, h // 20))
-        cx = w // 2
-        y = self.app.header_h + h // 6
+        lines = [
+            (song.get("Title") or _basename(song.get("file", "")) or "—", big, "text"),
+            (song.get("Artist") or "", body, "muted"),
+            (song.get("Album") or "", body, "muted"),
+            (
+                f"[{status.get('state', 'stop')}]   vol {status.get('volume', '?')}%",
+                body,
+                "accent",
+            ),
+        ]
+        lines = [line for line in lines if line[0]]
 
-        title = song.get("Title") or _basename(song.get("file", "")) or "—"
-        artist = song.get("Artist") or ""
-        state = status.get("state", "stop")
-        vol = status.get("volume", "?")
+        m = self.MARGIN
+        area_top = self.app.header_h + m
+        area_h = h - area_top - m
+        landscape = w >= h
+        side = min(area_h, (w - 3 * m) * 2 // 5) if landscape else min(w - 2 * m, area_h // 2)
+        cover = self._cover(side) if song.get("file") else None
 
-        for text, font, color in [
-            (title, big, self.theme.color("text")),
-            (artist, body, self.theme.color("muted")),
-            (f"[{state}]   vol {vol}%", body, self.theme.color("accent")),
-        ]:
-            img = font.render(text, True, color)
-            surface.blit(img, (cx - img.get_width() // 2, y))
+        if cover is None:  # no cover: the text block, centered
+            x, text_w, centered = m, w - 2 * m, True
+            y = self.app.header_h + h // 6
+        elif landscape:  # cover on the left, text on the right, centered vertically
+            surface.blit(cover, (m, area_top + (area_h - cover.get_height()) // 2))
+            x = 2 * m + side
+            text_w, centered = w - x - m, False
+            block = sum(font.get_height() + 10 for _t, font, _c in lines) - 10
+            y = area_top + max(0, (area_h - block) // 2)
+        else:  # cover on top, text below
+            surface.blit(cover, ((w - cover.get_width()) // 2, area_top))
+            x, text_w, centered = m, w - 2 * m, True
+            y = area_top + cover.get_height() + m
+
+        for text, font, color in lines:
+            img = font.render(_fit(font, text, text_w), True, self.theme.color(color))
+            surface.blit(img, (x + (text_w - img.get_width()) // 2 if centered else x, y))
             y += img.get_height() + 10
 
 
