@@ -68,7 +68,7 @@ así que un mapping de SDL_GameControllerDB no cambia nada. Para un encoder con 
 que ajustar `[buttons]`. Para ver qué índice manda cada botón: menú → **Probar controles**. Cada
 tecla o botón aparece con el nombre o el índice que va en `[keys]`/`[buttons]` y la acción que le
 toca hoy. Se sale con Atrás dos veces seguidas o a los 15 s sin tocar nada, así un encoder mal
-mapeado no deja a nadie adentro.
+mapeado no deja a nadie adentro. Captura: [screenshots/ui-inputtest.png](screenshots/ui-inputtest.png).
 
 ## Acceso al instalador
 
