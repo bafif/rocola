@@ -140,6 +140,22 @@ Construir y arrancar "de verdad" destapó (y arregló) varios problemas reales:
 - **Probar controles**: F10 → «Probar controles»; `n` y la barra aparecen como `Tecla «n» -> next` y
   `Tecla «space» -> playpause`, y a los 15 s sin tocar nada vuelve sola al menú.
 
+## Verificación del 01/11/2026 (QEMU/KVM)
+
+ISO armada desde lo commiteado, entrada por defecto por BIOS (800×600×32 por VBE), con un pendrive
+FAT conectado al arrancar: 10 WAV con tags ID3 en `Artista/Álbum/` (una biblioteca de demostración
+inventada) y un `Folder.jpg` por álbum.
+
+- **Import con portadas**: la biblioteca muestra «Todas las canciones» (10) y los tres artistas, y en
+  `/music` cada álbum tiene su `cover.jpg` junto al `Folder.jpg`.
+- **Navegar**: Enter sobre un artista muestra «Todas de …» y sus dos álbumes (el de 1988 antes que
+  el de 1991); Enter sobre un álbum, sus pistas numeradas.
+- **Reproducir**: Enter sobre una pista abre «Reproduciendo» con la portada del álbum, título,
+  artista, álbum y `[play]`. Esc tres veces vuelve por el álbum y el artista hasta la lista de
+  artistas, con el mismo artista seleccionado.
+- **Elegir con la cola terminada**: probado contra el MPD de la imagen (0.23.12): antes volvía a sonar
+  la primera canción de la cola; ahora suena la elegida.
+
 ## ❌ Todavía NO verificado (requiere hardware físico)
 
 - **Video 15 kHz (CRT arcade/TV)**: depende de GPU/driver físicos; **no** se valida en QEMU.
