@@ -14,8 +14,8 @@ navegable con los controles de arcade/teclado.
 ```
 1. Detección de discos   → lista modelo + tamaño de cada /dev/sdX, /dev/nvmeX, etc.
                            (los de menos de 14 GB salen marcados como «muy chico»)
-2. Selección             → el usuario elige el disco destino (mínimo 14 GB)
-3. Confirmación          → muestra QUÉ se va a borrar; pide confirmación explícita ("BORRAR")
+2. Selección             → se elige el disco de destino (mínimo 14 GB)
+3. Confirmación          → muestra qué se va a borrar y pide escribir "BORRAR"
 4. Particionado destino (GPT):
      ┌─────────┬──────────┬──────────────┬───────────────────────────┐
      │ BIOSBOOT│ ESP 256M │ ROOT 12G     │ DATOS /music (resto)      │
@@ -45,13 +45,13 @@ navegable con los controles de arcade/teclado.
 | BIOSBOOT | `ef02` (2 MiB, sin FS) | **obligatoria para arrancar por BIOS desde GPT**: GRUB embebe ahí su `core.img` (en GPT no hay hueco post-MBR como en MBR). Sin ella, `grub-install --target=i386-pc` falla. |
 | ESP | FAT32 (`ef00`) | requerido para arrancar por UEFI x64 (`/EFI/BOOT/BOOTX64.EFI`) |
 | ROOT | ext4 | sistema; se **reescribe** en cada (re)instalación |
-| `/music` | ext4 | datos del usuario; **persiste** entre reinstalaciones |
+| `/music` | ext4 | la música; **persiste** entre reinstalaciones |
 
-Separar `/music` permite **actualizar el SO sin perder la música**. El layout GPT con BIOS Boot
-Partition + ESP hace que el **mismo disco** arranque por BIOS y por UEFI x64.
+Con `/music` aparte se puede actualizar el SO sin perder la música. Y el esquema GPT con la BIOS
+Boot Partition más la ESP hace que el mismo disco arranque por BIOS y por UEFI x64.
 
-> **Verificado en QEMU**: instalación desatendida completa (particionar → clonar → GRUB) y el disco
-> resultante arrancando a la UI por **BIOS y por UEFI**. Ver [12 · Verificación](12-verificacion.md).
+En QEMU probé la instalación desatendida completa (particionar, clonar, GRUB) y el disco que queda
+arranca a la UI por BIOS y por UEFI; el detalle está en [12 · Verificación](12-verificacion.md).
 
 ## Reinstalar / actualizar
 
@@ -68,8 +68,8 @@ ROCOLA_UNATTENDED=1 ROCOLA_TARGET=/dev/sdX \
   ROCOLA_KEEP_MUSIC=no ROCOLA_DISPLAY=auto  rocola-install
 ```
 
-En producción **no** se usa: el menú de la rocola lanza siempre el flujo interactivo con confirmación.
-El arnés de prueba (`rocola-selftest.service`, gatillado solo con `rocola.selftest` en el cmdline del
-kernel) usa este modo; ver [12 · Verificación](12-verificacion.md).
+En uso normal no se usa: el menú de la rocola siempre lanza el flujo interactivo con confirmación.
+Lo usa el arnés de prueba (`rocola-selftest.service`, que solo se activa con `rocola.selftest` en
+la línea de comandos del kernel); ver [12 · Verificación](12-verificacion.md).
 
 Siguiente: [05 · Video VGA y 15 kHz](05-display-crt-15khz.md).
