@@ -5,6 +5,9 @@ encoders de arcade en modo teclado o en modo joystick sin configurar nada.
 """
 from __future__ import annotations
 
+import sys
+from collections.abc import Mapping
+
 import pygame
 
 # --- Acciones de la rocola ---
@@ -20,6 +23,12 @@ PREV = "prev"
 VOLUP = "volup"
 VOLDOWN = "voldown"
 MENU = "menu"
+
+ACTIONS = frozenset(
+    {UP, DOWN, LEFT, RIGHT, SELECT, BACK, PLAYPAUSE, NEXT, PREV, VOLUP, VOLDOWN, MENU}
+)
+# En rocola.toml, "none" saca un mapeo por defecto.
+UNMAP = "none"
 
 DEFAULT_KEYMAP = {
     pygame.K_UP: UP,
@@ -41,7 +50,7 @@ DEFAULT_KEYMAP = {
     pygame.K_F10: MENU,
 }
 
-# Mapeo típico de encoders/gamepads de arcade (ajustable por usuario).
+# Mapeo típico de encoders/gamepads de arcade (se ajusta con [buttons] en rocola.toml).
 DEFAULT_BUTTONMAP = {
     0: SELECT,
     1: BACK,
@@ -54,10 +63,49 @@ DEFAULT_BUTTONMAP = {
 }
 
 
+def _warn(msg: str) -> None:
+    print(f"rocola: {msg}", file=sys.stderr)
+
+
+def _apply(mapping: dict[int, str], code: int, action: str, where: str) -> None:
+    if action == UNMAP:
+        mapping.pop(code, None)
+    elif action in ACTIONS:
+        mapping[code] = action
+    else:
+        _warn(f"acción desconocida {action!r} en {where}; se ignora")
+
+
+def build_keymap(overrides: Mapping[str, str] | None = None) -> dict[int, str]:
+    """DEFAULT_KEYMAP más la tabla [keys] de rocola.toml.
+
+    Las claves son nombres de tecla de SDL ("f10", "a", "return", "space"); "none" saca
+    la tecla. Una tecla o acción desconocida se ignora: la config nunca tumba la app.
+    Llamar después de pygame.init().
+    """
+    keymap = dict(DEFAULT_KEYMAP)
+    for name, action in (overrides or {}).items():
+        try:
+            code = pygame.key.key_code(name)
+        except (ValueError, pygame.error):
+            _warn(f"tecla desconocida {name!r} en [keys]; se ignora")
+            continue
+        _apply(keymap, code, action, f"[keys] {name}")
+    return keymap
+
+
+def build_buttonmap(overrides: Mapping[int, str] | None = None) -> dict[int, str]:
+    """DEFAULT_BUTTONMAP más la tabla [buttons] de rocola.toml (índice de botón -> acción)."""
+    buttonmap = dict(DEFAULT_BUTTONMAP)
+    for button, action in (overrides or {}).items():
+        _apply(buttonmap, button, action, f"[buttons] {button}")
+    return buttonmap
+
+
 class InputManager:
     def __init__(self, keymap=None, buttonmap=None, deadzone: float = 0.5):
-        self.keymap = keymap or dict(DEFAULT_KEYMAP)
-        self.buttonmap = buttonmap or dict(DEFAULT_BUTTONMAP)
+        self.keymap = dict(DEFAULT_KEYMAP) if keymap is None else dict(keymap)
+        self.buttonmap = dict(DEFAULT_BUTTONMAP) if buttonmap is None else dict(buttonmap)
         self.deadzone = deadzone
         self.joysticks: list = []
         self._axis_state: dict = {}

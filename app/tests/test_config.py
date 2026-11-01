@@ -111,3 +111,22 @@ def test_env_wins_over_file(clean_env, tmp_path):
     write_toml(clean_env, tmp_path, "mpd_port = 6610\n")
     clean_env.setenv("ROCOLA_MPD_PORT", "6620")
     assert Config.load().mpd_port == 6620
+
+
+def test_toml_control_maps(clean_env, tmp_path):
+    write_toml(
+        clean_env,
+        tmp_path,
+        '[keys]\nF10 = "none"\nm = " Menu "\nbad = 3\n\n'
+        '[buttons]\n8 = "menu"\n"9" = "back"\nx = "up"\n-1 = "up"\n',
+    )
+    cfg = Config.load()
+    assert cfg.keys == {"F10": "none", "m": "menu"}
+    assert cfg.buttons == {8: "menu", 9: "back"}
+
+
+def test_toml_control_maps_wrong_type(clean_env, tmp_path):
+    write_toml(clean_env, tmp_path, 'keys = "f10"\nbuttons = [1, 2]\n')
+    cfg = Config.load()
+    assert cfg.keys == {}
+    assert cfg.buttons == {}

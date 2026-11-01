@@ -106,8 +106,8 @@ Detalle: [docs/05-display-crt-15khz.md](docs/05-display-crt-15khz.md).
 
 - Los encoders USB típicos (iPAC/Xin-Mo/zero-delay) se presentan como **teclado** y/o **joystick**.
 - La app usa **SDL2** para leer ambos y **autodetecta** el dispositivo presente.
-- Mapeo de acciones (arriba/abajo, seleccionar, atrás, volumen, etc.) fijo en `app/rocola/input.py`;
-  todavía no se lee de la configuración.
+- Mapeo de acciones (arriba/abajo, seleccionar, atrás, volumen, etc.) con defaults en
+  `app/rocola/input.py`, ajustables con `[keys]` y `[buttons]` en `rocola.toml`.
 
 Detalle: [docs/06-arcade-controls.md](docs/06-arcade-controls.md).
 

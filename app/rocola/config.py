@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 
 try:  # Python 3.11+
@@ -43,6 +43,29 @@ def _parse_int(value: object, default: int) -> int:
         return default
 
 
+def _parse_map(value: object, *, int_keys: bool) -> dict:
+    """The [keys] / [buttons] tables of rocola.toml: {key name or button index: action}.
+
+    Entries that are not strings (or, for buttons, not a non-negative index) are dropped
+    here; unknown key names and actions are dropped later by the input layer.
+    """
+    if not isinstance(value, dict):
+        return {}
+    out: dict = {}
+    for key, action in value.items():
+        if not isinstance(action, str):
+            continue
+        if int_keys:
+            try:
+                key = int(key)
+            except (TypeError, ValueError):
+                continue
+            if key < 0:
+                continue
+        out[key] = action.strip().lower()
+    return out
+
+
 def _coerce(name: str, value: object, current: object) -> object:
     """Coerce a value from rocola.toml to the field's type, keeping the current one if invalid.
 
@@ -51,6 +74,8 @@ def _coerce(name: str, value: object, current: object) -> object:
     """
     if name == "resolution":
         return _parse_res(value)
+    if name in ("keys", "buttons"):
+        return _parse_map(value, int_keys=name == "buttons")
     if isinstance(current, bool):
         return value if isinstance(value, bool) else current
     if isinstance(current, int):
@@ -71,8 +96,10 @@ class Config:
     fps: int = 30
     music_dir: str = "/music"
 
-    # Combo de teclas para abrir el instalador (ver input.py / docs 06).
-    installer_hotkey: str = "F10"
+    # Mapeos de controles que se suman a los de input.py (tablas [keys] y [buttons] de
+    # rocola.toml; ver docs 06): nombre de tecla SDL o índice de botón -> acción.
+    keys: dict[str, str] = field(default_factory=dict)
+    buttons: dict[int, str] = field(default_factory=dict)
 
     # Modo captura (dev/CI): si ROCOLA_SCREENSHOT apunta a un archivo, la app
     # renderiza unos frames, guarda un PNG y sale. Sirve para previews del
