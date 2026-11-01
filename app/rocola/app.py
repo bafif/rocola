@@ -50,6 +50,9 @@ class RocolaApp:
 
         self.theme = Theme.load(self.config.theme_dir)
         self.header_h = max(40, self.screen.get_height() // 10)
+        # Los nombres de tecla de rocola.toml se resuelven con SDL: después de pygame.init().
+        self.input.keymap = rin.build_keymap(self.config.keys)
+        self.input.buttonmap = rin.build_buttonmap(self.config.buttons)
         self.input.init_joysticks()
         # En runtime NO bloqueamos esperando a MPD: la UI tiene que dibujar de
         # inmediato (si no, el arranque queda en NEGRO hasta que MPD responde, ~30s

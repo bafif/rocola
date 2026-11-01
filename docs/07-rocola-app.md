@@ -76,6 +76,7 @@ configuración.
 | `resolution` (`"640x480"` o `[640, 480]`) | `ROCOLA_RES` | resolución nativa |
 | `windowed` | `ROCOLA_WINDOWED=1` | `false` |
 | `fps` | — | `30` |
+| `[keys]`, `[buttons]` (mapeos de controles, ver [06](06-arcade-controls.md)) | — | los de `input.py` |
 
 `ROCOLA_SCREENSHOT=/ruta.png` (y `ROCOLA_SCREENSHOT_SCENE=library|nowplaying|menu|audio|info|btpair`)
 dibuja una escena, guarda el PNG y sale: así se generan las capturas `docs/screenshots/ui-*.png`.

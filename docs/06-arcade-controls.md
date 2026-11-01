@@ -41,14 +41,31 @@ manda cada botón del encoder.
 Los ejes analógicos tienen zona muerta de 0,5 y disparan una sola acción por cada movimiento
 (mantener el stick apretado no repite).
 
-Los mapeos están en `app/rocola/input.py` (`DEFAULT_KEYMAP` y `DEFAULT_BUTTONMAP`). Cambiarlos hoy
-requiere editar ese archivo y reconstruir la imagen: todavía no se leen de `rocola.toml`.
+Los mapeos por defecto están en `app/rocola/input.py` (`DEFAULT_KEYMAP` y `DEFAULT_BUTTONMAP`). Se
+cambian sin tocar código con las tablas `[keys]` y `[buttons]` de `/etc/rocola/rocola.toml`, que se
+suman a los de por defecto:
+
+```toml
+[keys]          # nombre de tecla de SDL -> acción
+m = "menu"
+f10 = "none"    # "none" saca un mapeo por defecto
+
+[buttons]       # índice de botón del joystick -> acción
+8 = "menu"
+3 = "none"
+```
+
+Acciones: `up`, `down`, `left`, `right`, `select`, `back`, `playpause`, `next`, `prev`, `volup`,
+`voldown` y `menu`. Una tecla o una acción desconocida se ignora: la configuración nunca impide que
+la app arranque. En el modo en vivo `/etc` vive en RAM; para que el archivo viaje en la imagen va en
+`os/rootfs-overlay/etc/rocola/rocola.toml` antes de `make rootfs`. En el sistema instalado se edita
+directamente.
 
 ## Calibración
 
 La app lee el joystick por **índice de botón** (la API de joystick de SDL, no la de GameController),
 así que un mapping de SDL_GameControllerDB no cambia nada. Para un encoder con otra numeración hay
-que ajustar `DEFAULT_BUTTONMAP`. Para ver qué índice manda cada botón, conectá el encoder a otra PC
+que ajustar `[buttons]`. Para ver qué índice manda cada botón, conectá el encoder a otra PC
 con Linux y usá `jstest /dev/input/js0` (paquete `joystick`) o `evtest`: la imagen no los trae. Una
 pantalla de test de input dentro de la app no existe todavía.
 
