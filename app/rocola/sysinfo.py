@@ -4,6 +4,7 @@ Junta datos de varias fuentes (PipeWire/pactl, /proc, la config de Xorg, pygame)
 devuelve como una lista de (etiqueta, valor) lista para dibujar. Todo best-effort: si
 una fuente falla, esa línea muestra '—' en vez de romper la pantalla.
 """
+
 from __future__ import annotations
 
 import os

@@ -4,6 +4,7 @@ Render simple (pensado para 320x240 / 640x480 en CRT y resoluciones mayores en
 VGA/moderno). Cada escena maneja acciones (ver input.py) y se dibuja sobre la
 superficie principal.
 """
+
 from __future__ import annotations
 
 import threading
@@ -18,14 +19,11 @@ class Scene:
         self.app = app
         self.theme = app.theme
 
-    def on_enter(self) -> None:
-        ...
+    def on_enter(self) -> None: ...
 
-    def handle(self, action: str) -> None:
-        ...
+    def handle(self, action: str) -> None: ...
 
-    def draw(self, surface) -> None:
-        ...
+    def draw(self, surface) -> None: ...
 
 
 def _fmt_song(meta: dict) -> str:
@@ -303,8 +301,11 @@ class AudioScene(Scene):
         rows = max(1, (h - top_y - 2 * line_h) // line_h)  # reservar 1 línea para el hint
 
         if not self.available:
-            msg = body.render("PipeWire no responde todavía. Reintentá en unos segundos.",
-                              True, self.theme.color("accent"))
+            msg = body.render(
+                "PipeWire no responde todavía. Reintentá en unos segundos.",
+                True,
+                self.theme.color("accent"),
+            )
             surface.blit(msg, (16, top_y))
             return
 
@@ -331,8 +332,9 @@ class AudioScene(Scene):
             surface.blit(body.render(text, True, color), (16, y))
 
         hint = self.theme.font("body", max(13, h // 26))
-        himg = hint.render("Enter: elegir salida y probar tono   -   Esc: volver",
-                           True, self.theme.color("muted"))
+        himg = hint.render(
+            "Enter: elegir salida y probar tono   -   Esc: volver", True, self.theme.color("muted")
+        )
         surface.blit(himg, (16, h - himg.get_height() - 6))
 
 
@@ -389,9 +391,9 @@ class BtPairScene(Scene):
         self.scan_proc = None
         self.scan_start = 0.0
         self.last_poll = 0.0
-        self.pending = ("", "")     # (mac, nombre) a emparejar
-        self.pair_thread = None     # emparejado en background (no congela el loop)
-        self.pair_result = None     # resultado de bt.pair_connect (lo setea el thread)
+        self.pending = ("", "")  # (mac, nombre) a emparejar
+        self.pair_thread = None  # emparejado en background (no congela el loop)
+        self.pair_result = None  # resultado de bt.pair_connect (lo setea el thread)
         self.pair_start = 0.0
         self.result_msg = ""
 
@@ -479,17 +481,24 @@ class BtPairScene(Scene):
                 ok = self.pair_result
                 self.result_msg = (
                     f"Conectado: {self.pending[1]}\n\nElegilo como salida (Enter para volver)."
-                    if ok else
-                    f"No se pudo conectar a {self.pending[1]}.\n\nReintentá (Enter para volver)."
+                    if ok
+                    else f"No se pudo conectar a {self.pending[1]}.\n\n"
+                    "Reintentá (Enter para volver)."
                 )
                 self.state = "done"
                 self.pair_thread = None
         elif self.state == "empty":
-            self._draw_message(surface, "No se encontraron dispositivos.\n\nPoné el parlante en"
-                               " modo emparejamiento y reintentá (Enter para volver).")
+            self._draw_message(
+                surface,
+                "No se encontraron dispositivos.\n\nPoné el parlante en"
+                " modo emparejamiento y reintentá (Enter para volver).",
+            )
         elif self.state == "noadapter":
-            self._draw_message(surface, "No hay adaptador Bluetooth.\n\nMuchas PCs no traen BT:"
-                               " conectá un dongle USB (Enter para volver).")
+            self._draw_message(
+                surface,
+                "No hay adaptador Bluetooth.\n\nMuchas PCs no traen BT:"
+                " conectá un dongle USB (Enter para volver).",
+            )
         elif self.state == "done":
             self._draw_message(surface, self.result_msg)
 

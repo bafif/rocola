@@ -1,4 +1,5 @@
 """Punto de entrada: python3 -m rocola"""
+
 from __future__ import annotations
 
 import sys

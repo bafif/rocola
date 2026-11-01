@@ -3,6 +3,7 @@
 Autodetecta joysticks y deja el teclado siempre activo, así funciona con
 encoders de arcade en modo teclado o en modo joystick sin configurar nada.
 """
+
 from __future__ import annotations
 
 import sys

@@ -1,4 +1,5 @@
 """RocolaApp — orquestador: inicializa SDL, conecta MPD y corre el loop principal."""
+
 from __future__ import annotations
 
 import os
