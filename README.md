@@ -10,9 +10,13 @@ a guided installer **clones** the system to the internal disk, so the machine be
 jukebox that **starts on power-on**, is driven with **arcade controls**, and works on **modern
 monitors and CRTs**, including 15 kHz arcade/TV screens.
 
-| Now playing | Menu |
+| Library | Now playing |
 |---|---|
-| ![Now playing screen](docs/screenshots/ui-nowplaying.png) | ![Menu screen](docs/screenshots/ui-menu.png) |
+| ![Library by artist](docs/screenshots/ui-library.png) | ![Now playing screen with the album cover](docs/screenshots/ui-nowplaying.png) |
+| **Menu** | **Controls test** |
+| ![Menu screen](docs/screenshots/ui-menu.png) | ![Controls test screen](docs/screenshots/ui-inputtest.png) |
+
+The screenshots use an invented demo library.
 
 ## Features
 
