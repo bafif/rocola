@@ -68,7 +68,8 @@ can be written with any of the tools above.
 1. Plug the stick into the old PC and boot from it (change the boot order if needed).
 2. The live jukebox starts: music can play right away.
 3. To install it: open the menu (**F10** or arcade button 3), choose **Instalar en disco**, pick the
-   target disk, confirm, pick the monitor type (modern/VGA or 15 kHz) and reboot.
+   target disk (**14 GB or more**: 12 GB for the system, the rest for music), confirm, pick the
+   monitor type (modern/VGA or 15 kHz) and reboot.
 4. Remove the stick: from now on the PC boots straight into the jukebox.
 
 Default controls (keyboard / arcade):
