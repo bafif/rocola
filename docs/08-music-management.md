@@ -58,6 +58,11 @@ instalado queda en la partición de música.
       cover.jpg
 ```
 
+La portada de un álbum es el `cover.jpg` (o `.png`/`.webp`) de su carpeta, o la imagen embebida
+en los archivos. MPD solo encuentra `cover.*` escrito así; el import desde USB le agrega un
+`cover.<ext>` (enlace duro, sin ocupar lugar) a cada carpeta que trae solo `Folder.jpg`,
+`COVER.JPG` o parecidos.
+
 No es obligatorio: MPD indexa cualquier carpeta. La UI agrupa por los **tags** (artista, álbum,
 número de pista), no por las carpetas; un tema sin tags aparece con el nombre del archivo, en
 «(sin artista)». Ver [07](07-rocola-app.md).
