@@ -1,6 +1,7 @@
 # app/ — UI de la rocola
 
-Interfaz a pantalla completa hecha con **pygame-ce (SDL2)** que controla **MPD**.
+Interfaz a pantalla completa hecha con **pygame (SDL2)** que controla **MPD**. En la imagen corre el
+`python3-pygame` de Debian bookworm (2.1.2); el desarrollo y la CI usan pygame-ce, con la misma API.
 
 ## Estructura
 
@@ -8,9 +9,10 @@ Interfaz a pantalla completa hecha con **pygame-ce (SDL2)** que controla **MPD**
 rocola/
   __main__.py   arranque (python3 -m rocola)
   app.py        loop principal, manejo de escenas
-  mpdclient.py  cliente MPD por socket (sin deps externas)
+  mpdclient.py  cliente MPD por socket (sin deps externas; también portadas)
   input.py      teclado + joystick → acciones
   ui.py         escenas: biblioteca, now-playing, menú
+  library.py    vistas de la biblioteca por artista y álbum (sin pygame)
   theme.py      branding (logo, colores, fuentes) desde assets/
   config.py     ajustes (host MPD, resolución, tema…)
   audio.py      salidas de PipeWire (pactl)
