@@ -28,7 +28,8 @@ los de 15 kHz de arcade/TV**, sin configuración posterior.
 - **Tu música, fácil**: biblioteca **precargada** en la imagen **+** import desde un **segundo USB**
   a una **partición de datos persistente** que sobrevive reinstalaciones.
 - **Open source**: 100% software libre, licencia MIT.
-- **Probado**: tests de la app (`make app-test`) y CI con ruff y shellcheck.
+- **Probado**: tests de la app (`make app-test`) y del import de música (`make os-test`), y CI con
+  ruff y shellcheck.
 
 ---
 

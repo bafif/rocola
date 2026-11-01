@@ -7,6 +7,7 @@
 #   make app-run    # corre la UI de la rocola localmente (dev)
 #   make app-test   # tests de la app (pytest, con uv)
 #   make app-lint   # lint de la app (ruff, con uv)
+#   make os-test    # tests de los scripts del SO (sin root)
 #   make clean      # borra artefactos de build
 
 SHELL := /bin/bash
@@ -83,6 +84,10 @@ app-test: ## Corre los tests de la app (pytest, sin display ni audio)
 .PHONY: app-lint
 app-lint: ## Lint y formato de la app (ruff)
 	cd app && uv run ruff check . && uv run ruff format --check .
+
+.PHONY: os-test
+os-test: ## Tests de los scripts del SO que corren sin root (import de música)
+	bash os/tests/music-import.sh
 
 .PHONY: clean
 clean: ## Borra artefactos de build

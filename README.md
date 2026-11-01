@@ -128,6 +128,7 @@ The app lives in [`app/`](app/) and uses [uv](https://docs.astral.sh/uv/) with P
 ```bash
 make app-deps   # uv sync: pygame-ce, pytest, ruff
 make app-test   # tests, headless (SDL dummy driver and a fake MPD server)
+make os-test    # tests of the OS scripts that run without root (music import)
 make app-lint   # ruff
 make app-run    # the UI in a window; needs a local MPD on 127.0.0.1:6600
 ```

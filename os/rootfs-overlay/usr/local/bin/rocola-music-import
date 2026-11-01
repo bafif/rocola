@@ -5,8 +5,9 @@
 # Luego dispara un re-scan de MPD.
 set -euo pipefail
 
-DEST="/music"
-PRELOAD="/opt/rocola/music"
+# Las variables existen para los tests (os/tests/music-import.sh); en la imagen no se usan.
+DEST="${ROCOLA_MUSIC_DIR:-/music}"
+PRELOAD="${ROCOLA_PRELOAD_DIR:-/opt/rocola/music}"
 mkdir -p "$DEST"
 
 log() { echo "[rocola-music-import] $*"; }
