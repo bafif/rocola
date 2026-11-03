@@ -12,19 +12,26 @@
 # Login interactivo normal (otra tty, o SSH): cargar la config de bash habitual.
 [ -f ~/.bashrc ] && . ~/.bashrc
 
-if [ "$(tty)" = "/dev/tty1" ] && [ -z "${DISPLAY:-}" ] && ! grep -qw rocola.noui /proc/cmdline; then
-    # El home de 'rocola' vive en overlayfs (el live corre en RAM): el lock que toma
-    # xauth sobre ~/.Xauthority (link-based) NO funciona en overlayfs y falla con
-    # "timeout in locking authority file" tras ~20 s. Sin cookie, el cliente X recibe
-    # "Authorization required" y la app nunca abre el display -> pantalla negra eterna
-    # (y el ciclo login->startx-lento puede pegar el rate-limit del getty). Apuntamos
-    # la cookie a tmpfs (/run/user/$UID, lo crea pam_systemd), donde el file-locking
-    # funciona. Verificado por SSH en hardware (overlayfs + boot por Ventoy). Ver docs/03.
-    export XAUTHORITY="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/Xauthority"
+# Cookie X en tmpfs — FUERA del bloque de autostart, a propósito: el home de 'rocola'
+# vive en overlayfs (el live corre en RAM) y el lock link-based de xauth sobre
+# ~/.Xauthority NO funciona en overlayfs -> falla con "timeout in locking authority
+# file" tras ~20 s -> X sin cookie -> "Authorization required, but no authorization
+# protocol specified" -> pantalla negra. /run/user/$UID es tmpfs (lo crea pam_systemd),
+# donde el file-locking funciona. Al estar acá (y no dentro del if) cubre TODO startx:
+# el del autologin Y uno tipeado a mano en consola. Verificado por SSH. Ver docs/03.
+export XAUTHORITY="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/Xauthority"
 
-    # NO pasar 'vt1' explícito: startx ya detecta la vt del login (tty1) y, como la
-    # sesión del autologin queda activa en seat0, logind le entrega input+DRM. Forzar
-    # 'vt1' provocaba "xf86OpenConsole: Switching VT failed". Sin él, X usa la vt
-    # actual y todo queda en la misma sesión activa.
-    exec startx /usr/local/bin/rocola-session -- -nolisten tcp
-fi
+# Autostart de la UI. Aceptamos tty1 O console: 'console-getty' (el getty de /dev/console
+# que systemd-getty-generator activa aunque la consola sea una VT normal) puede ganarle
+# la consola física a getty@tty1 y dejar el login en /dev/console, donde $(tty) != tty1
+# -> no arrancaba startx. Lo enmascaramos en el build (os/Dockerfile), pero esto lo cubre igual.
+case "$(tty)" in
+    /dev/tty1|/dev/console)
+        if [ -z "${DISPLAY:-}" ] && ! grep -qw rocola.noui /proc/cmdline; then
+            # NO pasar 'vt1' explícito: startx ya detecta la vt del login y, como la
+            # sesión del autologin queda activa en seat0, logind le entrega input+DRM.
+            # Forzar 'vt1' provocaba "xf86OpenConsole: Switching VT failed".
+            exec startx /usr/local/bin/rocola-session -- -nolisten tcp
+        fi
+        ;;
+esac
