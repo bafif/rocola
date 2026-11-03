@@ -94,6 +94,17 @@ RUN set -eux; \
         ln -sf "$src" "/etc/systemd/system/multi-user.target.wants/$unit"; \
     done
 
+# --- Consola: SOLO getty@tty1 con autologin, sin console-getty compitiendo ----
+# systemd-getty-generator activa 'console-getty.service' (agetty SIN --autologin sobre
+# /dev/console; su ConditionPathExists=/dev/console siempre se cumple) aunque la consola
+# sea una VT normal (tty0). Eso le pelea la consola física a getty@tty1 (autologin): es
+# una CARRERA, y cuando gana console-getty el arranque cae a un login MANUAL en
+# /dev/console -> sin autologin y, como $(tty)!=tty1, sin startx -> no arranca la UI.
+# Lo enmascaramos: el symlink en /etc gana sobre el que el generator pone en /run, así
+# getty@tty1 queda como único getty de la consola. (No usamos consola serial; si en el
+# futuro hiciera falta, habilitar serial-getty@ttySX explícitamente.) Verificado por SSH.
+RUN ln -sf /dev/null /etc/systemd/system/console-getty.service
+
 # --- Audio: MPD fuera del sistema, PipeWire por-usuario -------------------
 # MPD ya NO es servicio del sistema: lo lanza la sesión de 'rocola' (rocola-session)
 # para compartir el PipeWire de la sesión gráfica. Enmascaramos service+socket para
