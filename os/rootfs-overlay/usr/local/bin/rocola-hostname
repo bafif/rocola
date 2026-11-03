@@ -2,9 +2,9 @@
 # Fija hostname + /etc/hosts en runtime (al arrancar).
 #
 # Por qué un servicio y no archivos en el overlay: el build saca el rootfs con
-# `docker export`, y Docker maneja /etc/hostname, /etc/hosts y /etc/resolv.conf
-# como bind-mounts → el export los reemplaza por versiones vacías/propias y
-# no conserva lo que pongamos vía COPY. Resultado: hostname vacío → "localhost"
+# `podman export`, y el motor de contenedores maneja /etc/hostname, /etc/hosts y
+# /etc/resolv.conf por su cuenta (los monta en cada contenedor) → lo que pongamos
+# vía COPY no se puede dar por bueno en el rootfs exportado. Resultado: hostname vacío → "localhost"
 # que no resuelve → `startx` genera mal la cookie de xauth → Xorg tira
 # "Authorization required, but no protocol specified", crashea y el autologin
 # loopea hasta que (con suerte) algún reintento pega. Seteándolo acá, en runtime,

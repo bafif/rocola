@@ -10,7 +10,7 @@ Un **pendrive booteable** que convierte una PC de escritorio vieja en una **roco
 | Restricción | Decisión |
 |-------------|----------|
 | Hardware viejo (~2 GB RAM, 32-bit) | Debian **i386**, kernel `686-pae` (fallback `686` no-PAE) |
-| Base del SO | **Docker `FROM i386/debian:bookworm`** (bookworm aún publica kernel/booteable i386; trixie lo discontinuó) |
+| Base del SO | **Imagen de contenedor `FROM i386/debian:bookworm`** (Podman; bookworm aún publica kernel/booteable i386; trixie lo discontinuó) |
 | Arranque | **BIOS** (PCs 32 y 64-bit) **+ UEFI x64** (`grub-efi-amd64` carga kernel i386) |
 | Monitores | **VGA 31 kHz + arcade/TV 15 kHz** vía `switchres` + modelines |
 | Controles | Encoder USB **teclado y/o joystick**, autodetectado (SDL) |
@@ -18,20 +18,20 @@ Un **pendrive booteable** que convierte una PC de escritorio vieja en una **roco
 | Instalación | **Live en el pendrive + disparo manual → instalador guiado** (nunca auto-formatea) |
 | Música | **Precargada** + **import desde 2º USB** a partición de datos persistente |
 
-## 2. Pipeline de build (Docker → pendrive)
+## 2. Pipeline de build (contenedor → pendrive)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ os/Dockerfile  (FROM i386/debian:bookworm)                             │
+│ os/Containerfile  (FROM i386/debian:bookworm)                          │
 │   · paquetes mínimos (Xorg, MPD, SDL2/pygame-ce, switchres, GRUB…)     │
 │   · rootfs-overlay/  (systemd units, autologin, mpd.conf, xorg, app)   │
 └───────────────┬──────────────────────────────────────────────────────┘
-                │  docker build  →  docker export
+                │  podman build  →  podman export
                 ▼
         out/rootfs.tar
                 │
-                │  image/Dockerfile.builder (mksquashfs + xorriso + grub-mkrescue)
-                ▼  build-image.sh   (docker run NORMAL, sin privilegios)
+                │  image/Containerfile.builder (mksquashfs + xorriso + grub-mkrescue)
+                ▼  build-image.sh   (contenedor NORMAL, sin privilegios; entra y sale con podman cp)
         out/rocola-i386.img  (ISO híbrida / isohybrid)
           · El Torito BIOS (core GRUB i386-pc) + UEFI x64 (BOOTX64.EFI)
           · /live/{vmlinuz,initrd.img,filesystem.squashfs}  (live-boot, overlay en RAM)
@@ -41,14 +41,15 @@ Un **pendrive booteable** que convierte una PC de escritorio vieja en una **roco
 ```
 
 Las dos decisiones que más pesan:
-- **El SO es una imagen Docker.** Todo el userland, la configuración y la app están en `os/`. El
-  kernel, `live-boot` y GRUB se instalan dentro de esa misma imagen para que el rootfs exportado
+- **El SO es una imagen de contenedor.** Todo el userland, la configuración y la app están en `os/`.
+  El kernel, `live-boot` y GRUB se instalan dentro de esa misma imagen para que el rootfs exportado
   alcance por sí solo.
-- **El empaquetado a `.img`** (`mksquashfs` y `grub-mkrescue`) corre en un contenedor aparte con un
-  `docker run` común: `grub-mkrescue` arma la ISO híbrida en espacio de usuario (xorriso y mtools),
-  sin loop devices ni privilegios. Por eso el build anda en WSL2 y en el CI, y en el host no hace
-  falta nada más que Docker. La instalación a disco (particionar, `grub-install`) la hace el
-  instalador en el sistema ya arrancado, donde sí hay un `/dev/sdX` real.
+- **El empaquetado a `.img`** (`mksquashfs` y `grub-mkrescue`) corre en un contenedor aparte, común y
+  sin root: `grub-mkrescue` arma la ISO híbrida en espacio de usuario (xorriso y mtools), sin loop
+  devices ni privilegios. El contenedor no monta el repo: el rootfs entra y la imagen sale con
+  `podman cp`. Por eso el build anda en WSL2 y en el CI, y en el host no hace falta nada más que
+  Podman. La instalación a disco (particionar, `grub-install`) la hace el instalador en el sistema ya
+  arrancado, donde sí hay un `/dev/sdX` real.
 
 Detalle: [docs/02-build-pipeline.md](docs/02-build-pipeline.md).
 

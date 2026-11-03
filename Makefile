@@ -1,6 +1,6 @@
 # Rocola — orquestación del build
 # Uso rápido:
-#   make rootfs     # construye la imagen Docker del SO (FROM i386/debian:bookworm)
+#   make rootfs     # construye la imagen de contenedor del SO (Podman, FROM i386/debian:bookworm)
 #   make image      # rootfs -> out/rocola-i386.img (booteable BIOS + UEFI x64)
 #   make release VERSION=vX.Y.Z   # empaqueta el .iso + checksum para subir a un Release
 #   make flash DEV=/dev/sdX   # escribe la imagen al pendrive (¡destructivo!)
@@ -30,30 +30,34 @@ $(OUT):
 	mkdir -p $(OUT)
 
 .PHONY: rootfs
-rootfs: ## Construye la imagen Docker del SO de la rocola
-	docker build --platform linux/386 -t $(OS_IMAGE) -f os/Dockerfile .
+rootfs: ## Construye la imagen de contenedor del SO de la rocola (Podman)
+	podman build --platform linux/386 -t $(OS_IMAGE) -f os/Containerfile .
 
 # Asegura que la imagen del SO exista, SIN forzar un rebuild en cada `make image`.
-# (Si `export`/`image` dependieran del target `rootfs`, se reconstruiría el docker
-#  build cada vez. Con esto sólo se construye si falta; para forzar: `make rootfs`.)
+# (Si `export`/`image` dependieran del target `rootfs`, se reconstruiría la imagen
+#  cada vez. Con esto sólo se construye si falta; para forzar: `make rootfs`.)
 .PHONY: ensure-os
 ensure-os: | $(OUT)
-	@if [ -z "$$(docker images -q $(OS_IMAGE))" ]; then \
+	@if ! podman image exists $(OS_IMAGE); then \
 		echo "Imagen $(OS_IMAGE) no existe; construyendo…"; $(MAKE) rootfs; \
 	else echo "Usando $(OS_IMAGE) existente (usá 'make rootfs' para reconstruir)"; fi
 
 .PHONY: export
-export: ensure-os ## Exporta el rootfs de la imagen Docker a un tar
-	cid=$$(docker create --platform linux/386 $(OS_IMAGE)); \
-	docker export $$cid -o $(ROOTFS_TAR); \
-	docker rm $$cid
+export: ensure-os ## Exporta el rootfs de la imagen del SO a un tar
+	cid=$$(podman create --platform linux/386 $(OS_IMAGE)); \
+	podman export $$cid -o $(ROOTFS_TAR); \
+	podman rm $$cid
 
+# El builder no monta nada del repo: el rootfs entra con `podman cp` y la imagen sale igual, así ningún
+# contenedor escribe en el repo.
 .PHONY: image
 image: export ## Arma la imagen booteable rocola-i386.img (híbrida BIOS+UEFI)
-	docker build -t rocola-builder -f image/Dockerfile.builder image/
-	docker run --rm \
-		-v "$(CURDIR)/$(OUT)":/out \
-		rocola-builder /usr/local/bin/build-image.sh /out/rootfs.tar /out/rocola-$(ARCH).img
+	podman build -t rocola-builder -f image/Containerfile.builder image/
+	cid=$$(podman create rocola-builder /usr/local/bin/build-image.sh /work/rootfs.tar /work/rocola-$(ARCH).img); \
+	trap 'podman rm -f $$cid >/dev/null' EXIT; \
+	podman cp $(ROOTFS_TAR) $$cid:/work/rootfs.tar && \
+	podman start -a $$cid && \
+	podman cp $$cid:/work/rocola-$(ARCH).img $(OUT)/rocola-$(ARCH).img
 
 .PHONY: release
 release: ## Empaqueta el .iso + checksum para subir a un Release: make release VERSION=vX.Y.Z
@@ -92,4 +96,4 @@ os-test: ## Tests de los scripts del SO que corren sin root (import de música)
 .PHONY: clean
 clean: ## Borra artefactos de build
 	rm -rf $(OUT)
-	-docker image rm $(OS_IMAGE) rocola-builder 2>/dev/null || true
+	-podman image rm $(OS_IMAGE) rocola-builder 2>/dev/null || true

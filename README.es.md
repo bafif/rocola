@@ -100,13 +100,14 @@ Hay más en [docs/06-arcade-controls.md](docs/06-arcade-controls.md).
 
 ## Compilar desde el código
 
-Hace falta **Docker** y `make`. Todo lo demás corre dentro de contenedores: no se necesita
-`debootstrap`, ni loop devices, ni `--privileged`, así que también anda en WSL2 y en el CI. En un
-host x86-64, Docker corre los contenedores i386 de forma nativa; en otros hosts hay que registrar
-binfmt una vez (ver [docs/02-build-pipeline.md](docs/02-build-pipeline.md)).
+Hace falta **Podman** (alcanza sin root) y `make`. Todo lo demás corre dentro de contenedores: no
+se necesita `debootstrap`, ni loop devices, ni `--privileged`, así que también anda en WSL2 y en el
+CI, y ningún contenedor monta el repo: el rootfs y la imagen entran y salen con `podman cp`. En un
+host x86-64, los contenedores i386 corren de forma nativa; en otros hosts hay que registrar binfmt
+una vez (ver [docs/02-build-pipeline.md](docs/02-build-pipeline.md)).
 
 ```bash
-make rootfs                        # arma el SO como imagen Docker (FROM i386/debian:bookworm)
+make rootfs                        # arma el SO como imagen de contenedor (FROM i386/debian:bookworm)
 make image                         # out/rocola-i386.img: ISO híbrida, BIOS + UEFI x64
 make release VERSION=v0.1.2-beta   # out/release/rocola-i386-<versión>.iso + SHA256SUMS.txt
 make flash DEV=/dev/sdX            # DESTRUCTIVO: graba la imagen en el pendrive
@@ -141,7 +142,7 @@ sale. Referencia: [docs/07-rocola-app.md](docs/07-rocola-app.md).
 ## Cómo está organizado
 
 ```
-os/         el SO: Dockerfile (FROM i386/debian:bookworm) + archivos que se superponen a la raíz
+os/         el SO: Containerfile (FROM i386/debian:bookworm) + archivos que se superponen a la raíz
 image/      empaquetado: rootfs -> ISO híbrida booteable (squashfs + GRUB BIOS/UEFI)
 app/        la UI de la rocola (Python + pygame/SDL2), cliente MPD, entrada, temas, tests
 installer/  instalador guiado (TUI con whiptail) que clona el sistema al disco
@@ -156,7 +157,7 @@ El diseño completo está en [ARCHITECTURE.md](ARCHITECTURE.md).
 | Doc | Tema |
 |-----|------|
 | [01](docs/01-overview.md) | Visión general y objetivos |
-| [02](docs/02-build-pipeline.md) | Pipeline de build (de Docker a la imagen) |
+| [02](docs/02-build-pipeline.md) | Pipeline de build (del contenedor a la imagen) |
 | [03](docs/03-boot-and-live.md) | Arranque, sistema en vivo, autologin, autostart |
 | [04](docs/04-installer.md) | Instalador guiado y particionado |
 | [05](docs/05-display-crt-15khz.md) | Video: VGA y CRT de 15 kHz |

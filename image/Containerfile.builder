@@ -1,8 +1,9 @@
 # Builder de la imagen booteable de la rocola.
-# Consume out/rootfs.tar (exportado del SO) y produce rocola-i386.img.
+# `make image` copia out/rootfs.tar (exportado del SO) a /work con `podman cp`, y
+# saca de ahí rocola-i386.img: el contenedor no monta nada del repo.
 # Usa grub-mkrescue (xorriso + mtools): no requiere privilegios ni loop devices,
 # así funciona en WSL2/CI. Genera una ISO híbrida booteable por BIOS y UEFI x64.
-FROM debian:bookworm
+FROM docker.io/library/debian:bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -19,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY build-image.sh /usr/local/bin/build-image.sh
 RUN chmod +x /usr/local/bin/build-image.sh
+WORKDIR /work
 
 ENTRYPOINT []
 CMD ["/usr/local/bin/build-image.sh"]

@@ -24,7 +24,7 @@ export XAUTHORITY="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/Xauthority"
 # Autostart de la UI. Aceptamos tty1 O console: 'console-getty' (el getty de /dev/console
 # que systemd-getty-generator activa aunque la consola sea una VT normal) puede ganarle
 # la consola física a getty@tty1 y dejar el login en /dev/console, donde $(tty) != tty1
-# -> no arrancaba startx. Lo enmascaramos en el build (os/Dockerfile), pero esto lo cubre igual.
+# -> no arrancaba startx. Lo enmascaramos en el build (os/Containerfile), pero esto lo cubre igual.
 case "$(tty)" in
     /dev/tty1|/dev/console)
         if [ -z "${DISPLAY:-}" ] && ! grep -qw rocola.noui /proc/cmdline; then

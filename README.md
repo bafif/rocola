@@ -99,13 +99,14 @@ More in [docs/06-arcade-controls.md](docs/06-arcade-controls.md).
 
 ## Build from source
 
-Requirements: **Docker** and `make`. Everything else runs inside containers; no `debootstrap`,
-loop devices or `--privileged` are needed, so it also works in WSL2 and CI. On x86-64 hosts Docker
-runs the i386 containers natively; on other hosts, register binfmt once (see
+Requirements: **Podman** (rootless is enough) and `make`. Everything else runs inside containers;
+no `debootstrap`, loop devices or `--privileged` are needed, so it also works in WSL2 and CI, and no
+container mounts the repository: the rootfs and the image go in and out with `podman cp`. On x86-64
+hosts the i386 containers run natively; on other hosts, register binfmt once (see
 [docs/02-build-pipeline.md](docs/02-build-pipeline.md)).
 
 ```bash
-make rootfs                        # build the OS as a Docker image (FROM i386/debian:bookworm)
+make rootfs                        # build the OS as a container image (FROM i386/debian:bookworm)
 make image                         # out/rocola-i386.img: hybrid ISO, BIOS + UEFI x64
 make release VERSION=v0.1.2-beta   # out/release/rocola-i386-<version>.iso + SHA256SUMS.txt
 make flash DEV=/dev/sdX            # DESTRUCTIVE: writes the image to the stick
@@ -140,7 +141,7 @@ exits. Reference: [docs/07-rocola-app.md](docs/07-rocola-app.md).
 ## Layout
 
 ```
-os/         the OS: Dockerfile (FROM i386/debian:bookworm) + files overlaid on the root filesystem
+os/         the OS: Containerfile (FROM i386/debian:bookworm) + files overlaid on the root filesystem
 image/      packaging: rootfs -> bootable hybrid ISO (squashfs + GRUB BIOS/UEFI)
 app/        the jukebox UI (Python + pygame/SDL2), MPD client, input, themes, tests
 installer/  guided installer (whiptail TUI) that clones the system to disk
@@ -157,7 +158,7 @@ The detailed docs are in Spanish.
 | Doc | Topic |
 |-----|-------|
 | [01](docs/01-overview.md) | Overview and goals |
-| [02](docs/02-build-pipeline.md) | Build pipeline (Docker to image) |
+| [02](docs/02-build-pipeline.md) | Build pipeline (container to image) |
 | [03](docs/03-boot-and-live.md) | Boot, live system, autologin, autostart |
 | [04](docs/04-installer.md) | Guided installer and partitioning |
 | [05](docs/05-display-crt-15khz.md) | Video: VGA and 15 kHz CRT |

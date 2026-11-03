@@ -3,7 +3,7 @@
 
 # --- Firmware de hardware (non-free-firmware) ---
 # Amplio, para soportar la gama más variada de PCs. Requiere el componente
-# non-free-firmware habilitado (ver os/Dockerfile). Sin el firmware de GPU,
+# non-free-firmware habilitado (ver os/Containerfile). Sin el firmware de GPU,
 # amdgpu/i915/nouveau no inicializan KMS; sin el de audio Intel (SOF) muchas PCs
 # modernas no tienen sonido (clave en una rocola).
 firmware-linux             # metapaquete no-libre (GPU AMD/Intel/varios)
@@ -54,7 +54,7 @@ whiptail                  # TUI del instalador
 
 # --- SSH de troubleshooting (opt-in, APAGADO por defecto) ---
 # sshd se instala pero no arranca salvo que se bootee con 'rocola.ssh' (entrada
-# de GRUB "Troubleshooting"). Solo-clave, root. Ver os/Dockerfile y rocola-ssh.service.
+# de GRUB "Troubleshooting"). Solo-clave, root. Ver os/Containerfile y rocola-ssh.service.
 openssh-server
 
 # --- Servidor gráfico (mínimo) ---

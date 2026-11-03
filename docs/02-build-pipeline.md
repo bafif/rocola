@@ -1,29 +1,28 @@
 # 02 · Pipeline de build
 
-De código a pendrive en tres pasos: **SO (Docker) → rootfs → imagen booteable**.
+De código a pendrive en tres pasos: **SO (contenedor) → rootfs → imagen booteable**.
 
 ```
-os/Dockerfile ──build──► imagen Docker del SO ──export──► out/rootfs.tar
-                                                              │
-                        image/build-image.sh (sin privilegios)│
-                                                              ▼
-                                                   out/rocola-i386.img ──flash──► pendrive
+os/Containerfile ──build──► imagen del SO ──export──► out/rootfs.tar
+                                                          │
+                    image/build-image.sh (sin privilegios)│
+                                                          ▼
+                                               out/rocola-i386.img ──flash──► pendrive
 ```
 
 ## Requisitos del host
 
-- **Docker** y **make**. Nada más.
-- En CPUs **x86-64**, Docker ejecuta los contenedores `linux/386` de forma nativa (no hace falta
-  emulador). En hosts que no puedan, instalá binfmt una sola vez:
-  ```bash
-  docker run --privileged --rm tonistiigi/binfmt --install all
-  ```
-- `make image` corre con un `docker run` **normal**: no necesita `--privileged`, loop devices ni
-  `/dev` (usa `grub-mkrescue`). Por eso funciona en **WSL2** y en CI.
+- **Podman** (alcanza sin root) y **make**. Nada más.
+- En CPUs **x86-64**, los contenedores `linux/386` corren de forma nativa (no hace falta emulador).
+  En hosts que no puedan, registrá binfmt una sola vez con el `qemu-user-static` de la distribución
+  (en Arch, `qemu-user-static` y `qemu-user-static-binfmt`; en Debian y Ubuntu, `qemu-user-static`).
+- `make image` corre en un contenedor **normal**: no necesita `--privileged`, loop devices ni
+  `/dev` (usa `grub-mkrescue`). Por eso funciona en **WSL2** y en CI. Tampoco monta nada del repo:
+  el rootfs entra y la imagen sale con `podman cp`.
 
-## Paso 1 — SO como imagen Docker (`make rootfs`)
+## Paso 1 — SO como imagen de contenedor (`make rootfs`)
 
-`os/Dockerfile` parte de `i386/debian:bookworm` e instala el set mínimo (ver `os/packages.list`):
+`os/Containerfile` parte de `i386/debian:bookworm` e instala el set mínimo (ver `os/packages.list`):
 Xorg, MPD, SDL2/pygame-ce, switchres, kernel `linux-image-686-pae`, `live-boot`, GRUB, etc. Luego
 copia `os/rootfs-overlay/` (configs, systemd units, la app) sobre el rootfs.
 
@@ -32,13 +31,14 @@ copia `os/rootfs-overlay/` (configs, systemd units, la app) sobre el rootfs.
 
 ## Paso 2 — Exportar el rootfs (`make export`)
 
-`docker create` + `docker export` vuelcan el filesystem de la imagen a `out/rootfs.tar`. Como el
+`podman create` + `podman export` vuelcan el filesystem de la imagen a `out/rootfs.tar`. Como el
 kernel, `live-boot` y GRUB se instalaron en el paso 1, el rootfs es **autosuficiente**.
 
 ## Paso 3 — Armar la imagen booteable (`make image`)
 
-`image/Dockerfile.builder` trae el tooling (`mksquashfs`, `xorriso`, `mtools`, `grub-pc-bin`,
-`grub-efi-amd64-bin`). `build-image.sh`:
+`image/Containerfile.builder` trae el tooling (`mksquashfs`, `xorriso`, `mtools`, `grub-pc-bin`,
+`grub-efi-amd64-bin`). `make image` crea el contenedor, le copia `rootfs.tar` a `/work` con
+`podman cp`, lo arranca y saca `rocola-i386.img` de la misma forma. `build-image.sh`:
 
 1. Desempaqueta `rootfs.tar`.
 2. `mksquashfs` → `filesystem.squashfs` (incluye `/boot`, para que el sistema **instalado** tenga
@@ -48,7 +48,7 @@ kernel, `live-boot` y GRUB se instalaron en el paso 1, el rootfs es **autosufici
    **BIOS** (core GRUB i386-pc) **y UEFI x64** (imagen EFI + `/EFI/BOOT/BOOTX64.EFI`).
 
 Todo esto corre sin privilegios ni loop devices: `grub-mkrescue` trabaja en espacio de usuario
-(xorriso y mtools), así que `make image` usa un `docker run` común, sin `--privileged`. Es lo que
+(xorriso y mtools), así que `make image` usa un contenedor común, sin `--privileged`. Es lo que
 permite construir en WSL2 y en el CI, donde `losetup -P` no crea los nodos de las particiones. El
 `.img` que sale se graba con `dd` y arranca por BIOS y por UEFI; live-boot monta el squashfs con un
 overlay en RAM.

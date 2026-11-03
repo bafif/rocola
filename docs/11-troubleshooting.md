@@ -3,24 +3,25 @@
 ## Build
 
 **`make rootfs` falla con "exec format error" / no corre i386**
-El host no puede ejecutar binarios i386. En CPUs x86-64 Docker suele correrlos nativo; si no, instalá
-el emulador binfmt una sola vez:
+El host no puede ejecutar binarios i386. En CPUs x86-64 suelen correr nativos; si no, registrá
+binfmt una sola vez con el emulador de la distribución:
 ```bash
-docker run --privileged --rm tonistiigi/binfmt --install all
+sudo pacman -S qemu-user-static qemu-user-static-binfmt   # Arch
+sudo apt install qemu-user-static                         # Debian / Ubuntu
 ```
 
 **`make rootfs` falla con `Failed to fetch ... Unable to connect to deb.debian.org`**
-Blip de red al bajar paquetes. El Dockerfile ya reintenta (`Acquire::Retries` + reintento del
+Blip de red al bajar paquetes. El Containerfile ya reintenta (`Acquire::Retries` + reintento del
 install con `--fix-missing`); volvé a correr `make rootfs` y normalmente completa.
 
 **`make image` falla**
 El armado usa `grub-mkrescue` (xorriso + mtools), **sin privilegios ni loop devices**. Si falla,
 suele faltar `xorriso`/`mtools`/`grub-pc-bin`/`grub-efi-amd64-bin` en el builder (los trae
-`image/Dockerfile.builder`). No necesita `--privileged` ni `/dev`.
+`image/Containerfile.builder`). No necesita `--privileged` ni `/dev`.
 
 **La imagen queda enorme**
 Revisá música precargada en `os/rootfs-overlay/opt/rocola/music/` y limpiá cachés de apt en el
-Dockerfile (`rm -rf /var/lib/apt/lists/*`).
+Containerfile (`rm -rf /var/lib/apt/lists/*`).
 
 ## Arranque
 

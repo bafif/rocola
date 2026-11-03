@@ -1,4 +1,4 @@
-# The jukebox never hibernates. Without this, update-initramfs inside the Docker build
+# The jukebox never hibernates. Without this, update-initramfs inside the container build
 # picks up the BUILD HOST's swap as the resume device (the image then depends on the
 # machine that built it, and the initrd may wait for a disk that does not exist).
 RESUME=none

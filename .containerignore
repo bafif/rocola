@@ -1,4 +1,4 @@
-# Build context for os/Dockerfile is the repo root. Keep build outputs and dev
+# Build context for os/Containerfile is the repo root. Keep build outputs and dev
 # environments out of it: out/ holds the multi-GB rootfs.tar and ISO, and a
 # host .venv (x86-64 wheels) would otherwise be copied into the i386 image
 # through `COPY app/ /opt/rocola/`.

@@ -15,7 +15,7 @@ import subprocess
 from dataclasses import dataclass
 
 # audio.conf: la app persiste acá la salida elegida para que sobreviva al reboot
-# (rocola-audio-default la re-aplica al arrancar). El Dockerfile la deja escribible
+# (rocola-audio-default la re-aplica al arrancar). El Containerfile la deja escribible
 # por 'rocola'.
 AUDIO_CONF = "/etc/rocola/audio.conf"
 _TIMEOUT = 4.0

@@ -2,11 +2,11 @@
 
 Acá anoto qué construí y arranqué de punta a punta, qué problemas aparecieron en el camino y qué
 falta probar, que es sobre todo lo que depende de hardware físico. Todo lo de este documento lo
-armé y lo probé en una PC x86-64 con Docker (que corre i386 nativo) y QEMU/KVM.
+armé y lo probé en una PC x86-64 con contenedores (que corren i386 nativo) y QEMU/KVM.
 
 ## Lo que anda de punta a punta
 
-1. **Build del SO** (`make rootfs`). La imagen Docker `i386/debian:bookworm` se construye con todos
+1. **Build del SO** (`make rootfs`). La imagen del SO (`FROM i386/debian:bookworm`) se construye con todos
    los paquetes, el overlay, los symlinks de systemd y el initramfs con live-boot. La capa pesa unos
    478 MB.
 2. **Contenido del rootfs.** La arquitectura es i386, con el kernel `6.1.0-686-pae` y su initrd; el
@@ -71,8 +71,8 @@ armé y lo probé en una PC x86-64 con Docker (que corre i386 nativo) y QEMU/KVM
 ```bash
 make rootfs && make image
 file out/rocola-i386.img
-docker run --rm -v "$PWD/out":/out rocola-builder \
-  xorriso -indev /out/rocola-i386.img -report_el_torito plain      # lista BIOS y UEFI
+podman run --rm -i rocola-builder sh -c 'cat > /tmp/r.img && xorriso -indev /tmp/r.img -report_el_torito plain' \
+  < out/rocola-i386.img                                            # lista BIOS y UEFI
 # Arranque live a la UI (BIOS):
 qemu-system-i386  -enable-kvm -m 2048 -cdrom out/rocola-i386.img
 # Arranque live a la UI (UEFI x64):

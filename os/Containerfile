@@ -1,9 +1,9 @@
 # Rocola — SO base (i386, Debian bookworm)
-# Construir con:  docker build --platform linux/386 -t rocola-os -f os/Dockerfile .
+# Construir con:  podman build --platform linux/386 -t rocola-os -f os/Containerfile .
 # (requiere binfmt/qemu para linux/386 en hosts no-i386)
 #
 # bookworm a propósito: Debian 13 (trixie) discontinuó kernel/booteable i386.
-FROM i386/debian:bookworm
+FROM docker.io/i386/debian:bookworm
 
 LABEL org.opencontainers.image.title="rocola-os" \
       org.opencontainers.image.description="SO de la rocola (Debian i386) — live + instalable" \
@@ -79,7 +79,7 @@ RUN set -eux; \
 # (python3-pygame y demás vienen en packages.list; instalá extras acá si hiciera falta)
 
 # --- Habilitar servicios + target por defecto -----------------------------
-# En un build de Docker no hay systemd corriendo, así que `systemctl` puede
+# En un build de contenedor no hay systemd corriendo, así que `systemctl` puede
 # fallar. Creamos los symlinks de "enable" y "set-default" a mano: es
 # determinista y equivalente a lo que hace systemctl offline.
 RUN set -eux; \
