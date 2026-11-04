@@ -20,6 +20,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY build-image.sh /usr/local/bin/build-image.sh
 RUN chmod +x /usr/local/bin/build-image.sh
+# The folder exists in the image itself: `make image` copies the rootfs into a created, not yet started, container.
+RUN mkdir -p /work
 WORKDIR /work
 
 ENTRYPOINT []
