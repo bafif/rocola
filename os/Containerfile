@@ -47,6 +47,9 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/* /tmp/packages.list
 
 # --- Locale + zona horaria (Argentina) ------------------------------------
+# El locale es_AR solo es el punto de partida: el idioma de la rocola se elige en el
+# arranque (entrada «English» de GRUB), en el menú de la app o en el instalador, y queda
+# en /etc/rocola/language.conf (ver /usr/local/bin/rocola-lang).
 RUN sed -i 's/# es_AR.UTF-8/es_AR.UTF-8/' /etc/locale.gen \
  && locale-gen \
  && printf 'LANG=es_AR.UTF-8\n' > /etc/default/locale \
@@ -76,7 +79,7 @@ RUN set -eux; \
     install -d -o rocola -g rocola /music; \
     install -d -o rocola -g rocola /var/lib/rocola-mpd /var/lib/rocola-mpd/playlists; \
     chown rocola:rocola /home/rocola/.bash_profile; \
-    chown rocola:rocola /etc/rocola/audio.conf
+    chown rocola:rocola /etc/rocola/audio.conf /etc/rocola/language.conf
 
 # --- Dependencias Python de la app (pygame-ce vía apt) --------------------
 # (python3-pygame y demás vienen en packages.list; instalá extras acá si hiciera falta)

@@ -13,6 +13,18 @@ os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
 
 import pytest  # noqa: E402
 
+from rocola import i18n  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def spanish_by_default(monkeypatch, tmp_path):
+    """Every test starts in Spanish, with no saved language and no rocola.lang on the
+    kernel command line, whatever the locale and the files of the machine running it."""
+    monkeypatch.setenv("ROCOLA_LANG", "es")
+    monkeypatch.setattr(i18n, "LANGUAGE_CONF", tmp_path / "language.conf")
+    monkeypatch.setattr(i18n, "CMDLINE", tmp_path / "cmdline")
+    i18n.set_language("es")
+
 
 class FakeMPD:
     """Answers MPD protocol commands from a dict of canned responses.

@@ -13,8 +13,9 @@ import time
 
 import pygame
 
-from . import audio, bt, library, sysinfo
+from . import audio, bt, i18n, library, sysinfo
 from . import input as actions
+from .i18n import t
 
 
 class Scene:
@@ -30,7 +31,7 @@ class Scene:
 
 
 def _basename(path: str) -> str:
-    return path.rsplit("/", 1)[-1] if path else "(desconocido)"
+    return path.rsplit("/", 1)[-1] if path else t("library.unknown_song")
 
 
 def _fit(font, text: str, max_w: int) -> str:
@@ -78,6 +79,12 @@ class LibraryScene(Scene):
             self.error = str(exc)
             return  # keep the place: the next refresh reopens it
         self.stack = library.reopen(self.songs, self.stack)
+
+    def relabel(self) -> None:
+        """Rebuild the views from the songs already loaded (after a language switch)."""
+        if self.songs:
+            self.stack = library.reopen(self.songs, self.stack)
+        self._labels.clear()
 
     def handle(self, action: str) -> None:
         view = self.view
@@ -133,20 +140,20 @@ class LibraryScene(Scene):
         w, h = surface.get_size()
         bg = self.theme.color("background")
         surface.fill(bg)
-        self.app.draw_header(surface, "BIBLIOTECA")
+        self.app.draw_header(surface, t("header.library"))
 
         body = self.theme.font("body", max(16, h // 18))
         line_h = body.get_height() + 6
         top_y = self.app.header_h + 8
 
         if self.error:
-            msg = body.render(f"MPD: {self.error}", True, self.theme.color("accent"))
+            msg = body.render(
+                t("library.mpd_error", error=self.error), True, self.theme.color("accent")
+            )
             surface.blit(msg, (16, top_y))
             return
         if not self.songs:
-            msg = body.render(
-                "Sin música. Importá canciones (ver menú).", True, self.theme.color("muted")
-            )
+            msg = body.render(t("library.empty"), True, self.theme.color("muted"))
             surface.blit(msg, (16, top_y))
             return
 
@@ -237,7 +244,7 @@ class NowPlayingScene(Scene):
     def draw(self, surface) -> None:
         w, h = surface.get_size()
         surface.fill(self.theme.color("background"))
-        self.app.draw_header(surface, "REPRODUCIENDO")
+        self.app.draw_header(surface, t("header.nowplaying"))
 
         song = self.app.state.get("song", {})
         status = self.app.state.get("status", {})
@@ -282,28 +289,22 @@ class NowPlayingScene(Scene):
             y += img.get_height() + 10
 
 
-_STATES = {"play": "Reproduciendo", "pause": "En pausa", "stop": "Detenido"}
+_STATES = {"play": "status.play", "pause": "status.pause", "stop": "status.stop"}
 
 
 def _status_line(status: dict) -> str:
     """MPD's state and volume in words. MPD says volume -1 when it has no mixer (no
     output open yet, or none at all): then the volume is left out."""
-    state = _STATES.get(status.get("state", "stop"), "Detenido")
+    state = t(_STATES.get(status.get("state", "stop"), "status.stop"))
     volume = status.get("volume")
     if volume is None or volume.startswith("-"):
         return state
-    return f"{state}   ·   volumen {volume}%"
+    return t("status.volume", state=state, volume=volume)
 
 
 class MenuScene(Scene):
-    OPTIONS = [
-        ("Salida de audio", "audio"),
-        ("Información del sistema", "info"),
-        ("Probar controles", "inputtest"),
-        ("Actualizar biblioteca", "update"),
-        ("Instalar en disco", "install"),
-        ("Volver", "back"),
-    ]
+    # Each option's label is the catalog's "menu.<option>".
+    OPTIONS = ["audio", "info", "inputtest", "update", "language", "install", "back"]
 
     def __init__(self, app):
         super().__init__(app)
@@ -312,11 +313,11 @@ class MenuScene(Scene):
         self.notice: str | None = None  # why the last option failed, shown below the list
 
     @staticmethod
-    def _options() -> list[tuple[str, str]]:
+    def _options() -> list[str]:
         # The installer clones the USB stick; on a rocola already installed on a disk it
         # has nothing to clone from, so the option only shows up in the live system.
         live = sysinfo.is_live()
-        return [opt for opt in MenuScene.OPTIONS if opt[1] != "install" or live]
+        return [opt for opt in MenuScene.OPTIONS if opt != "install" or live]
 
     def on_enter(self) -> None:
         self.index = 0
@@ -331,7 +332,7 @@ class MenuScene(Scene):
         elif action in (actions.BACK, actions.MENU):
             self.app.set_scene("library")
         elif action == actions.SELECT:
-            self._activate(self.options[self.index][1])
+            self._activate(self.options[self.index])
 
     def _activate(self, key: str) -> None:
         if key == "audio":
@@ -343,6 +344,9 @@ class MenuScene(Scene):
         elif key == "update":
             self.app.mpd_safe(lambda c: c.update())
             self.app.set_scene("library")
+        elif key == "language":
+            self.notice = None
+            self.app.change_language(i18n.next_language(i18n.language()))
         elif key == "install":
             self.notice = self.app.launch_installer()
         else:
@@ -351,14 +355,14 @@ class MenuScene(Scene):
     def draw(self, surface) -> None:
         w, h = surface.get_size()
         surface.fill(self.theme.color("background"))
-        self.app.draw_header(surface, "MENÚ")
+        self.app.draw_header(surface, t("header.menu"))
         font = self.theme.font("body", max(18, h // 16))
         y = self.app.header_h + h // 6
-        for i, (label, _key) in enumerate(self.options):
+        for i, key in enumerate(self.options):
             selected = i == self.index
             color = self.theme.color("highlight") if selected else self.theme.color("text")
             prefix = "> " if selected else "  "
-            img = font.render(prefix + label, True, color)
+            img = font.render(prefix + t(f"menu.{key}"), True, color)
             surface.blit(img, (w // 2 - img.get_width() // 2, y))
             y += img.get_height() + 14
         if self.notice:
@@ -371,8 +375,6 @@ class AudioScene(Scene):
     """Selector de salida de audio: lista los *sinks* de PipeWire y permite elegir uno
     (lo prueba con un tono). Incluye un acceso para emparejar un dispositivo Bluetooth.
     """
-
-    PAIR_LABEL = "+  Emparejar Bluetooth..."
 
     def __init__(self, app):
         super().__init__(app)
@@ -429,7 +431,7 @@ class AudioScene(Scene):
     def draw(self, surface) -> None:
         w, h = surface.get_size()
         surface.fill(self.theme.color("background"))
-        self.app.draw_header(surface, "SALIDA DE AUDIO")
+        self.app.draw_header(surface, t("header.audio"))
 
         body = self.theme.font("body", max(16, h // 18))
         line_h = body.get_height() + 8
@@ -437,7 +439,7 @@ class AudioScene(Scene):
         rows = max(1, (h - top_y - 2 * line_h) // line_h)  # reservar 1 línea para el hint
 
         if not self.available:
-            text = "PipeWire no responde todavía. Reintentá en unos segundos."
+            text = t("audio.unavailable")
             msg = body.render(_fit(body, text, w - 32), True, self.theme.color("accent"))
             surface.blit(msg, (16, top_y))
             return
@@ -455,7 +457,7 @@ class AudioScene(Scene):
                 surface.fill(self.theme.color("highlight"), (8, y - 2, w - 16, line_h))
             color = self.theme.color("background") if selected else self.theme.color("text")
             if self._is_pair_row(i):
-                text = self.PAIR_LABEL
+                text = t("audio.pair")
             else:
                 s = self.sinks[i]
                 # Marcador ASCII para el sink actual: el tema puede no traer una
@@ -466,7 +468,7 @@ class AudioScene(Scene):
 
         hint = self.theme.font("body", max(13, h // 26))
         himg = hint.render(
-            _fit(hint, "Enter: elegir salida y probar tono   -   Esc: volver", w - 32),
+            _fit(hint, t("audio.hint"), w - 32),
             True,
             self.theme.color("muted"),
         )
@@ -490,7 +492,7 @@ class InfoScene(Scene):
     def draw(self, surface) -> None:
         w, h = surface.get_size()
         surface.fill(self.theme.color("background"))
-        self.app.draw_header(surface, "INFORMACIÓN")
+        self.app.draw_header(surface, t("header.info"))
 
         font = self.theme.font("body", max(15, h // 22))
         line_h = font.get_height() + 10
@@ -509,24 +511,22 @@ class InfoScene(Scene):
             y += line_h
 
         hint = self.theme.font("body", max(13, h // 26))
-        himg = hint.render("Esc: volver", True, self.theme.color("muted"))
+        himg = hint.render(t("info.hint"), True, self.theme.color("muted"))
         surface.blit(himg, (16, h - himg.get_height() - 6))
 
 
 def describe_event(event) -> str | None:
     """What an input event is, in the words rocola.toml uses ([keys] names, [buttons] indexes)."""
     if event.type == pygame.KEYDOWN:
-        return f"Tecla «{pygame.key.name(event.key)}»"
+        return t("input.key", name=pygame.key.name(event.key))
     if event.type == pygame.JOYBUTTONDOWN:
-        return f"Joystick {event.joy} · botón {event.button}"
+        return t("input.button", joy=event.joy, button=event.button)
     if event.type == pygame.JOYHATMOTION:
-        return (
-            None
-            if tuple(event.value) == (0, 0)
-            else f"Joystick {event.joy} · cruceta {event.value}"
-        )
+        if tuple(event.value) == (0, 0):
+            return None
+        return t("input.hat", joy=event.joy, value=event.value)
     if event.type == pygame.JOYAXISMOTION:
-        return f"Joystick {event.joy} · eje {event.axis} ({event.value:+.1f})"
+        return t("input.axis", joy=event.joy, axis=event.axis, value=event.value)
     return None
 
 
@@ -557,7 +557,7 @@ class InputTestScene(Scene):
         if desc is None or (event.type == pygame.JOYAXISMOTION and action is None):
             return  # centro de la cruceta, o un eje que sigue apretado
         self.last_input = time.monotonic()
-        self.lines.append(f"{desc}  ->  {action or 'sin acción'}")
+        self.lines.append(f"{desc}  ->  {action or t('input.no_action')}")
         del self.lines[: -self.MAX_LINES]
         if action == actions.BACK and self.last_action == actions.BACK:
             self.app.set_scene("menu")
@@ -569,20 +569,19 @@ class InputTestScene(Scene):
             return
         w, h = surface.get_size()
         surface.fill(self.theme.color("background"))
-        self.app.draw_header(surface, "CONTROLES")
+        self.app.draw_header(surface, t("header.inputtest"))
 
         font = self.theme.font("body", max(15, h // 22))
         line_h = font.get_height() + 8
         y = self.app.header_h + 12
-        intro = "Apretá teclas o botones."
-        surface.blit(font.render(intro, True, self.theme.color("muted")), (16, y))
+        surface.blit(font.render(t("input.intro"), True, self.theme.color("muted")), (16, y))
         y += line_h + 6
-        for line in self.lines or ["Esperando..."]:
+        for line in self.lines or [t("input.waiting")]:
             surface.blit(font.render(line, True, self.theme.color("text")), (16, y))
             y += line_h
 
         hint = self.theme.font("body", max(13, h // 26))
-        text = "Volver: Atrás dos veces o 15 s sin tocar nada"
+        text = t("input.hint", seconds=round(self.IDLE_EXIT_S))
         himg = hint.render(text, True, self.theme.color("muted"))
         surface.blit(himg, (16, h - himg.get_height() - 6))
 
@@ -660,7 +659,7 @@ class BtPairScene(Scene):
 
     def draw(self, surface) -> None:
         surface.fill(self.theme.color("background"))
-        self.app.draw_header(surface, "BLUETOOTH")
+        self.app.draw_header(surface, t("header.bluetooth"))
         now = time.time()
 
         if self.state == "scanning":
@@ -673,9 +672,9 @@ class BtPairScene(Scene):
                 self._finish_scan()
                 self.state = "list" if self.devices else "empty"
             remaining = max(0, int(self.SCAN_SECS - (now - self.scan_start)))
-            self._draw_list(surface, f"Buscando dispositivos... ({remaining}s)")
+            self._draw_list(surface, t("bt.scanning", seconds=remaining))
         elif self.state == "list":
-            self._draw_list(surface, "Elegí un dispositivo (Enter para emparejar):")
+            self._draw_list(surface, t("bt.choose"))
         elif self.state == "pairing":
             # Emparejar en un thread aparte: bt.pair_connect (bluetoothctl pair+trust+
             # connect) tarda 5–30 s y, llamado acá, congelaría el loop de pygame (sin
@@ -691,29 +690,17 @@ class BtPairScene(Scene):
                 self.pair_thread.start()
                 self.pair_start = now
             elapsed = int(now - self.pair_start)
-            self._draw_message(surface, f"Conectando con {self.pending[1]}... ({elapsed}s)")
+            name = self.pending[1]
+            self._draw_message(surface, t("bt.connecting", name=name, seconds=elapsed))
             if not self.pair_thread.is_alive():
                 ok = self.pair_result
-                self.result_msg = (
-                    f"Conectado: {self.pending[1]}\n\nElegilo como salida (Enter para volver)."
-                    if ok
-                    else f"No se pudo conectar a {self.pending[1]}.\n\n"
-                    "Reintentá (Enter para volver)."
-                )
+                self.result_msg = t("bt.connected" if ok else "bt.failed", name=name)
                 self.state = "done"
                 self.pair_thread = None
         elif self.state == "empty":
-            self._draw_message(
-                surface,
-                "No se encontraron dispositivos.\n\nPoné el parlante en"
-                " modo emparejamiento y reintentá (Enter para volver).",
-            )
+            self._draw_message(surface, t("bt.empty"))
         elif self.state == "noadapter":
-            self._draw_message(
-                surface,
-                "No hay adaptador Bluetooth.\n\nMuchas PCs no traen BT:"
-                " conectá un dongle USB (Enter para volver).",
-            )
+            self._draw_message(surface, t("bt.noadapter"))
         elif self.state == "done":
             self._draw_message(surface, self.result_msg)
 
@@ -740,7 +727,7 @@ class BtPairScene(Scene):
             surface.blit(body.render(self.devices[i][1], True, color), (16, y))
 
         hint = self.theme.font("body", max(13, h // 26))
-        himg = hint.render("Enter: emparejar   -   Esc: volver", True, self.theme.color("muted"))
+        himg = hint.render(t("bt.hint"), True, self.theme.color("muted"))
         surface.blit(himg, (16, h - himg.get_height() - 6))
 
     def _draw_message(self, surface, text: str) -> None:

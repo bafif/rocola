@@ -9,7 +9,7 @@ from __future__ import annotations
 import pygame
 import pytest
 
-from rocola import audio, bt, sysinfo
+from rocola import audio, bt, i18n, sysinfo
 from rocola.app import RocolaApp
 
 LIBRARY = [
@@ -37,15 +37,17 @@ def no_binary(*_args, **_kwargs):
     raise FileNotFoundError
 
 
+@pytest.mark.parametrize("lang", ["es", "en"])
 @pytest.mark.parametrize(
     "scene", ["library", "nowplaying", "menu", "audio", "info", "btpair", "inputtest"]
 )
-def test_scene_renders(scene, fake_mpd, monkeypatch, tmp_path):
+def test_scene_renders(scene, lang, fake_mpd, monkeypatch, tmp_path):
     srv = fake_mpd(MPD_REPLIES)
+    monkeypatch.setenv("ROCOLA_LANG", lang)  # every text of the scene, in each language
     # Never touch the host's PipeWire, BlueZ or network tools from a test.
     for mod in (audio, bt, sysinfo):
         monkeypatch.setattr(mod, "_run", no_binary)
-    out = tmp_path / f"{scene}.png"
+    out = tmp_path / f"{scene}-{lang}.png"
     monkeypatch.setenv("ROCOLA_MPD_PORT", str(srv.port))
     monkeypatch.setenv("ROCOLA_RES", "640x480")
     monkeypatch.setenv("ROCOLA_WINDOWED", "1")
@@ -54,6 +56,7 @@ def test_scene_renders(scene, fake_mpd, monkeypatch, tmp_path):
 
     RocolaApp().run()
 
+    assert i18n.language() == lang
     assert out.is_file()
     pygame.init()
     try:

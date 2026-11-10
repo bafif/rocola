@@ -13,7 +13,7 @@ from rocola import ui
 @pytest.mark.parametrize(("live", "shown"), [(True, True), (False, False)])
 def test_install_option_only_on_the_usb_stick(monkeypatch, live, shown):
     monkeypatch.setattr(ui.sysinfo, "is_live", lambda: live)
-    keys = [key for _label, key in ui.MenuScene._options()]
+    keys = ui.MenuScene._options()
     assert ("install" in keys) is shown
     assert keys[-1] == "back"
 

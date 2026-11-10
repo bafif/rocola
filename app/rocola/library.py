@@ -11,9 +11,7 @@ import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-UNKNOWN_ARTIST = "(sin artista)"
-UNKNOWN_ALBUM = "(sin álbum)"
-ALL_SONGS = "Todas las canciones"
+from .i18n import t
 
 Song = dict[str, str]
 
@@ -75,7 +73,7 @@ def tracks_in_order(songs: Iterable[Song]) -> list[Song]:
 
 def _title(song: Song) -> str:
     path = song.get("file", "")
-    return song.get("Title") or (path.rsplit("/", 1)[-1] if path else "(desconocido)")
+    return song.get("Title") or (path.rsplit("/", 1)[-1] if path else t("library.unknown_song"))
 
 
 def song_label(song: Song) -> str:
@@ -102,10 +100,15 @@ class Row:
     kind: str = "song"  # "song", "all", "artist" or "album"
     songs: list[Song] = field(default_factory=list)
     song: Song | None = None
+    name: str | None = None  # the tag behind an artist or album label ("" when untagged)
 
     @property
     def key(self) -> tuple[str, str]:
-        return (self.kind, self.label)
+        # By tag, not by label: the labels of "all" rows and untagged folders change
+        # with the language, and reopen() must still find them after a switch.
+        if self.kind == "all":
+            return (self.kind, "")
+        return (self.kind, self.label if self.name is None else self.name)
 
     @property
     def is_folder(self) -> bool:
@@ -130,13 +133,16 @@ def _track_rows(tracks: Iterable[Song]) -> list[Row]:
 
 
 def root_view(songs: list[Song]) -> View:
-    """Artists, with "Todas las canciones" first. A library with one artist (or none
+    """Artists, with "All songs" first. A library with one artist (or none
     tagged) stays the flat list of songs, in MPD's order."""
     artists = by_artist(songs)
     if len(artists) <= 1:
         return View("", _song_rows(songs))
-    rows = [Row(ALL_SONGS, "all", list(songs))]
-    rows += [Row(name or UNKNOWN_ARTIST, "artist", tracks) for name, tracks in artists]
+    rows = [Row(t("library.all_songs"), "all", list(songs))]
+    rows += [
+        Row(name or t("library.unknown_artist"), "artist", tracks, name=name)
+        for name, tracks in artists
+    ]
     return View("", rows)
 
 
@@ -148,10 +154,14 @@ def open_row(row: Row) -> View:
         albums = by_album(row.songs)
         if len(albums) == 1:
             name, tracks = albums[0]
-            return View(f"{row.label} / {name or UNKNOWN_ALBUM}", _track_rows(tracks), row.key)
+            title = f"{row.label} / {name or t('library.unknown_album')}"
+            return View(title, _track_rows(tracks), row.key)
         everything = [s for _name, tracks in albums for s in tracks]
-        rows = [Row(f"Todas de {row.label}", "all", everything)]
-        rows += [Row(name or UNKNOWN_ALBUM, "album", tracks) for name, tracks in albums]
+        rows = [Row(t("library.all_by", artist=row.label), "all", everything)]
+        rows += [
+            Row(name or t("library.unknown_album"), "album", tracks, name=name)
+            for name, tracks in albums
+        ]
         return View(row.label, rows, row.key)
     return View(row.label, _track_rows(row.songs), row.key)  # album: tracks already in order
 

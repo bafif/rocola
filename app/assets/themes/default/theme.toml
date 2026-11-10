@@ -15,6 +15,7 @@ muted      = "#7878a0"
 # body  = "../../fonts/Inter-Regular.ttf"
 
 [branding]
-title = "MI ROCOLA"
+# Un texto, o uno por idioma de la rocola (español / inglés).
+title = { es = "MI ROCOLA", en = "MY JUKEBOX" }
 # Logo compartido en app/assets/logo.svg (reemplazable por .png).
 logo  = "../../logo.svg"

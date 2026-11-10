@@ -1,0 +1,55 @@
+#!/bin/bash
+# rocola-lang — prints the language of the jukebox: es or en.
+#
+# Same rule as the app (app/rocola/i18n.py, detect), for the installer and the
+# console scripts. First wins:
+#   1. ROCOLA_LANG (development and tests);
+#   2. LANGUAGE= in /etc/rocola/language.conf (chosen in the menu or the installer);
+#   3. rocola.lang= on the kernel command line (the "English" boot entry);
+#   4. the locale: Spanish if any preferred language (LANGUAGE, then the first of
+#      LC_ALL, LC_MESSAGES and LANG) is Spanish, English otherwise.
+# ROCOLA_LANGUAGE_CONF and ROCOLA_CMDLINE point it at other files (tests).
+set -euo pipefail
+
+conf="${ROCOLA_LANGUAGE_CONF:-/etc/rocola/language.conf}"
+cmdline="${ROCOLA_CMDLINE:-/proc/cmdline}"
+
+# "es_AR.UTF-8", "en-US", "EN" -> es / en; anything else -> nothing.
+norm() {
+    local v="${1,,}"
+    v="${v//[\"\'[:space:]]/}"
+    v="${v%%[_.@-]*}"
+    case "$v" in es|en) printf '%s\n' "$v" ;; esac
+}
+
+pick() {
+    local v
+    v="$(norm "${ROCOLA_LANG:-}")"
+    [ -n "$v" ] && { echo "$v"; return; }
+
+    if [ -r "$conf" ]; then
+        v="$(sed -n 's/^[[:space:]]*LANGUAGE=//p' "$conf" | tail -n 1)"
+        v="$(norm "$v")"
+        [ -n "$v" ] && { echo "$v"; return; }
+    fi
+
+    if [ -r "$cmdline" ]; then
+        local words w last=""
+        read -r -a words < "$cmdline" || true
+        for w in "${words[@]}"; do
+            case "$w" in rocola.lang=*) last="${w#rocola.lang=}" ;; esac
+        done
+        v="$(norm "$last")"
+        [ -n "$v" ] && { echo "$v"; return; }
+    fi
+
+    local prefs p
+    IFS=: read -r -a prefs <<<"${LANGUAGE:-}" || true
+    prefs+=("${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}")
+    for p in "${prefs[@]}"; do
+        [ "$(norm "$p")" = es ] && { echo es; return; }
+    done
+    echo en
+}
+
+pick

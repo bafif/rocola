@@ -13,6 +13,7 @@ import socket
 import subprocess
 
 from . import audio
+from .i18n import t
 
 XORG_CONF = "/etc/X11/xorg.conf.d/10-rocola-display.conf"
 DISPLAY_CONF = "/etc/rocola/display.conf"
@@ -31,7 +32,7 @@ def _run(args):
 def _audio_output() -> str:
     d = audio.default_sink_name()
     if not d:
-        return "— (PipeWire no disponible)"
+        return t("info.no_pipewire")
     for s in audio.list_sinks():
         if s.name == d:
             return f"{s.description}  [{s.kind}]"
@@ -63,7 +64,7 @@ def _video_driver() -> str:
                     break
     except OSError:
         pass
-    kms = "con KMS" if os.path.exists("/dev/dri/card0") else "sin KMS (fbdev)"
+    kms = t("info.kms") if os.path.exists("/dev/dri/card0") else t("info.no_kms")
     return f"{drv} ({kms})"
 
 
@@ -89,20 +90,20 @@ def _ip() -> str:
 def collect(screen=None) -> list[tuple[str, str]]:
     """Devuelve las filas (etiqueta, valor) a mostrar en la pantalla de información."""
     rows: list[tuple[str, str]] = [
-        ("Salida de audio", _audio_output()),
-        ("Driver de audio", _audio_driver()),
-        ("Driver de video", _video_driver()),
+        (t("info.audio_output"), _audio_output()),
+        (t("info.audio_driver"), _audio_driver()),
+        (t("info.video_driver"), _video_driver()),
     ]
     if screen is not None:
         try:
             w, h = screen.get_size()
-            rows.append(("Resolución", f"{w}x{h}"))
+            rows.append((t("info.resolution"), f"{w}x{h}"))
         except Exception:  # noqa: BLE001
             pass
     rows += [
-        ("Modo de pantalla", _display_mode()),
-        ("Equipo", socket.gethostname()),
-        ("IP", _ip()),
-        ("Kernel", platform.release()),
+        (t("info.display_mode"), _display_mode()),
+        (t("info.hostname"), socket.gethostname()),
+        (t("info.ip"), _ip()),
+        (t("info.kernel"), platform.release()),
     ]
     return rows

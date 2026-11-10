@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from rocola import input as actions
 from rocola import library
+from rocola.i18n import t
 from rocola.library import Row, View
 
 
@@ -38,11 +39,11 @@ def test_root_lists_artists_case_insensitively_with_untagged_last():
     lib = LIBRARY + [song("a/1.mp3", "abba", "Arrival", "Dancing Queen")]
     root = library.root_view(lib)
     assert labels(root) == [
-        library.ALL_SONGS,
+        t("library.all_songs"),
         "abba",
         "Queen",
         "Soda Stereo",
-        library.UNKNOWN_ARTIST,
+        t("library.unknown_artist"),
     ]
     assert [len(r.songs) for r in root.rows] == [6, 1, 3, 1, 1]
 
@@ -57,7 +58,7 @@ def test_one_artist_or_none_tagged_keeps_the_flat_list_in_mpd_order():
 
 def test_all_songs_keeps_mpd_order():
     root = library.root_view(LIBRARY)
-    view = library.open_row(row(root, library.ALL_SONGS))
+    view = library.open_row(row(root, t("library.all_songs")))
     assert [r.song["file"] for r in view.rows] == [s["file"] for s in LIBRARY]
 
 
@@ -107,14 +108,14 @@ def test_compilation_groups_by_album_artist_and_names_each_track_artist():
     for s in comp:
         s["AlbumArtist"] = "Varios"
     root = library.root_view(comp + SODA)
-    assert labels(root) == [library.ALL_SONGS, "Soda Stereo", "Varios"]
+    assert labels(root) == [t("library.all_songs"), "Soda Stereo", "Varios"]
     album = library.open_row(row(root, "Varios"))
     assert labels(album) == ["01  Charly García — Demoliendo hoteles", "02  Spinetta — Muchacha"]
 
 
 def test_untagged_songs_get_their_file_name():
-    view = library.open_row(row(library.root_view(LIBRARY), library.UNKNOWN_ARTIST))
-    assert view.title == f"{library.UNKNOWN_ARTIST} / {library.UNKNOWN_ALBUM}"
+    view = library.open_row(row(library.root_view(LIBRARY), t("library.unknown_artist")))
+    assert view.title == f"{t('library.unknown_artist')} / {t('library.unknown_album')}"
     assert labels(view) == ["tema01.mp3"]
 
 

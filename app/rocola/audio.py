@@ -13,6 +13,8 @@ import os
 import subprocess
 from dataclasses import dataclass
 
+from .i18n import t
+
 # audio.conf: la app persiste acá la salida elegida para que sobreviva al reboot
 # (rocola-audio-default la re-aplica al arrancar). El Containerfile la deja escribible
 # por 'rocola'.
@@ -28,16 +30,17 @@ class Sink:
 
     @property
     def kind(self) -> str:
+        """What kind of output it is, in words for the screen."""
         n = self.name.lower()
         if "bluez" in n:
-            return "Bluetooth"
+            return t("audio.kind.bluetooth")
         if ".usb-" in n or "usb" in n:
-            return "USB"
+            return t("audio.kind.usb")
         if "hdmi" in n or "iec958" in n or "digital" in n:
-            return "HDMI/Digital"
+            return t("audio.kind.hdmi")
         if "analog" in n:
-            return "Analógica"
-        return "Audio"
+            return t("audio.kind.analog")
+        return t("audio.kind.other")
 
 
 def _run(args):

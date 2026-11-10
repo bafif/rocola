@@ -40,7 +40,8 @@ def _hex(value: str | None, default: Color) -> Color:
 @dataclass
 class Theme:
     name: str = "default"
-    title: str = "ROCOLA"
+    # A plain string, or one per language: { es = "MI ROCOLA", en = "MY JUKEBOX" }.
+    title: str | dict[str, str] = "ROCOLA"
     colors: dict[str, Color] = field(default_factory=lambda: dict(_DEFAULTS))
     logo_path: Path | None = None
     _font_files: dict[str, Path | None] = field(default_factory=dict)
@@ -74,6 +75,13 @@ class Theme:
                 "body": (theme_dir / fonts["body"]) if fonts.get("body") else None,
             },
         )
+
+    def title_for(self, lang: str) -> str:
+        """The header title in `lang`: the theme's own text for it, else its first one."""
+        if isinstance(self.title, dict):
+            texts = [str(v) for v in self.title.values() if v]
+            return str(self.title.get(lang) or (texts[0] if texts else "ROCOLA"))
+        return str(self.title)
 
     def color(self, name: str) -> Color:
         return self.colors.get(name, (255, 255, 255))

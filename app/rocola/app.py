@@ -8,8 +8,8 @@ import time
 
 import pygame
 
+from . import i18n, ui
 from . import input as rin
-from . import ui
 from .config import Config
 from .mpdclient import MPDClient, MPDError
 from .theme import Theme
@@ -21,6 +21,7 @@ INSTALLER_UNIT = "rocola-installer.service"
 class RocolaApp:
     def __init__(self) -> None:
         self.config = Config.load()
+        i18n.set_language(i18n.detect())
         self.mpd = MPDClient(self.config.mpd_host, self.config.mpd_port)
         self.input = rin.InputManager()
         self.theme: Theme | None = None
@@ -214,7 +215,8 @@ class RocolaApp:
             surface.blit(logo, (x, 5))
             x += logo.get_width() + 12
         title_font = self.theme.font("title", self.header_h // 2)
-        timg = title_font.render(self.theme.title, True, self.theme.color("background"))
+        title = self.theme.title_for(i18n.language())
+        timg = title_font.render(title, True, self.theme.color("background"))
         surface.blit(timg, (x, (self.header_h - timg.get_height()) // 2))
         if subtitle:
             sfont = self.theme.font("body", max(14, self.header_h // 3))
@@ -239,9 +241,20 @@ class RocolaApp:
                 timeout=10,
             )
         except (OSError, subprocess.SubprocessError) as exc:
-            return f"No se pudo abrir el instalador ({exc})."
+            return i18n.t("installer.failed_detail", detail=exc)
         if r.returncode != 0:
             detail = (r.stderr or r.stdout).strip().splitlines()
-            return "No se pudo abrir el instalador" + (f": {detail[-1]}" if detail else ".")
+            if detail:
+                return i18n.t("installer.failed_detail", detail=detail[-1])
+            return i18n.t("installer.failed")
         self.set_scene("library")
         return None
+
+    # --- idioma -----------------------------------------------------------
+    def change_language(self, lang: str) -> None:
+        """Switch every screen to `lang` and save it (language.conf) for the next start."""
+        i18n.set_language(lang)
+        i18n.save(lang)
+        lib = self.scenes.get("library")
+        if lib is not None:
+            lib.relabel()  # its rows were labeled in the old language
