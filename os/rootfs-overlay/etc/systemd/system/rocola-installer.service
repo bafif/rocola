@@ -16,6 +16,9 @@ ConditionPathIsDirectory=/run/live/medium
 [Service]
 Type=oneshot
 Environment=TERM=linux
+# El locale del sistema, para que rocola-lang elija el idioma como lo hace la sesión de
+# la rocola (pam_env lee el mismo archivo en el autologin).
+EnvironmentFile=-/etc/default/locale
 TTYPath=/dev/tty8
 TTYReset=yes
 TTYVHangup=yes

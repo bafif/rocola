@@ -37,10 +37,17 @@ case "$(tty)" in
             recent=$(awk -v now="$now" 'now - $1 < 120' "$starts" 2>/dev/null | wc -l)
             if [ "$recent" -ge 5 ]; then
                 echo
-                echo "La interfaz de la rocola se cerró 5 veces en 2 minutos: no se vuelve a abrir sola."
-                echo "  Por qué:      journalctl -b | grep -iE 'startx|Xorg|rocola-session'"
-                echo "                less /var/log/Xorg.0.log  (o ~/.local/share/xorg/Xorg.0.log)"
-                echo "  Reintentar:   rm $starts; exit"
+                if [ "$(rocola-lang 2>/dev/null)" = es ]; then
+                    echo "La interfaz de la rocola se cerró 5 veces en 2 minutos: no se vuelve a abrir sola."
+                    echo "  Por qué:      journalctl -b | grep -iE 'startx|Xorg|rocola-session'"
+                    echo "                less /var/log/Xorg.0.log  (o ~/.local/share/xorg/Xorg.0.log)"
+                    echo "  Reintentar:   rm $starts; exit"
+                else
+                    echo "The jukebox screen closed 5 times in 2 minutes: it will not open again on its own."
+                    echo "  Why:          journalctl -b | grep -iE 'startx|Xorg|rocola-session'"
+                    echo "                less /var/log/Xorg.0.log  (or ~/.local/share/xorg/Xorg.0.log)"
+                    echo "  Try again:    rm $starts; exit"
+                fi
                 echo
             else
                 { tail -n 9 "$starts" 2>/dev/null; echo "$now"; } >"$starts.new" \

@@ -99,26 +99,35 @@ fi
 # fbdev anda en casi cualquier placa. gfxpayload=keep le pasa al kernel el
 # framebuffer lineal que armó GRUB (sirve en BIOS y UEFI). loglevel=3 calla el
 # spam de la consola (p. ej. "enp3s0: Link is Up/Down").
+# Los nombres de las entradas van en los dos idiomas o en términos que valen para los
+# dos: este menú aparece antes de que la rocola sepa en qué idioma hablar.
 menuentry "Rocola" {
     set gfxpayload=keep
     linux  /live/vmlinuz boot=live components quiet loglevel=3 nomodeset
     initrd /live/initrd.img
 }
+menuentry "Rocola — English" {
+    # La entrada por defecto con la rocola en inglés (rocola.lang=en, ver rocola-lang):
+    # en el pendrive no se guarda nada entre arranques, así que se elige acá.
+    set gfxpayload=keep
+    linux  /live/vmlinuz boot=live components quiet loglevel=3 nomodeset rocola.lang=en
+    initrd /live/initrd.img
+}
 # Aceleración por GPU (KMS). NECESARIA para CRT 15 kHz (modelines via modesetting).
 # Usar sólo si tu GPU soporta KMS en i386; si la pantalla queda en negro o loopea,
 # volvé a la entrada "Rocola" (fbdev).
-menuentry "Rocola — aceleración GPU / CRT 15 kHz (KMS)" {
+menuentry "Rocola — GPU / CRT 15 kHz (KMS)" {
     linux  /live/vmlinuz boot=live components quiet loglevel=3
     initrd /live/initrd.img
 }
-menuentry "Rocola — recuperación (consola, sin UI)" {
+menuentry "Rocola — consola de recuperación · recovery console" {
     # Arranca a una consola de texto sin lanzar la UI (flag rocola.noui), para
     # depurar (journalctl, lspci, etc.). Autologin de rocola en tty1.
     set gfxpayload=keep
     linux  /live/vmlinuz boot=live components nomodeset rocola.noui
     initrd /live/initrd.img
 }
-menuentry "Rocola — troubleshooting (SSH por red)" {
+menuentry "Rocola — SSH por red · SSH troubleshooting" {
     # Arranca la UI (fbdev) PERO además habilita sshd (root, solo clave) para
     # depurar por red. SSH se prende solo al elegir esta entrada (flag rocola.ssh);
     # el arranque normal nunca abre SSH. Requiere red con DHCP (systemd-networkd).
@@ -126,7 +135,7 @@ menuentry "Rocola — troubleshooting (SSH por red)" {
     linux  /live/vmlinuz boot=live components nomodeset rocola.ssh
     initrd /live/initrd.img
 }
-menuentry "Rocola — CPU sin PAE (kernel 686)" {
+menuentry "Rocola — CPU sin PAE · without PAE (kernel 686)" {
     # Para CPUs que no tienen PAE (algunos Pentium M, VIA C3, AMD Geode): con el kernel
     # de siempre se cuelgan apenas arranca. Mismo video genérico que la entrada normal.
     set gfxpayload=keep

@@ -7,39 +7,51 @@
 #
 # Pensado para parlantes/auriculares BT estándar ("just works", sin PIN). Necesita un
 # adaptador Bluetooth: muchas PCs de escritorio viejas requieren un dongle USB.
+# Habla en el idioma de la rocola (rocola-lang).
 set -uo pipefail
 
 BT=bluetoothctl
-TITLE="Rocola — Emparejar Bluetooth"
 SCAN_SECS=12
+
+UI_LANG="$(rocola-lang 2>/dev/null || true)"
+txt() { if [ "$UI_LANG" = es ]; then printf '%s' "$1"; else printf '%s' "$2"; fi; }
+TITLE="$(txt "Rocola — Emparejar Bluetooth" "Rocola — Pair Bluetooth")"
+wt() {
+    whiptail --title "$TITLE" --ok-button "$(txt Aceptar OK)" \
+        --cancel-button "$(txt Cancelar Cancel)" "$@"
+}
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
-if ! have whiptail; then echo "whiptail no disponible"; exit 1; fi
+if ! have whiptail; then txt "whiptail no disponible" "whiptail is not available"; echo; exit 1; fi
 if ! have "$BT"; then
-    whiptail --title "$TITLE" --msgbox "bluetoothctl (paquete bluez) no está instalado." 8 60
+    wt --msgbox "$(txt "bluetoothctl (paquete bluez) no está instalado." \
+        "bluetoothctl (package bluez) is not installed.")" 8 60
     exit 1
 fi
 
 # Encender el adaptador y verificar que exista alguno.
 $BT power on >/dev/null 2>&1 || true
 if ! $BT list 2>/dev/null | grep -q .; then
-    whiptail --title "$TITLE" --msgbox \
+    wt --msgbox "$(txt \
 "No se detectó ningún adaptador Bluetooth.\n\nMuchas PCs de escritorio no traen BT: conectá un dongle USB Bluetooth y reintentá." \
+"No Bluetooth adapter found.\n\nMany desktop PCs do not have one: plug in a USB Bluetooth dongle and try again.")" \
         12 64
     exit 1
 fi
 
 # Escaneo (bloqueante; bluetoothctl --timeout sale solo a los SCAN_SECS).
-whiptail --title "$TITLE" --infobox \
-"Buscando dispositivos Bluetooth…\n\nPoné tu parlante/auricular en modo emparejamiento.\n($SCAN_SECS segundos)" 10 64
+wt --infobox "$(txt \
+"Buscando dispositivos Bluetooth…\n\nPoné tu parlante/auricular en modo emparejamiento.\n($SCAN_SECS segundos)" \
+"Looking for Bluetooth devices…\n\nPut your speaker or headphones in pairing mode.\n($SCAN_SECS seconds)")" 10 64
 $BT --timeout "$SCAN_SECS" scan on >/dev/null 2>&1 || true
 
 # Recolectar dispositivos descubiertos: "Device AA:BB:.. Nombre".
 mapfile -t DEVS < <($BT devices 2>/dev/null | sed -n 's/^Device \([0-9A-F:]\{17\}\) \(.*\)$/\1\t\2/p')
 if [ "${#DEVS[@]}" -eq 0 ]; then
-    whiptail --title "$TITLE" --msgbox \
+    wt --msgbox "$(txt \
 "No se encontraron dispositivos.\n\nAsegurate de que el parlante esté encendido y en modo emparejamiento, y reintentá." \
+"No devices found.\n\nMake sure the speaker is on and in pairing mode, and try again.")" \
         11 64
     exit 1
 fi
@@ -49,11 +61,11 @@ MENU_ARGS=()
 for d in "${DEVS[@]}"; do
     mac="${d%%$'\t'*}"
     name="${d#*$'\t'}"
-    [ -n "$name" ] || name="(sin nombre)"
+    [ -n "$name" ] || name="$(txt "(sin nombre)" "(no name)")"
     MENU_ARGS+=("$mac" "$name")
 done
 
-MAC="$(whiptail --title "$TITLE" --menu "Elegí el dispositivo a emparejar:" 18 64 8 \
+MAC="$(wt --menu "$(txt "Elegí el dispositivo a emparejar:" "Choose the device to pair:")" 18 64 8 \
         "${MENU_ARGS[@]}" 3>&1 1>&2 2>&3)" || exit 0
 [ -n "$MAC" ] || exit 0
 
@@ -63,7 +75,7 @@ MAC="$(whiptail --title "$TITLE" --menu "Elegí el dispositivo a emparejar:" 18 
 # cuando el que lo pidió se va. Sin agente, BlueZ empareja como NoInputNoOutput ("just
 # works", sin PIN). Un paso que falla (pair en un parlante ya emparejado) no corta los
 # demás: lo que cuenta es si queda conectado.
-whiptail --title "$TITLE" --infobox "Conectando con $MAC…" 8 60
+wt --infobox "$(txt "Conectando con $MAC…" "Connecting to $MAC…")" 8 60
 OUT="$(
     timeout 40 $BT pair "$MAC" 2>&1
     timeout 10 $BT trust "$MAC" 2>&1
@@ -72,11 +84,11 @@ OUT="$(
 
 sleep 2
 if $BT info "$MAC" 2>/dev/null | grep -q "Connected: yes"; then
-    whiptail --title "$TITLE" --msgbox \
-"¡Listo! Dispositivo conectado.\n\nElegilo como salida en el menú \"Salida de audio\"." 10 62
+    wt --msgbox "$(txt \
+"¡Listo! Dispositivo conectado.\n\nElegilo como salida en el menú «Salida de audio»." \
+"Done! The device is connected.\n\nChoose it as the output in the \"Audio output\" menu.")" 10 62
     exit 0
 fi
 
-whiptail --title "$TITLE" --msgbox \
-"No se pudo conectar.\n\nDetalle:\n$(printf '%s' "$OUT" | tail -n 6)" 16 70
+wt --msgbox "$(txt "No se pudo conectar.\n\nDetalle:" "Could not connect.\n\nDetails:")\n$(printf '%s' "$OUT" | tail -n 6)" 16 70
 exit 1

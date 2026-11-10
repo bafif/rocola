@@ -6,6 +6,9 @@
 # rocola-installer` desde una consola. Nunca formatea un disco que no se haya elegido y
 # confirmado. TUI con whiptail: se maneja con teclado (la confirmación se tipea).
 #
+# Habla español o inglés: arranca en el idioma de la rocola (rocola-lang) y lo primero
+# que pregunta es el idioma, que queda guardado en el disco instalado.
+#
 # Estrategia de clonado: rsync del sistema en vivo (/) al disco destino, excluyendo
 # dirs volátiles y la propia media de instalación. Particiona BIOSBOOT + ESP + ROOT +
 # DATOS (/music).
@@ -14,14 +17,29 @@
 # datos todavía no.
 set -euo pipefail
 
-TITLE="Rocola — Instalador"
 LOG=/tmp/rocola-install.log
+
+# Idioma: el de la rocola (lo elegido en el menú, la entrada de GRUB o el locale; ver
+# rocola-lang). txt "español" "english" devuelve el texto del idioma actual.
+UI_LANG="$(rocola-lang 2>/dev/null || true)"
+[ "$UI_LANG" = es ] || UI_LANG=en
+txt() { if [ "$UI_LANG" = es ]; then printf '%s' "$1"; else printf '%s' "$2"; fi; }
+set_title() { TITLE="$(txt "Rocola — Instalador" "Rocola — Installer")"; }
+set_title
+# whiptail con los botones en el idioma elegido (sin depender de las traducciones de newt).
+wt() {
+    whiptail --ok-button "$(txt Aceptar OK)" --cancel-button "$(txt Cancelar Cancel)" \
+        --yes-button "$(txt Sí Yes)" --no-button "$(txt No No)" "$@"
+}
 
 # La rocola no tiene sudo ni clave de root: el camino es la unidad de systemd, que
 # polkit le deja arrancar al usuario rocola.
 if [ "$(id -u)" -ne 0 ]; then
-    echo "rocola-install corre como root. Abrilo desde el menú de la rocola («Instalar en disco»)" >&2
-    echo "o con: systemctl start rocola-installer" >&2
+    txt "rocola-install corre como root. Abrilo desde el menú de la rocola («Instalar en disco»)" \
+        "rocola-install runs as root. Open it from the jukebox menu (\"Install to disk\")" >&2
+    echo >&2
+    txt "o con: systemctl start rocola-installer" "or with: systemctl start rocola-installer" >&2
+    echo >&2
     exit 1
 fi
 exec 3>>"$LOG"
@@ -31,17 +49,31 @@ exec 3>>"$LOG"
 #   ROCOLA_TARGET=/dev/sdb         (obligatoria)
 #   ROCOLA_KEEP_MUSIC=yes|no       (default no)
 #   ROCOLA_DISPLAY=auto|vga|crt15  (default auto)
+#   ROCOLA_LANG=es|en              (idioma de la rocola instalada; sin él, su locale)
 # Nunca se usa en producción: el menú de la rocola lanza el flujo interactivo.
 UNATTENDED="${ROCOLA_UNATTENDED:-0}"
 
 die() {
-    if [ "$UNATTENDED" = 1 ]; then echo "ERROR: $*  (ver $LOG)" >&2
-    else whiptail --title "$TITLE" --msgbox "ERROR: $*\n\nVer $LOG" 12 70 || true; fi
+    if [ "$UNATTENDED" = 1 ]; then echo "ERROR: $*  ($(txt ver see) $LOG)" >&2
+    else wt --title "$TITLE" --msgbox "ERROR: $*\n\n$(txt Ver See) $LOG" 12 70 || true; fi
     exit 1
 }
 log() { echo "[$(date +%T)] $*" >&3; }
 
-[ "$UNATTENDED" = 1 ] || command -v whiptail >/dev/null || die "falta whiptail"
+[ "$UNATTENDED" = 1 ] || command -v whiptail >/dev/null || die "$(txt "falta whiptail" "whiptail is missing")"
+
+# --- Idioma (lo primero que se pregunta; se guarda en el disco instalado) ----
+CHOSEN_LANG=""
+if [ "$UNATTENDED" = 1 ]; then
+    [ -z "${ROCOLA_LANG:-}" ] || CHOSEN_LANG="$UI_LANG"
+else
+    UI_LANG="$(wt --title "Rocola" --default-item "$UI_LANG" --menu \
+        "Idioma del instalador y de la rocola instalada.\nLanguage of the installer and of the installed jukebox." \
+        12 64 2 es "Español" en "English" 3>&1 1>&2 2>&3)" || exit 0
+    CHOSEN_LANG="$UI_LANG"
+    set_title
+fi
+log "idioma: $UI_LANG (se guarda: ${CHOSEN_LANG:-no})"
 
 # --- Detectar la media de instalación (para excluirla del destino) -----------
 LIVE_SRC="$(findmnt -n -o SOURCE /run/live/medium 2>/dev/null || true)"
@@ -58,7 +90,9 @@ fi
 log "Media live: ${LIVE_SRC:-?} (disco ${LIVE_DISK:-?})"
 # Se clona el sistema en vivo. Desde una rocola ya instalada no hay pendrive que excluir
 # y el disco del propio sistema aparecería como destino.
-[ -n "$LIVE_SRC" ] || die "el instalador corre desde el pendrive: arrancá la PC con el pendrive de la rocola"
+[ -n "$LIVE_SRC" ] || die "$(txt \
+    "el instalador corre desde el pendrive: arrancá la PC con el pendrive de la rocola" \
+    "the installer runs from the USB stick: boot the PC from the jukebox's stick")"
 
 # Tamaño mínimo del destino: BIOSBOOT 2 MiB + ESP 256 MiB + ROOT 12 GiB (fijos, ver el
 # particionado) y algo de lugar para /music. Con menos, sgdisk fallaba a mitad de camino
@@ -66,16 +100,23 @@ log "Media live: ${LIVE_SRC:-?} (disco ${LIVE_DISK:-?})"
 MIN_BYTES=14000000000
 too_small() { [ "$(blockdev --getsize64 "$1" 2>/dev/null || echo 0)" -lt "$MIN_BYTES" ]; }
 check_size() {
-    too_small "$1" && die "$1 tiene $(lsblk -dno SIZE "$1" | tr -d ' '): la rocola necesita un disco de al menos 14 GB (12 GB de sistema y el resto para la música)"
-    return 0
+    local size
+    too_small "$1" || return 0
+    size="$(lsblk -dno SIZE "$1" | tr -d ' ')"
+    die "$(txt \
+        "$1 tiene $size: la rocola necesita un disco de al menos 14 GB (12 GB de sistema y el resto para la música)" \
+        "$1 is $size: the jukebox needs a disk of at least 14 GB (12 GB for the system, the rest for music)")"
 }
 
 # --- Selección de destino y opciones -----------------------------------------
 if [ "$UNATTENDED" = 1 ]; then
     # Desatendido: todo viene de variables de entorno, sin TUI.
-    TARGET="${ROCOLA_TARGET:?ROCOLA_TARGET requerido en modo desatendido}"
-    [ -b "$TARGET" ] || die "ROCOLA_TARGET=$TARGET no es un dispositivo de bloque"
-    [ "$TARGET" = "$LIVE_DISK" ] && die "ROCOLA_TARGET es la media de instalación"
+    TARGET="${ROCOLA_TARGET:-}"
+    [ -n "$TARGET" ] || die "$(txt "falta ROCOLA_TARGET" "ROCOLA_TARGET is not set")"
+    [ -b "$TARGET" ] || die "$(txt "ROCOLA_TARGET=$TARGET no es un dispositivo de bloque" \
+        "ROCOLA_TARGET=$TARGET is not a block device")"
+    [ "$TARGET" = "$LIVE_DISK" ] && die "$(txt "ROCOLA_TARGET es la media de instalación" \
+        "ROCOLA_TARGET is the installation medium")"
     check_size "$TARGET"
     KEEP_MUSIC="${ROCOLA_KEEP_MUSIC:-no}"
     DISP_MODE="${ROCOLA_DISPLAY:-auto}"
@@ -91,34 +132,44 @@ else
         [ "$d" = "$LIVE_DISK" ] && continue          # excluir el pendrive de instalación
         size="$(lsblk -dno SIZE "$d")"
         model="$(lsblk -dno MODEL "$d" | tr -s ' ')"
-        note=""; too_small "$d" && note="  (muy chico: mínimo 14 GB)"
-        MENU_ITEMS+=("$d" "${size}  ${model:-disco}${note}")
+        note=""; too_small "$d" && note="  $(txt "(muy chico: mínimo 14 GB)" "(too small: 14 GB minimum)")"
+        MENU_ITEMS+=("$d" "${size}  ${model:-$(txt disco disk)}${note}")
     done
-    [ "${#MENU_ITEMS[@]}" -gt 0 ] || die "no se encontraron discos destino (¿solo está el pendrive?)"
+    [ "${#MENU_ITEMS[@]}" -gt 0 ] || die "$(txt "no se encontraron discos destino (¿solo está el pendrive?)" \
+        "no target disks found (is the USB stick the only disk?)")"
 
-    TARGET="$(whiptail --title "$TITLE" --menu \
+    TARGET="$(wt --title "$TITLE" --menu "$(txt \
         "Elegí el disco DESTINO.\nSe BORRARÁ por completo (salvo que conserves /music)." \
+        "Choose the TARGET disk.\nIt will be ERASED completely (unless you keep /music).")" \
         20 74 8 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3)" || exit 0
     check_size "$TARGET"
 
     # --- Conservar /music existente ------------------------------------------
     KEEP_MUSIC=no
-    if whiptail --title "$TITLE" --yesno \
-        "¿Conservar una partición de música existente en $TARGET (si la hay)?" 10 70; then
+    if wt --title "$TITLE" --yesno "$(txt \
+        "¿Conservar una partición de música existente en $TARGET (si la hay)?" \
+        "Keep an existing music partition on $TARGET (if there is one)?")" 10 70; then
         KEEP_MUSIC=yes
     fi
 
     # --- Confirmación tipográfica (anti-borrado) -----------------------------
-    SUMMARY="DESTINO: $TARGET\n$(lsblk -no NAME,SIZE,FSTYPE,LABEL "$TARGET" | sed 's/^/  /')\n\nEsto DESTRUIRÁ los datos del disco."
-    CONFIRM="$(whiptail --title "$TITLE — CONFIRMAR" --inputbox \
-        "$SUMMARY\n\nEscribí BORRAR (en mayúsculas) para continuar:" 18 74 3>&1 1>&2 2>&3)" || exit 0
-    [ "$CONFIRM" = "BORRAR" ] || die "confirmación inválida; cancelado"
+    # La palabra a tipear va en el idioma elegido: BORRAR o ERASE.
+    WORD="$(txt BORRAR ERASE)"
+    PARTS="$(lsblk -no NAME,SIZE,FSTYPE,LABEL "$TARGET" | sed 's/^/  /')"
+    SUMMARY="$(txt "DESTINO" "TARGET"): $TARGET\n$PARTS\n\n$(txt \
+        "Esto DESTRUIRÁ los datos del disco." "This will DESTROY the data on the disk.")"
+    CONFIRM="$(wt --title "$TITLE — $(txt CONFIRMAR CONFIRM)" --inputbox "$SUMMARY\n\n$(txt \
+        "Escribí $WORD (en mayúsculas) para continuar:" \
+        "Type $WORD (in capitals) to continue:")" 18 74 3>&1 1>&2 2>&3)" || exit 0
+    [ "$CONFIRM" = "$WORD" ] || die "$(txt "confirmación inválida; cancelado" "wrong confirmation; cancelled")"
 
     # --- Tipo de monitor (se persiste en el destino) -------------------------
-    DISP_MODE="$(whiptail --title "$TITLE" --menu "Tipo de monitor de esta rocola:" 15 70 4 \
-        auto  "Autodetectar (recomendado en VGA/moderno)" \
-        vga   "VGA / moderno (31 kHz)" \
-        crt15 "CRT de arcade / TV (15 kHz)" 3>&1 1>&2 2>&3)" || DISP_MODE=auto
+    DISP_MODE="$(wt --title "$TITLE" --menu \
+        "$(txt "Tipo de monitor de esta rocola:" "Monitor type of this jukebox:")" 15 70 4 \
+        auto  "$(txt "Autodetectar (recomendado en VGA/moderno)" "Detect it (recommended for VGA/modern)")" \
+        vga   "$(txt "VGA / moderno (31 kHz)" "VGA / modern (31 kHz)")" \
+        crt15 "$(txt "CRT de arcade / TV (15 kHz)" "Arcade CRT / TV (15 kHz)")" \
+        3>&1 1>&2 2>&3)" || DISP_MODE=auto
 fi
 
 # =============================================================================
@@ -128,7 +179,7 @@ fi
 # No envolver el bloque en `{ ... } || die`, porque eso desactiva set -e dentro
 # del grupo (gotcha de bash) y los errores (grub, rsync, mkfs) pasarían como
 # "éxito". Con el trap, el primer comando que falle dispara die.
-trap 'die "falló la instalación (ver $LOG)"' ERR
+trap 'die "$(txt "falló la instalación" "the installation failed") ($(txt ver see) $LOG)"' ERR
 {
 log "=== Instalando en $TARGET (keep_music=$KEEP_MUSIC, display=$DISP_MODE) ==="
 
@@ -153,11 +204,13 @@ if [ "$KEEP_MUSIC" = yes ]; then
         # silencio: abortamos pidiendo backup. Si no hay ninguna, se hace layout
         # nuevo (no hay música que perder).
         OTHER_MUSIC="$(lsblk -lnpo NAME,LABEL "$TARGET" 2>/dev/null | awk '$2=="music"{print $1; exit}' || true)"
-        [ -z "$OTHER_MUSIC" ] || die "hay una partición 'music' ($OTHER_MUSIC) en un layout no reconocido; hacé backup y reintentá SIN conservar música"
+        [ -z "$OTHER_MUSIC" ] || die "$(txt \
+            "hay una partición 'music' ($OTHER_MUSIC) en un layout no reconocido; hacé backup y reintentá SIN conservar música" \
+            "there is a 'music' partition ($OTHER_MUSIC) in a layout I do not recognize; back it up and try again WITHOUT keeping the music")"
     fi
 fi
 
-echo "Particionando $TARGET…"
+txt "Particionando $TARGET…" "Partitioning $TARGET…"; echo
 log "particionando (keep_ok=$KEEP_OK)"
 if [ "$KEEP_OK" = yes ]; then
     # No reparticionar: conservar la tabla y la partición de música intactas.
@@ -178,7 +231,7 @@ fi
 partprobe "$TARGET" || true
 udevadm settle 2>/dev/null || true
 
-echo "Formateando…"; log "mkfs"
+txt "Formateando…" "Formatting…"; echo; log "mkfs"
 mkfs.vfat -F32 -n ESP "$P_ESP"        >&3 2>&1
 mkfs.ext4 -F -L rocola-root "$P_ROOT" >&3 2>&1
 if [ "$KEEP_OK" = yes ]; then
@@ -194,7 +247,8 @@ mkdir -p "$T/boot/efi" "$T/music"
 mount "$P_ESP" "$T/boot/efi"
 mount "$P_DATA" "$T/music" || true
 
-echo "Clonando el sistema (puede tardar)…"; log "rsync /"
+txt "Clonando el sistema (puede tardar)…" "Cloning the system (this can take a while)…"; echo
+log "rsync /"
 # Ojo: clonar un sistema vivo hace que rsync devuelva a menudo 24 (archivos que
 # desaparecen durante la copia) o 23 (algún archivo suelto ilegible: sockets,
 # xattrs). Ninguno rompe el clon del SO, así que no deben abortar la instalación
@@ -209,7 +263,7 @@ rsync -aHAXx --info=progress2 \
 case "$rsync_rc" in
     0) ;;
     23|24) log "rsync terminó con código $rsync_rc (no fatal: archivos volátiles del sistema vivo)";;
-    *) die "rsync falló (código $rsync_rc)";;
+    *) die "$(txt "rsync falló (código $rsync_rc)" "rsync failed (code $rsync_rc)")";;
 esac
 
 # Música precargada: va a la partición de música, no a ROOT (12 GB fijos). En el
@@ -220,13 +274,14 @@ esac
 PRELOAD=/opt/rocola/music
 if [ -z "$(find "$T/music" -mindepth 1 -maxdepth 1 ! -name lost+found -print -quit)" ] \
    && [ -n "$(find "$PRELOAD" -mindepth 1 -maxdepth 1 ! -name .gitkeep -print -quit 2>/dev/null)" ]; then
-    echo "Copiando la música precargada…"; log "música precargada -> /music"
+    txt "Copiando la música precargada…" "Copying the preloaded music…"; echo
+    log "música precargada -> /music"
     rsync -a --no-links --exclude=/.gitkeep "$PRELOAD"/ "$T/music"/ >&3 2>&1 \
         || log "la copia de la música precargada terminó con código $?"
 fi
 
 # fstab por UUID
-echo "Generando fstab…"; log "fstab"
+txt "Generando fstab…" "Writing fstab…"; echo; log "fstab"
 {
     echo "# generado por rocola-install"
     echo "UUID=$(blkid -s UUID -o value "$P_ROOT")  /          ext4  defaults,noatime  0 1"
@@ -238,6 +293,22 @@ echo "Generando fstab…"; log "fstab"
 mkdir -p "$T/etc/rocola"
 sed -i "s/^MODE=.*/MODE=$DISP_MODE/" "$T/etc/rocola/display.conf" 2>/dev/null \
     || echo "MODE=$DISP_MODE" > "$T/etc/rocola/display.conf"
+
+# Persistir el idioma elegido (la app y rocola-lang lo leen de language.conf). Se
+# reescribe en el lugar: el archivo es de 'rocola', que así lo puede seguir cambiando
+# desde el menú. Si falla, la rocola arranca en el idioma de su locale: no aborta.
+save_language() {
+    local conf="$T/etc/rocola/language.conf" body
+    if grep -q '^[[:space:]]*LANGUAGE=' "$conf" 2>/dev/null; then
+        body="$(sed "s/^[[:space:]]*LANGUAGE=.*/LANGUAGE=$CHOSEN_LANG/" "$conf")"
+        printf '%s\n' "$body" > "$conf"
+    else
+        echo "LANGUAGE=$CHOSEN_LANG" >> "$conf"
+    fi
+}
+if [ -n "$CHOSEN_LANG" ]; then
+    save_language || log "no se pudo guardar el idioma ($CHOSEN_LANG)"
+fi
 
 # Video del sistema instalado = el del arranque en vivo. La entrada por defecto del
 # pendrive usa 'nomodeset' (fbdev sobre el framebuffer del firmware) porque el KMS de
@@ -262,7 +333,7 @@ fi
 # al /boot del sistema clonado: así grub-probe resuelve el disco destino con el
 # /proc/mounts real del sistema vivo. (Dentro de un chroot, /proc/mounts no mapea
 # el destino -> el error típico "cannot find a device for /boot/grub".)
-echo "Instalando GRUB (BIOS + UEFI)…"; log "grub"
+txt "Instalando GRUB (BIOS + UEFI)…" "Installing GRUB (BIOS + UEFI)…"; echo; log "grub"
 grub-install --target=i386-pc --boot-directory="$T/boot" --recheck "$TARGET" >&3 2>&1
 grub-install --target=x86_64-efi --efi-directory="$T/boot/efi" \
     --boot-directory="$T/boot" --bootloader-id=rocola --removable --recheck >&3 2>&1
@@ -278,7 +349,8 @@ for fs in proc sys dev dev/pts run; do mkdir -p "$T/$fs"; mount --bind "/$fs" "$
 # (heredado del live) espera ~30s un dispositivo de resume inexistente en cada
 # arranque ("Waiting for suspend/resume device... Gave up"). Lo desactivamos y
 # regeneramos el initrd del destino antes de generar el grub.cfg.
-echo "Optimizando arranque (initramfs)…"; log "initramfs (RESUME=none)"
+txt "Optimizando arranque (initramfs)…" "Speeding up the boot (initramfs)…"; echo
+log "initramfs (RESUME=none)"
 mkdir -p "$T/etc/initramfs-tools/conf.d"
 echo "RESUME=none" > "$T/etc/initramfs-tools/conf.d/resume"
 chroot "$T" /usr/sbin/update-initramfs -u >&3 2>&1
@@ -286,7 +358,7 @@ chroot "$T" /usr/sbin/update-grub >&3 2>&1
 
 # Desmontar. Todo guardado: si algo deja un mount "busy", la instalación ya está
 # escrita y correcta -> no debe reportarse como fallida (con set -e abortaría).
-echo "Finalizando…"; log "umount"
+txt "Finalizando…" "Finishing…"; echo; log "umount"
 for fs in run dev/pts dev sys proc; do umount "$T/$fs" || true; done
 umount "$T/music" 2>/dev/null || true
 umount "$T/boot/efi" 2>/dev/null || true
@@ -296,11 +368,13 @@ log "OK"
 trap - ERR   # a partir de acá los prompts pueden devolver no-cero sin abortar
 
 if [ "$UNATTENDED" = 1 ]; then
-    echo "Instalación desatendida completa en $TARGET."
+    txt "Instalación desatendida completa en $TARGET." "Unattended installation finished on $TARGET."
+    echo
     exit 0
 fi
 
-if whiptail --title "$TITLE" --yesno \
-    "¡Instalación completa!\n\nQuitá el pendrive y reiniciá.\n\n¿Reiniciar ahora?" 12 60; then
+if wt --title "$TITLE" --yesno "$(txt \
+    "¡Instalación completa!\n\nQuitá el pendrive y reiniciá.\n\n¿Reiniciar ahora?" \
+    "Installation complete!\n\nRemove the USB stick and restart.\n\nRestart now?")" 12 60; then
     systemctl reboot
 fi

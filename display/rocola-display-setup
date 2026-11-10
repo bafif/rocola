@@ -100,7 +100,7 @@ write_crt15() {
     fi
     {
         echo "# CRT 15 kHz — generado por rocola-display-setup (ajustar por monitor)."
-        echo "# El 15 kHz requiere KMS: arrancá la entrada de GRUB 'aceleración GPU / CRT 15 kHz'."
+        echo "# El 15 kHz requiere KMS: arrancá la entrada de GRUB 'Rocola — GPU / CRT 15 kHz (KMS)'."
         device_section
         screen_section
         echo 'Section "Monitor"'

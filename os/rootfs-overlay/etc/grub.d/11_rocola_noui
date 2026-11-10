@@ -33,9 +33,9 @@ dir=$(make_system_path_relative_to_its_root /boot) || exit 0
 
 echo "Found Rocola console entry (no UI): $kernel" >&2
 cat <<EOF
-menuentry 'Rocola — consola sin UI (recuperación)' --class gnu-linux --class os {
+menuentry 'Rocola — consola de recuperación · recovery console' --class gnu-linux --class os {
 $access
-	echo	'Linux $version, sin la interfaz...'
+	echo	'Linux $version: consola, sin la interfaz · console, no UI...'
 	linux	$dir/vmlinuz-$version root=$root ro ${GRUB_CMDLINE_LINUX} nomodeset rocola.noui
 	initrd	$dir/initrd.img-$version
 }
