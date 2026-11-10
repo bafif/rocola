@@ -1,4 +1,5 @@
-# Lint and tests for the jukebox app and the shell scripts of the OS image.
+# Lint and tests for the jukebox app and the shell scripts of the OS image. The app's
+# tests also check the docs: every document in Spanish and English, no broken links.
 # Building the ISO itself (make image) is heavy and stays a local/manual step.
 name: ci
 
