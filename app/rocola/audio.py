@@ -9,7 +9,6 @@ funciones devuelven vacío en vez de romper la UI.
 
 from __future__ import annotations
 
-import glob
 import os
 import subprocess
 from dataclasses import dataclass
@@ -147,24 +146,21 @@ def _persist_output(sink_name: str) -> None:
         pass  # best-effort: si /etc no es escribible, igual quedó aplicado en vivo
 
 
+# A two-second voice clip ("front center") from alsa-utils, the one speaker-test plays.
+# Not a .wav out of /music: there may be none (mp3, flac), and when there is one it is a
+# whole song that keeps playing with no way to stop it.
+TEST_TONE = "/usr/share/sounds/alsa/Front_Center.wav"
+
+
 def play_test_tone(sink_name: str | None = None) -> None:
-    """Reproduce un tono corto al sink dado (o al default) para confirmar al oído."""
-    tone = _first_tone()
-    if not tone:
+    """Reproduce un sonido corto al sink dado (o al default) para confirmar al oído."""
+    if not os.path.exists(TEST_TONE):
         return
     args = ["paplay"]
     if sink_name:
         args += ["--device", sink_name]
-    args.append(tone)
+    args.append(TEST_TONE)
     try:
         subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except OSError:
         pass
-
-
-def _first_tone() -> str | None:
-    for pattern in ("/music/*.wav", "/music/*.WAV", "/opt/rocola/music/*.wav"):
-        hits = sorted(glob.glob(pattern))
-        if hits:
-            return hits[0]
-    return None

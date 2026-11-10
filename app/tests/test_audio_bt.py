@@ -149,3 +149,55 @@ def test_bt_is_connected(monkeypatch):
 def test_timeouts_are_subprocess_errors():
     # The wrappers catch SubprocessError; TimeoutExpired must be one of them.
     assert issubclass(subprocess.TimeoutExpired, subprocess.SubprocessError)
+
+
+def test_pair_connect_runs_each_step_on_its_own(monkeypatch):
+    # One-shot bluetoothctl calls, each waiting for BlueZ; never a script on stdin.
+    mac = "AA:BB:CC:DD:EE:FF"
+    calls: list = []
+    info = f"Device {mac} (public)\n\tConnected: yes\n"
+    monkeypatch.setattr(bt, "_run", fake_runner({("bluetoothctl", "info", mac): info}, calls))
+    monkeypatch.setattr(bt.time, "sleep", lambda _s: None)
+    assert bt.pair_connect(mac) is True
+    assert calls == [
+        ("bluetoothctl", "power", "on"),
+        ("bluetoothctl", "pair", mac),
+        ("bluetoothctl", "trust", mac),
+        ("bluetoothctl", "connect", mac),
+        ("bluetoothctl", "info", mac),
+    ]
+
+
+def test_pair_connect_goes_on_after_a_failed_step(monkeypatch):
+    # A step that times out does not stop the rest; the end state decides.
+    mac = "AA:BB:CC:DD:EE:FF"
+    calls: list = []
+
+    def run(args, *_, **__):
+        calls.append(tuple(args))
+        if args[1] == "pair":
+            raise subprocess.TimeoutExpired(args, 40)
+        return SimpleNamespace(returncode=1, stdout="", stderr="")
+
+    monkeypatch.setattr(bt, "_run", run)
+    monkeypatch.setattr(bt.time, "sleep", lambda _s: None)
+    assert bt.pair_connect(mac) is False
+    assert ("bluetoothctl", "connect", mac) in calls
+
+
+def test_test_tone_plays_the_alsa_clip(monkeypatch, tmp_path):
+    clip = tmp_path / "Front_Center.wav"
+    clip.write_bytes(b"RIFF")
+    started: list = []
+    monkeypatch.setattr(audio, "TEST_TONE", str(clip))
+    monkeypatch.setattr(audio.subprocess, "Popen", lambda args, **_: started.append(args))
+    audio.play_test_tone("bluez_output.AA_BB.1")
+    assert started == [["paplay", "--device", "bluez_output.AA_BB.1", str(clip)]]
+
+
+def test_test_tone_without_the_clip_does_nothing(monkeypatch, tmp_path):
+    started: list = []
+    monkeypatch.setattr(audio, "TEST_TONE", str(tmp_path / "missing.wav"))
+    monkeypatch.setattr(audio.subprocess, "Popen", lambda args, **_: started.append(args))
+    audio.play_test_tone()
+    assert started == []

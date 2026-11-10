@@ -142,3 +142,22 @@ def test_esc():
 def test_stats(fake_mpd):
     client, _ = connect(fake_mpd, {"stats": ["songs: 2", "db_update: 1730000000"]})
     assert client.stats()["db_update"] == "1730000000"
+
+
+def test_an_ack_keeps_the_connection(fake_mpd):
+    client, _ = connect(fake_mpd, {"play 99": "ACK [2@0] {play} Bad song index"})
+    with pytest.raises(MPDError):
+        client.play(99)
+    assert client.connected
+
+
+def test_a_cut_answer_closes_the_connection(fake_mpd):
+    # An answer that never ends (no OK): the read times out. The rest of it could still
+    # arrive later and be taken as the reply to the next command, so the client drops
+    # the connection instead of reusing it.
+    srv = fake_mpd({"listallinfo": b"file: a.mp3\nTitle: A\n"})
+    client = MPDClient("127.0.0.1", srv.port, timeout=0.3)
+    client.connect()
+    with pytest.raises(OSError):
+        client.all_files()
+    assert not client.connected

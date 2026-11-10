@@ -19,6 +19,11 @@ DISPLAY_CONF = "/etc/rocola/display.conf"
 _TIMEOUT = 4.0
 
 
+def is_live() -> bool:
+    """Running from the USB stick (live-boot mounts its medium there), not from a disk."""
+    return os.path.isdir("/run/live/medium")
+
+
 def _run(args):
     return subprocess.run(args, capture_output=True, text=True, timeout=_TIMEOUT)
 

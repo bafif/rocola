@@ -39,12 +39,19 @@ class MPDClient:
         return self._sock is not None
 
     def connect(self) -> None:
-        self._sock = socket.create_connection((self.host, self.port), timeout=self.timeout)
-        self._file = self._sock.makefile("rwb")
-        hello = self._file.readline().decode("utf-8", "replace")
-        if not hello.startswith("OK MPD"):
-            self.close()
-            raise MPDError(f"saludo inesperado: {hello!r}")
+        # The client counts as connected only after MPD's greeting: a timeout or a
+        # wrong greeting must not leave a half-open socket that `connected` reports.
+        sock = socket.create_connection((self.host, self.port), timeout=self.timeout)
+        file = sock.makefile("rwb")
+        try:
+            hello = file.readline().decode("utf-8", "replace")
+            if not hello.startswith("OK MPD"):
+                raise MPDError(f"saludo inesperado: {hello!r}")
+        except BaseException:
+            file.close()
+            sock.close()
+            raise
+        self._sock, self._file = sock, file
 
     def close(self) -> None:
         try:
@@ -62,9 +69,25 @@ class MPDClient:
         return self._send_binary(command)[0]
 
     def _send_binary(self, command: str) -> Tuple[List[Tuple[str, str]], bytes]:
-        """Like _send, plus the bytes of a `binary: N` answer (albumart, readpicture)."""
+        """Like _send, plus the bytes of a `binary: N` answer (albumart, readpicture).
+
+        Any failure other than an ACK closes the connection. After a timeout or a cut
+        in the middle of an answer, the rest of that answer may still arrive, and every
+        later command would read the previous command's reply; a new connection starts
+        clean (whoever calls reconnects).
+        """
         if not self._file:
             raise MPDError("no conectado")
+        try:
+            return self._exchange(command)
+        except MPDAckError:
+            raise
+        except BaseException:
+            self.close()
+            raise
+
+    def _exchange(self, command: str) -> Tuple[List[Tuple[str, str]], bytes]:
+        assert self._file is not None
         self._file.write((command + "\n").encode("utf-8"))
         self._file.flush()
         pairs: List[Tuple[str, str]] = []

@@ -15,8 +15,8 @@ import time
 _TIMEOUT = 6.0
 
 
-def _run(args, timeout: float = _TIMEOUT, stdin: str | None = None):
-    return subprocess.run(args, capture_output=True, text=True, timeout=timeout, input=stdin)
+def _run(args, timeout: float = _TIMEOUT):
+    return subprocess.run(args, capture_output=True, text=True, timeout=timeout)
 
 
 def available() -> bool:
@@ -84,17 +84,30 @@ def is_connected(mac: str) -> bool:
 
 
 def pair_connect(mac: str) -> bool:
-    """Empareja, confía y conecta un dispositivo. Bloquea unos segundos (la UI muestra
-    'Conectando…' antes). El agente 'NoInputNoOutput' acepta el pairing 'just works'.
+    """Empareja, confía y conecta un dispositivo. Bloquea hasta ~1 min en el peor caso (la
+    UI lo corre en un hilo y muestra 'Conectando…').
+
+    Each step is its own one-shot `bluetoothctl <command>`: in that mode bluetoothctl
+    waits for BlueZ's answer before it exits. Fed a script on stdin it read to the end
+    of the input and quit at once, and BlueZ cancels a pairing whose requester is gone.
+    With no agent, BlueZ pairs as NoInputNoOutput, which is what a speaker without a
+    screen or keypad does anyway ("just works"). `trust` lets the speaker reconnect on
+    its own later without asking anyone. A step that fails (pair says AlreadyExists for
+    a speaker paired before) does not stop the next one; what counts is the end state.
     """
-    # 'pair' tiene que ir en la misma sesión donde se registra el agente (vía stdin).
-    pair_seq = f"power on\nagent NoInputNoOutput\ndefault-agent\npair {mac}\n"
-    try:
-        _run(["bluetoothctl"], timeout=20.0, stdin=pair_seq)
-        time.sleep(0.5)
-        _run(["bluetoothctl", "trust", mac])
-        _run(["bluetoothctl", "connect", mac], timeout=12.0)
+    steps = (
+        (["bluetoothctl", "power", "on"], _TIMEOUT),
+        (["bluetoothctl", "pair", mac], 40.0),
+        (["bluetoothctl", "trust", mac], _TIMEOUT),
+        (["bluetoothctl", "connect", mac], 30.0),
+    )
+    for args, timeout in steps:
+        try:
+            _run(args, timeout=timeout)
+        except (OSError, subprocess.SubprocessError):
+            pass
+    for _ in range(5):  # the A2DP profile can take a moment after Connect answers
+        if is_connected(mac):
+            return True
         time.sleep(1.0)
-    except (OSError, subprocess.SubprocessError):
-        pass  # aún con timeout en algún paso, abajo verificamos si quedó conectado
-    return is_connected(mac)
+    return False

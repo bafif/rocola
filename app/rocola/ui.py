@@ -251,11 +251,7 @@ class NowPlayingScene(Scene):
             ),
             (song.get("Artist") or "", body, "muted"),
             (song.get("Album") or "", body, "muted"),
-            (
-                f"[{status.get('state', 'stop')}]   vol {status.get('volume', '?')}%",
-                body,
-                "accent",
-            ),
+            (_status_line(status), body, "accent"),
         ]
         lines = [line for line in lines if line[0]]
 
@@ -286,6 +282,19 @@ class NowPlayingScene(Scene):
             y += img.get_height() + 10
 
 
+_STATES = {"play": "Reproduciendo", "pause": "En pausa", "stop": "Detenido"}
+
+
+def _status_line(status: dict) -> str:
+    """MPD's state and volume in words. MPD says volume -1 when it has no mixer (no
+    output open yet, or none at all): then the volume is left out."""
+    state = _STATES.get(status.get("state", "stop"), "Detenido")
+    volume = status.get("volume")
+    if volume is None or volume.startswith("-"):
+        return state
+    return f"{state}   ·   volumen {volume}%"
+
+
 class MenuScene(Scene):
     OPTIONS = [
         ("Salida de audio", "audio"),
@@ -299,19 +308,30 @@ class MenuScene(Scene):
     def __init__(self, app):
         super().__init__(app)
         self.index = 0
+        self.options = self._options()
+        self.notice: str | None = None  # why the last option failed, shown below the list
+
+    @staticmethod
+    def _options() -> list[tuple[str, str]]:
+        # The installer clones the USB stick; on a rocola already installed on a disk it
+        # has nothing to clone from, so the option only shows up in the live system.
+        live = sysinfo.is_live()
+        return [opt for opt in MenuScene.OPTIONS if opt[1] != "install" or live]
 
     def on_enter(self) -> None:
         self.index = 0
+        self.notice = None
+        self.options = self._options()
 
     def handle(self, action: str) -> None:
         if action == actions.UP:
-            self.index = (self.index - 1) % len(self.OPTIONS)
+            self.index = (self.index - 1) % len(self.options)
         elif action == actions.DOWN:
-            self.index = (self.index + 1) % len(self.OPTIONS)
+            self.index = (self.index + 1) % len(self.options)
         elif action in (actions.BACK, actions.MENU):
             self.app.set_scene("library")
         elif action == actions.SELECT:
-            self._activate(self.OPTIONS[self.index][1])
+            self._activate(self.options[self.index][1])
 
     def _activate(self, key: str) -> None:
         if key == "audio":
@@ -324,7 +344,7 @@ class MenuScene(Scene):
             self.app.mpd_safe(lambda c: c.update())
             self.app.set_scene("library")
         elif key == "install":
-            self.app.launch_installer()
+            self.notice = self.app.launch_installer()
         else:
             self.app.set_scene("library")
 
@@ -334,13 +354,17 @@ class MenuScene(Scene):
         self.app.draw_header(surface, "MENÚ")
         font = self.theme.font("body", max(18, h // 16))
         y = self.app.header_h + h // 6
-        for i, (label, _key) in enumerate(self.OPTIONS):
+        for i, (label, _key) in enumerate(self.options):
             selected = i == self.index
             color = self.theme.color("highlight") if selected else self.theme.color("text")
             prefix = "> " if selected else "  "
             img = font.render(prefix + label, True, color)
             surface.blit(img, (w // 2 - img.get_width() // 2, y))
             y += img.get_height() + 14
+        if self.notice:
+            small = self.theme.font("body", max(14, h // 26))
+            img = small.render(_fit(small, self.notice, w - 32), True, self.theme.color("accent"))
+            surface.blit(img, (w // 2 - img.get_width() // 2, y + 10))
 
 
 class AudioScene(Scene):
@@ -413,11 +437,8 @@ class AudioScene(Scene):
         rows = max(1, (h - top_y - 2 * line_h) // line_h)  # reservar 1 línea para el hint
 
         if not self.available:
-            msg = body.render(
-                "PipeWire no responde todavía. Reintentá en unos segundos.",
-                True,
-                self.theme.color("accent"),
-            )
+            text = "PipeWire no responde todavía. Reintentá en unos segundos."
+            msg = body.render(_fit(body, text, w - 32), True, self.theme.color("accent"))
             surface.blit(msg, (16, top_y))
             return
 
@@ -441,11 +462,13 @@ class AudioScene(Scene):
                 # fuente con glifos no-ASCII (●/○ tofu con la fuente de fallback).
                 marker = "* " if s.is_default else "  "
                 text = f"{marker}[{s.kind}] {s.description}"
-            surface.blit(body.render(text, True, color), (16, y))
+            surface.blit(body.render(_fit(body, text, w - 32), True, color), (16, y))
 
         hint = self.theme.font("body", max(13, h // 26))
         himg = hint.render(
-            "Enter: elegir salida y probar tono   -   Esc: volver", True, self.theme.color("muted")
+            _fit(hint, "Enter: elegir salida y probar tono   -   Esc: volver", w - 32),
+            True,
+            self.theme.color("muted"),
         )
         surface.blit(himg, (16, h - himg.get_height() - 6))
 
@@ -475,8 +498,14 @@ class InfoScene(Scene):
         x = 16
         y = self.app.header_h + 12
         for label, value in self.rows:
-            surface.blit(font.render(f"{label}:", True, self.theme.color("accent")), (x, y))
-            surface.blit(font.render(str(value), True, self.theme.color("text")), (x + col, y))
+            label_img = font.render(
+                _fit(font, f"{label}:", col - 8), True, self.theme.color("accent")
+            )
+            surface.blit(label_img, (x, y))
+            value_img = font.render(
+                _fit(font, str(value), w - x - col - 16), True, self.theme.color("text")
+            )
+            surface.blit(value_img, (x + col, y))
             y += line_h
 
         hint = self.theme.font("body", max(13, h // 26))

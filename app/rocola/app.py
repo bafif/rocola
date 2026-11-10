@@ -14,6 +14,9 @@ from .config import Config
 from .mpdclient import MPDClient, MPDError
 from .theme import Theme
 
+# Root unit that runs the installer on its own console (os/rootfs-overlay).
+INSTALLER_UNIT = "rocola-installer.service"
+
 
 class RocolaApp:
     def __init__(self) -> None:
@@ -220,16 +223,25 @@ class RocolaApp:
             surface.blit(simg, (w - simg.get_width() - 12, sy))
 
     # --- instalador -------------------------------------------------------
-    def launch_installer(self) -> None:
-        """Lanza el instalador guiado (TUI) en un VT nuevo, best-effort.
+    def launch_installer(self) -> str | None:
+        """Open the guided installer (whiptail, as root) on its own console.
 
-        El instalador es whiptail; desde X se abre en otro VT con `openvt`.
-        Si no está disponible, vuelve a la biblioteca sin romper nada.
+        The app runs as `rocola`, who is not root and has no sudo: systemd starts
+        rocola-installer.service, and a polkit rule lets this user start that one unit
+        and nothing else. The unit switches to its console and back when it ends.
+        Returns None once it is on its way, or what to show on screen when it is not.
         """
-        installer = "/usr/local/bin/rocola-install"
-        if os.path.exists(installer):
-            try:
-                subprocess.Popen(["openvt", "-s", "-w", installer])
-            except OSError:
-                pass
+        try:
+            r = subprocess.run(
+                ["systemctl", "start", "--no-block", "--no-ask-password", INSTALLER_UNIT],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            return f"No se pudo abrir el instalador ({exc})."
+        if r.returncode != 0:
+            detail = (r.stderr or r.stdout).strip().splitlines()
+            return "No se pudo abrir el instalador" + (f": {detail[-1]}" if detail else ".")
         self.set_scene("library")
+        return None
