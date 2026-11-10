@@ -36,6 +36,7 @@ Un **único pendrive** que:
 - **Live**: sistema que corre desde el pendrive sin instalarse (en RAM/overlay).
 - **15 kHz**: frecuencia horizontal de los CRT de arcade/TV (vs 31 kHz+ de monitores VGA).
 - **MPD**: Music Player Daemon, el motor de audio.
-- **switchres**: utilidad que genera/cambia modelines para CRT.
+- **Modeline**: la descripción de un modo de video (resolución y tiempos) que se le pasa a Xorg;
+  los de 15 kHz están en `display/modelines/`.
 
 Siguiente: [02 · Pipeline de build](02-build-pipeline.md).

@@ -27,8 +27,8 @@ The screenshots use an invented demo library.
   partition.
 - **Old hardware first**: 32-bit (i386) CPUs and around 2 GB of RAM. Boots with **BIOS** (32- and
   64-bit PCs) and **UEFI x64**.
-- **CRT support**: VGA (31 kHz) and 15 kHz arcade/TV monitors through `switchres` and modelines,
-  with a safe VGA fallback. The monitor type is chosen once, at install time.
+- **CRT support**: VGA (31 kHz) and 15 kHz arcade/TV monitors through fixed modelines,
+  with VGA as the safe default. The monitor type is chosen once, at install time.
 - **Arcade controls**: USB encoders that show up as a keyboard or as a joystick both work, at the
   same time, with no setup.
 - **Its own UI**: a full-screen jukebox interface written with **SDL2** (Python + pygame) on top
@@ -72,7 +72,8 @@ can be written with any of the tools above.
 
 1. Plug the stick into the old PC and boot from it (change the boot order if needed).
 2. The live jukebox starts: music can play right away.
-3. To install it: open the menu (**F10** or arcade button 3), choose **Instalar en disco**, pick the
+3. To install it, plug in a keyboard (the installer asks you to type a confirmation word), open the
+   menu (**F10** or arcade button 3), choose **Instalar en disco**, pick the
    target disk (**14 GB or more**: 12 GB for the system, the rest for music), confirm, pick the
    monitor type (modern/VGA or 15 kHz) and reboot.
 4. Remove the stick: from now on the PC boots straight into the jukebox.
@@ -145,7 +146,7 @@ os/         the OS: Containerfile (FROM i386/debian:bookworm) + files overlaid o
 image/      packaging: rootfs -> bootable hybrid ISO (squashfs + GRUB BIOS/UEFI)
 app/        the jukebox UI (Python + pygame/SDL2), MPD client, input, themes, tests
 installer/  guided installer (whiptail TUI) that clones the system to disk
-display/    15 kHz modelines and VGA/CRT detection (switchres)
+display/    15 kHz modelines and the VGA/CRT video setup
 docs/       one document per subsystem
 ```
 

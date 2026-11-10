@@ -24,8 +24,9 @@ armé y lo probé en una PC x86-64 con contenedores (que corren i386 nativo) y Q
 
    ```
    GRUB → kernel i386 → live-boot monta /live/filesystem.squashfs (overlay en RAM)
-        → systemd (multi-user) → mpd.service → rocola.service
-        → Xorg en tty1 → UI de la rocola a pantalla completa, con MPD conectado
+        → systemd (multi-user) → autologin de rocola en tty1 → startx
+        → rocola-session (PipeWire, MPD) → Xorg en tty1 → UI de la rocola a pantalla
+          completa, con MPD conectado
    ```
 
    La captura es [screenshots/qemu-boot-ui.png](screenshots/qemu-boot-ui.png). Muestra «Sin música.

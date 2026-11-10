@@ -48,8 +48,8 @@ opt/rocola/                      (la app)
 usr/local/bin/rocola-session     (audio + MPD + app, dentro de X)
 ```
 
-`etc/systemd/system/rocola.service` es el mecanismo anterior (un servicio que tomaba tty1): queda
-en el árbol pero no se habilita.
+Si la UI se cierra 5 veces en 2 minutos, el autologin deja de relanzarla: tty1 queda en la consola
+con el motivo y la forma de reintentar, en vez de un bucle que tapa la pantalla.
 
 ## BIOS y UEFI x64
 
@@ -63,7 +63,13 @@ en el árbol pero no se habilita.
   queda en la consola de tty1 y no se lanza X.
 - Entrada **«Rocola — troubleshooting (SSH por red)»**: la UI normal más `sshd` (ver
   [11](11-troubleshooting.md)).
+- En el sistema instalado, la entrada **«Rocola — consola sin UI (recuperación)»** hace lo mismo
+  que la de recuperación del pendrive. Las «recovery mode» de Debian están apagadas: piden la clave
+  de root, y root está bloqueado.
+- Para CPUs sin PAE (algunos Pentium M, VIA C3, AMD Geode), la entrada **«Rocola — CPU sin PAE
+  (kernel 686)»**. En el disco instalado ese kernel queda en el submenú «Advanced options» de GRUB.
 - Para ver por qué no arrancó la UI: `journalctl -b | grep -iE 'startx|xinit|Xorg|rocola-session'`
-  y `/var/log/Xorg.0.log`.
+  y `/var/log/Xorg.0.log`. `rocola` está en el grupo `systemd-journal`, así que desde la consola
+  `journalctl` muestra los logs de todo el sistema sin root.
 
 Siguiente: [04 · Instalador](04-installer.md).

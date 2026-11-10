@@ -5,9 +5,16 @@ explícita: el sistema **nunca** formatea un disco solo.
 
 ## Cómo se dispara
 
-Desde la rocola en vivo: menú (**F10** o el botón 3 de arcade) → **Instalar en disco**. Lanza
-`rocola-install` (fuente en `installer/`, enlazado en `/usr/local/bin/`), una TUI con `whiptail`
-navegable con los controles de arcade/teclado.
+Desde la rocola en vivo: menú (**F10** o el botón 3 de arcade) → **Instalar en disco** (la opción
+solo aparece cuando la rocola corre desde el pendrive). La app no es root: le pide a systemd que
+arranque `rocola-installer.service`, y una regla de polkit le deja al usuario `rocola` arrancar esa
+unidad y ninguna otra. La unidad pasa a la consola tty8, corre `rocola-install` (fuente en
+`installer/`, enlazado en `/usr/local/bin/`) como root y al terminar vuelve a la UI. Desde una
+consola es lo mismo: `systemctl start rocola-installer`.
+
+Es una TUI con `whiptail` que se maneja con **teclado**: la confirmación se tipea, y un encoder de
+arcade en modo joystick no manda teclas a una consola de texto. Instalar se hace una vez; alcanza
+con enchufar un teclado para eso.
 
 ## Flujo
 
@@ -22,6 +29,8 @@ navegable con los controles de arcade/teclado.
      │ 2M ef02 │ FAT32    │ ext4         │ ext4 (persistente)        │
      └─────────┴──────────┴──────────────┴───────────────────────────┘
 5. Clonado               → rsync del sistema vivo (/) → ROOT (excluye /proc,/sys,/dev,/music…)
+                           La música precargada (y la importada en la sesión en vivo) va a
+                           la partición /music, si no tiene música; no ocupa ROOT.
 6. Tipo de monitor       → moderno/VGA | 15 kHz  → se persiste (ver doc 05)
 7. Bootloader            → GRUB BIOS (i386-pc, embebido en BIOSBOOT) + GRUB-EFI amd64
                            (BOOTX64.EFI en la ESP, --removable); /etc/fstab por UUID.
@@ -37,6 +46,8 @@ navegable con los controles de arcade/teclado.
 - Resumen claro de la operación destructiva antes de tocar nada.
 - Confirmación tipográfica (escribir una palabra), no solo "Enter".
 - Detección y aviso si el destino es el **propio pendrive** de instalación (se excluye).
+- Corre solo desde el pendrive: en una rocola instalada la opción no aparece y el instalador se
+  niega, porque el disco del propio sistema aparecería como destino.
 
 ## Esquema de particiones y por qué
 

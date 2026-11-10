@@ -74,6 +74,9 @@ mapeado no deja a nadie adentro. Captura: [screenshots/ui-inputtest.png](screens
 
 El **instalador guiado** se abre desde el menú (botón 3 o F10) → «Instalar en disco». No hay atajo
 directo, para no dispararlo sin querer durante el uso normal, y el instalador pide confirmación
-antes de tocar un disco.
+antes de tocar un disco. La opción solo aparece cuando la rocola corre desde el pendrive.
+
+El instalador es una pantalla de texto que se maneja con **teclado**: la confirmación se tipea, y
+un encoder en modo joystick no manda teclas a la consola. Para instalar hay que enchufar uno.
 
 Siguiente: [07 · La app](07-rocola-app.md).

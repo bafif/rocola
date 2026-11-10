@@ -60,7 +60,7 @@ reciente de pygame hay que probarlo en la ISO.
   una vez por canción, en bloques de 1 MiB (`binarylimit`), y se ignora si pesa más de 8 MB. Los
   textos largos se cortan con «…».
 - **Menú** (botón 3 o F10): salida de audio, información del sistema, probar controles, actualizar
-  la biblioteca e instalar en disco.
+  la biblioteca y, desde el pendrive, instalar en disco.
 - **Salida de audio**: elegir entre las salidas de PipeWire (analógica, HDMI, USB, Bluetooth) y
   emparejar un parlante Bluetooth.
 - **Información**: drivers de audio y video, resolución, modo de pantalla, equipo, IP y kernel.

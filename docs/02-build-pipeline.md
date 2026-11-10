@@ -23,7 +23,8 @@ os/Containerfile ──build──► imagen del SO ──export──► out/ro
 ## Paso 1 — SO como imagen de contenedor (`make rootfs`)
 
 `os/Containerfile` parte de `i386/debian:bookworm` e instala el set mínimo (ver `os/packages.list`):
-Xorg, MPD, SDL2/pygame-ce, switchres, kernel `linux-image-686-pae`, `live-boot`, GRUB, etc. Luego
+Xorg, MPD, SDL2/pygame, los kernels `linux-image-686-pae` y `linux-image-686` (el de respaldo sin
+PAE), `live-boot`, GRUB, etc. Si un initrd queda sin `live-boot`, el build se corta ahí. Luego
 copia `os/rootfs-overlay/` (configs, systemd units, la app) sobre el rootfs.
 
 > Por qué bookworm: Debian 13 (trixie) discontinuó el kernel/instalador i386. Para un sistema i386

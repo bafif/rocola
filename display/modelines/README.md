@@ -10,7 +10,10 @@ Perfiles de video que `rocola-display-setup` inserta en la config de Xorg.
 
 1. Arrancar con `MODE=crt15` en `/etc/rocola/display.conf`.
 2. Si la imagen sale corrida/sin sync, ajustar el `Modeline` correspondiente.
-3. Opcional: instalar **switchres** para generar modelines óptimos por contenido.
+3. Al tocar un modeline, revisar las frecuencias: horizontal = reloj ÷ total horizontal (entre
+   15,0 y 16,5 kHz, lo que `rocola-display-setup` le declara a Xorg) y vertical = horizontal ÷
+   total vertical (el doble si es entrelazado). Un modeline fuera de rango Xorg lo descarta sin
+   avisar. `switchres` los calcula a medida, pero no está en Debian y no viene en la imagen.
 
 ## Advertencia de hardware
 

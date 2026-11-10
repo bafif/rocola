@@ -29,15 +29,23 @@ Containerfile (`rm -rf /var/lib/apt/lists/*`).
 - Activá USB/Legacy boot en la BIOS; probá el menú de booteo (F12/F8/Esc).
 - Regrabá el pendrive (ver [10](10-flashing-usb.md)); puede haber quedado a medias.
 - Para UEFI muy viejo: usá modo BIOS/CSM.
+- Si se cuelga apenas arranca el kernel en una CPU muy vieja (algunos Pentium M, VIA C3, AMD
+  Geode), probá la entrada «Rocola — CPU sin PAE (kernel 686)».
 
 **Arranca pero queda en consola, no abre la rocola**
-La UI la lanza el autologin de tty1 (`~rocola/.bash_profile` → `startx` → `rocola-session`), no
-`rocola.service`. Para ver el error:
+La UI la lanza el autologin de tty1 (`~rocola/.bash_profile` → `startx` → `rocola-session`).
+Para ver el error:
 ```bash
 journalctl -u rocola-display-setup.service -b        # config de video
 journalctl -b | grep -iE 'startx|xinit|Xorg|rocola-session'
 ```
 Suele ser video (ver abajo) o que Xorg no levantó.
+
+Si la UI se cae 5 veces en 2 minutos, el autologin deja de relanzarla y la consola muestra cómo
+seguir. Para entrar a la consola a propósito: en el pendrive, la entrada de GRUB «Rocola —
+recuperación (consola, sin UI)»; en el disco instalado, «Rocola — consola sin UI (recuperación)».
+El usuario `rocola` está en el grupo `systemd-journal`, así que ahí `journalctl` muestra los logs
+de todo el sistema sin root.
 
 ## SSH de troubleshooting (remoto)
 

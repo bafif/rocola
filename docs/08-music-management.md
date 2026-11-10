@@ -7,7 +7,7 @@ La biblioteca vive en una **partición de datos persistente** (`/music`).
 
 | Contexto | Ruta | Persiste |
 |----------|------|----------|
-| Live (pendrive) | música precargada incluida en el squashfs (solo lectura) | n/a |
+| Live (pendrive) | `/music` es la carpeta precargada del squashfs, montada encima; lo importado queda en RAM | no (el instalador lo lleva al disco) |
 | Instalado | partición **`/music`** (ext4, separada de ROOT) | **sí** |
 
 MPD apunta su `music_directory` a `/music`. Separarla de ROOT permite **reinstalar/actualizar el SO
@@ -21,9 +21,12 @@ Antes de construir, poné carpetas de música en:
 os/rootfs-overlay/opt/rocola/music/
 ```
 
-(esa ruta se ignora en git salvo `.gitkeep`, para no versionar audio pesado). En el primer arranque,
-`rocola-music-import` copia/enlaza esa música a `/music` y MPD la escanea. Útil para entregar el
-pendrive "con música puesta".
+(esa ruta se ignora en git salvo `.gitkeep`, para no versionar audio pesado). En el pendrive,
+`rocola-music-import` monta esa carpeta encima de `/music` en vez de copiarla: el sistema en vivo
+corre en RAM y una copia ocupaba la biblioteca dos veces en memoria. Al instalar, el instalador la
+copia a la partición `/music` del disco (con lo que se haya importado en la sesión en vivo) si esa
+partición no tiene música, así no ocupa los 12 GB del sistema. MPD la escanea al arrancar. Útil
+para entregar el pendrive "con música puesta".
 
 ## Vía 2 — Import desde un 2º USB
 

@@ -69,7 +69,8 @@ En el menú (tecla **F10** o el botón de menú):
   dispositivos marcados como *trusted* se reconectan solos.
 - Para emparejar: menú, «Salida de audio», «Emparejar Bluetooth…». Se abre una pantalla dentro de
   la app (con flechas y Enter) que busca dispositivos, los lista y hace `pair`, `trust` y
-  `connect` con un agente «just works», sin PIN. Funciona como usuario `rocola`, sin root, gracias
+  `connect`, cada uno con su propio `bluetoothctl`, que espera la respuesta de BlueZ antes de
+  salir; el emparejamiento es «just works», sin PIN. Funciona como usuario `rocola`, sin root, gracias
   a la política de D-Bus del grupo `bluetooth`. Al volver, el sink Bluetooth aparece en el
   selector: elegilo y probá el tono.
 - Por SSH o desde la consola está `rocola-bt-pair` (una TUI con whiptail), que hace el mismo
@@ -84,7 +85,7 @@ la del SSH:
 
 ```bash
 U=$(id -u rocola)
-RUN="sudo -u rocola env XDG_RUNTIME_DIR=/run/user/$U"
+RUN="runuser -u rocola -- env XDG_RUNTIME_DIR=/run/user/$U"   # no hay sudo en la imagen
 
 $RUN pactl info                      # ¿PipeWire responde?
 $RUN pactl list short sinks          # sinks disponibles (nombres estables)

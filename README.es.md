@@ -27,8 +27,8 @@ Las capturas usan una biblioteca de demostración inventada.
   la partición de la música.
 - **Pensado para hardware viejo**: CPU de 32 bits (i386) y unos 2 GB de RAM. Arranca por **BIOS**
   (PCs de 32 y de 64 bits) y por **UEFI x64**.
-- **Monitores de tubo**: VGA (31 kHz) y monitores de arcade o TV de 15 kHz con `switchres` y
-  modelines, con un modo VGA seguro de respaldo. El tipo de monitor se elige una sola vez, al
+- **Monitores de tubo**: VGA (31 kHz) y monitores de arcade o TV de 15 kHz con modelines
+  fijos, con VGA como modo seguro por defecto. El tipo de monitor se elige una sola vez, al
   instalar.
 - **Controles de arcade**: los encoders USB que se presentan como teclado o como joystick andan los
   dos, a la vez y sin configurar nada.
@@ -73,7 +73,8 @@ x64 y se puede grabar con cualquiera de las herramientas de arriba.
 
 1. Enchufá el pendrive en la PC vieja y arrancá desde él (cambiá el orden de arranque si hace falta).
 2. Arranca la rocola en vivo: ya puede sonar música.
-3. Para instalarla: abrí el menú (**F10** o el botón 3 de arcade), elegí **Instalar en disco**, elegí
+3. Para instalarla, enchufá un teclado (el instalador pide tipear una palabra de confirmación),
+   abrí el menú (**F10** o el botón 3 de arcade), elegí **Instalar en disco**, elegí
    el disco de destino (**14 GB o más**: 12 GB para el sistema y el resto para la música), confirmá,
    elegí el tipo de monitor (moderno/VGA o 15 kHz) y reiniciá.
 4. Sacá el pendrive: desde ese momento la PC arranca directo en la rocola.
@@ -146,7 +147,7 @@ os/         el SO: Containerfile (FROM i386/debian:bookworm) + archivos que se s
 image/      empaquetado: rootfs -> ISO híbrida booteable (squashfs + GRUB BIOS/UEFI)
 app/        la UI de la rocola (Python + pygame/SDL2), cliente MPD, entrada, temas, tests
 installer/  instalador guiado (TUI con whiptail) que clona el sistema al disco
-display/    modelines de 15 kHz y detección VGA/CRT (switchres)
+display/    modelines de 15 kHz y la config de video VGA/CRT
 docs/       un documento por subsistema
 ```
 

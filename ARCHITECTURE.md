@@ -12,7 +12,7 @@ Un **pendrive booteable** que convierte una PC de escritorio vieja en una **roco
 | Hardware viejo (~2 GB RAM, 32-bit) | Debian **i386**, kernel `686-pae` (fallback `686` no-PAE) |
 | Base del SO | **Imagen de contenedor `FROM i386/debian:bookworm`** (Podman; bookworm aún publica kernel/booteable i386; trixie lo discontinuó) |
 | Arranque | **BIOS** (PCs 32 y 64-bit) **+ UEFI x64** (`grub-efi-amd64` carga kernel i386) |
-| Monitores | **VGA 31 kHz + arcade/TV 15 kHz** vía `switchres` + modelines |
+| Monitores | **VGA 31 kHz + arcade/TV 15 kHz** con modelines fijos |
 | Controles | Encoder USB **teclado y/o joystick**, autodetectado (SDL) |
 | App | **UI propia SDL2** (Python + pygame-ce) sobre **MPD** |
 | Instalación | **Live en el pendrive + disparo manual → instalador guiado** (nunca auto-formatea) |
@@ -23,7 +23,7 @@ Un **pendrive booteable** que convierte una PC de escritorio vieja en una **roco
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │ os/Containerfile  (FROM i386/debian:bookworm)                          │
-│   · paquetes mínimos (Xorg, MPD, SDL2/pygame-ce, switchres, GRUB…)     │
+│   · paquetes mínimos (Xorg, MPD, SDL2/pygame, GRUB…)                   │
 │   · rootfs-overlay/  (systemd units, autologin, mpd.conf, xorg, app)   │
 └───────────────┬──────────────────────────────────────────────────────┘
                 │  podman build  →  podman export
@@ -77,12 +77,12 @@ Detalle: [docs/03-boot-and-live.md](docs/03-boot-and-live.md).
 Disparo **manual** desde la rocola en vivo (menú → «Instalar en disco»; F10 o botón 3 de arcade):
 
 ```
-rocola-install (whiptail, navegable con arcade)
+rocola-install (whiptail, como root en tty8; se maneja con teclado)
   1. Detecta discos (modelo, tamaño)         → se elige el destino (mínimo 14 GB)
-  2. Doble confirmación anti-borrado          (muestra qué se va a destruir)
+  2. Confirmación tipeada anti-borrado        (muestra qué se va a destruir)
   3. Particiona destino (GPT):
         BIOSBOOT (ef02, BIOS) · ESP (FAT32, UEFI) · ROOT (ext4) · DATOS /music (ext4, persistente)
-  4. Clona el SO:  rsync del sistema vivo (/)  →  ROOT
+  4. Clona el SO:  rsync del sistema vivo (/)  →  ROOT; la música precargada → /music
   5. Pregunta tipo de monitor (moderno/VGA | 15 kHz) → persiste la elección
   6. Instala GRUB en el destino (BIOS + UEFI x64), genera fstab; mismo modo de video que el live
   7. Reboot → la PC arranca la rocola sola desde el disco
@@ -97,12 +97,13 @@ Detalle: [docs/04-installer.md](docs/04-installer.md).
 La idea es que los dos tipos de monitor de tubo anden sin configurar nada después de instalar:
 
 - En monitores con un EDID que sirve (VGA o modernos) se usan los modos estándar.
-- En un CRT de 15 kHz (arcade o TV, sin un EDID confiable) se fuerzan modelines de 15 kHz con
-  `switchres`.
+- En un CRT de 15 kHz (arcade o TV, sin un EDID confiable) se fuerzan modelines de 15 kHz
+  fijos, NTSC o PAL según el estándar de TV.
 - El tipo de monitor se elige una sola vez, en el instalador, y queda guardado; de ahí en adelante
   cada arranque lo aplica solo.
-- Los 15 kHz dependen de que la placa de video y el driver los acepten. Si no, el sistema vuelve a
-  un modo VGA seguro.
+- Los 15 kHz dependen de que la placa de video y el driver los acepten. El sistema no puede saber
+  si el monitor muestra imagen, así que no vuelve solo a VGA: con un CRT en negro se enchufa un
+  monitor VGA y se cambia el modo en `/etc/rocola/display.conf`.
 
 Detalle: [docs/05-display-crt-15khz.md](docs/05-display-crt-15khz.md).
 
