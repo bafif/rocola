@@ -54,8 +54,8 @@ CATALOG: dict[str, dict[str, str]] = {
     # Menu
     "menu.audio": {"es": "Salida de audio", "en": "Audio output"},
     "menu.info": {"es": "Información del sistema", "en": "System info"},
-    "menu.inputtest": {"es": "Probar controles", "en": "Test the controls"},
-    "menu.update": {"es": "Actualizar biblioteca", "en": "Update the library"},
+    "menu.inputtest": {"es": "Probar controles", "en": "Test controls"},
+    "menu.update": {"es": "Actualizar biblioteca", "en": "Update library"},
     # Both words, so whoever does not read the current language still finds it.
     "menu.language": {"es": "Idioma / Language: Español", "en": "Language / Idioma: English"},
     "menu.install": {"es": "Instalar en disco", "en": "Install to disk"},
@@ -69,7 +69,7 @@ CATALOG: dict[str, dict[str, str]] = {
         "en": "Could not open the installer: {detail}",
     },
     # Audio output
-    "audio.pair": {"es": "+  Emparejar Bluetooth...", "en": "+  Pair a Bluetooth device..."},
+    "audio.pair": {"es": "+  Emparejar Bluetooth...", "en": "+  Pair Bluetooth..."},
     "audio.unavailable": {
         "es": "PipeWire no responde todavía. Reintentá en unos segundos.",
         "en": "PipeWire is not answering yet. Try again in a few seconds.",
