@@ -33,11 +33,19 @@ tar -C "$ROOTDIR" -xf "$ROOTFS_TAR"
 
 # --- 2) Kernel + initrd para el arranque LIVE ---------------------------------
 log "Tomando kernel + initrd…"
-KIMG="$(ls -1 "$ROOTDIR"/boot/vmlinuz-*   2>/dev/null | sort -V | tail -1 || true)"
-IIMG="$(ls -1 "$ROOTDIR"/boot/initrd.img-* 2>/dev/null | sort -V | tail -1 || true)"
-[ -n "$KIMG" ] && [ -n "$IIMG" ] || { echo "ERROR: no encuentro kernel/initrd en el rootfs"; exit 1; }
+# Dos kernels: 686-pae (el de siempre) y 686 sin PAE, de respaldo para CPUs que no lo
+# tienen. Se eligen por sabor, no por orden alfabético.
+newest() { ls -1 "$ROOTDIR"/boot/vmlinuz-*"$1" 2>/dev/null | sort -V | tail -1 || true; }
+KIMG="$(newest -686-pae)"
+KIMG_NOPAE="$(newest -686)"
+[ -n "$KIMG" ] && [ -n "$KIMG_NOPAE" ] || { echo "ERROR: faltan los kernels 686-pae y 686 en el rootfs"; exit 1; }
+for k in "$KIMG" "$KIMG_NOPAE"; do
+    [ -f "$ROOTDIR/boot/initrd.img-${k##*/vmlinuz-}" ] || { echo "ERROR: falta el initrd de $k"; exit 1; }
+done
 cp "$KIMG" "$STAGE/live/vmlinuz"
-cp "$IIMG" "$STAGE/live/initrd.img"
+cp "$ROOTDIR/boot/initrd.img-${KIMG##*/vmlinuz-}" "$STAGE/live/initrd.img"
+cp "$KIMG_NOPAE" "$STAGE/live/vmlinuz-nopae"
+cp "$ROOTDIR/boot/initrd.img-${KIMG_NOPAE##*/vmlinuz-}" "$STAGE/live/initrd-nopae.img"
 
 # --- 3) squashfs del rootfs ---------------------------------------------------
 # No excluir /boot: el instalador clona desde la raíz viva (este squashfs) al
@@ -117,6 +125,13 @@ menuentry "Rocola — troubleshooting (SSH por red)" {
     set gfxpayload=keep
     linux  /live/vmlinuz boot=live components nomodeset rocola.ssh
     initrd /live/initrd.img
+}
+menuentry "Rocola — CPU sin PAE (kernel 686)" {
+    # Para CPUs que no tienen PAE (algunos Pentium M, VIA C3, AMD Geode): con el kernel
+    # de siempre se cuelgan apenas arranca. Mismo video genérico que la entrada normal.
+    set gfxpayload=keep
+    linux  /live/vmlinuz-nopae boot=live components quiet loglevel=3 nomodeset
+    initrd /live/initrd-nopae.img
 }
 EOF
 

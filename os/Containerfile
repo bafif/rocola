@@ -53,8 +53,10 @@ RUN sed -i 's/# es_AR.UTF-8/es_AR.UTF-8/' /etc/locale.gen \
  && ln -sf /usr/share/zoneinfo/America/Argentina/Buenos_Aires /etc/localtime
 
 # --- Usuario de la rocola -------------------------------------------------
+# systemd-journal: desde la consola de recuperación (sin root) se leen los logs del
+# sistema con journalctl; sin el grupo, rocola solo veía los de su propia sesión.
 RUN useradd -m -s /bin/bash rocola \
- && usermod -aG audio,video,input,plugdev,tty,bluetooth rocola \
+ && usermod -aG audio,video,input,plugdev,tty,bluetooth,systemd-journal rocola \
  && passwd -d rocola
 
 # --- App, instalador y subsistema de video --------------------------------
@@ -67,7 +69,8 @@ COPY os/rootfs-overlay/ /
 
 # --- Permisos de ejecutables y enlaces ------------------------------------
 RUN set -eux; \
-    chmod +x /usr/local/bin/* /opt/rocola-installer/rocola-install /opt/rocola-display/rocola-display-setup 2>/dev/null || true; \
+    chmod +x /usr/local/bin/* /opt/rocola-installer/rocola-install /opt/rocola-display/rocola-display-setup \
+             /etc/grub.d/11_rocola_noui; \
     ln -sf /opt/rocola-installer/rocola-install   /usr/local/bin/rocola-install; \
     ln -sf /opt/rocola-display/rocola-display-setup /usr/local/bin/rocola-display-setup; \
     install -d -o rocola -g rocola /music; \
@@ -134,8 +137,12 @@ RUN set -eux; \
     fi
 
 # --- initramfs con live-boot ---------------------------------------------
-# Regenerar el initrd para incluir los hooks de live-boot (arranque desde squashfs).
-RUN update-initramfs -u || true
+# Regenerar el initrd de cada kernel (686-pae y el 686 de respaldo) con los hooks de
+# live-boot y la config del overlay. Si falla, o si un initrd queda sin live-boot, el
+# build se corta acá: una imagen así arranca hasta el initramfs y se queda sin raíz.
+RUN set -eux; \
+    update-initramfs -u -k all; \
+    for i in /boot/initrd.img-*; do lsinitramfs "$i" | grep -qx 'scripts/live'; done
 
 # La imagen no "corre" como contenedor normal: su filesystem es el rootfs del SO.
 CMD ["/bin/bash"]

@@ -96,6 +96,27 @@ file "$WORK/music/A/01.mp3" "old"
 run_import "$WORK/stick"
 content "$WORK/music/A/01.mp3" "old"
 
+# --- a fresh partition (only lost+found) counts as empty; .gitkeep is not music
+setup
+mkdir "$WORK/music/lost+found"
+file "$WORK/preload/.gitkeep" ""
+file "$WORK/preload/Demo/01.ogg"
+run_import "$WORK/stick"
+has "$WORK/music/Demo/01.ogg"
+lacks "$WORK/music/.gitkeep"
+
+# --- symbolic links on the stick stay out (they can point anywhere)
+setup
+file "$WORK/outside/secret.mp3"
+mkdir -p "$WORK/stick/Album"
+ln -s "$WORK/outside/secret.mp3" "$WORK/stick/Album/link.mp3"
+ln -s "$WORK/outside" "$WORK/stick/Linked"
+file "$WORK/stick/Album/real.mp3"
+run_import "$WORK/stick"
+has "$WORK/music/Album/real.mp3"
+lacks "$WORK/music/Album/link.mp3"
+lacks "$WORK/music/Linked"
+
 if [ "$FAILS" -gt 0 ]; then
     echo "$FAILS check(s) failed"
     exit 1

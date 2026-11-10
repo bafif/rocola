@@ -28,10 +28,28 @@ export XAUTHORITY="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/Xauthority"
 case "$(tty)" in
     /dev/tty1|/dev/console)
         if [ -z "${DISPLAY:-}" ] && ! grep -qw rocola.noui /proc/cmdline; then
-            # NO pasar 'vt1' explícito: startx ya detecta la vt del login y, como la
-            # sesión del autologin queda activa en seat0, logind le entrega input+DRM.
-            # Forzar 'vt1' provocaba "xf86OpenConsole: Switching VT failed".
-            exec startx /usr/local/bin/rocola-session -- -nolisten tcp
+            # Tope de reintentos: si la UI se cierra 5 veces en 2 minutos no se relanza
+            # más y tty1 queda en esta consola con el motivo a la vista. Sin tope, una UI
+            # que no puede arrancar (driver, Xorg) entraba en un bucle sin fin que tapaba
+            # la pantalla. /tmp se vacía en cada arranque.
+            starts=/tmp/rocola-ui-starts
+            now=$(date +%s)
+            recent=$(awk -v now="$now" 'now - $1 < 120' "$starts" 2>/dev/null | wc -l)
+            if [ "$recent" -ge 5 ]; then
+                echo
+                echo "La interfaz de la rocola se cerró 5 veces en 2 minutos: no se vuelve a abrir sola."
+                echo "  Por qué:      journalctl -b | grep -iE 'startx|Xorg|rocola-session'"
+                echo "                less /var/log/Xorg.0.log  (o ~/.local/share/xorg/Xorg.0.log)"
+                echo "  Reintentar:   rm $starts; exit"
+                echo
+            else
+                { tail -n 9 "$starts" 2>/dev/null; echo "$now"; } >"$starts.new" \
+                    && mv -f "$starts.new" "$starts"
+                # NO pasar 'vt1' explícito: startx ya detecta la vt del login y, como la
+                # sesión del autologin queda activa en seat0, logind le entrega input+DRM.
+                # Forzar 'vt1' provocaba "xf86OpenConsole: Switching VT failed".
+                exec startx /usr/local/bin/rocola-session -- -nolisten tcp
+            fi
         fi
         ;;
 esac

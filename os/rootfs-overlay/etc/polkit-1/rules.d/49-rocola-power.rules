@@ -1,4 +1,4 @@
-// Rocola (kiosko): permitir apagar/reiniciar/suspender sin contraseña.
+// Rocola (kiosko): permitir apagar y reiniciar sin contraseña.
 //
 // Una rocola se maneja con controles de arcade, sin teclado para tipear claves.
 // El usuario 'rocola' (sesión local de la UI) tiene que poder apagar la máquina

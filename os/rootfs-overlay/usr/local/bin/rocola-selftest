@@ -27,9 +27,6 @@ for tok in $(cat /proc/cmdline); do
     esac
 done
 
-# Evitar que la UI/Xorg tome el control mientras instalamos (cosmético).
-systemctl stop rocola.service 2>/dev/null || true
-
 echo "==================== ROCOLA SELFTEST (instalador) ===================="
 echo "[selftest] destino: $TARGET (keep_music=$KEEP_MUSIC)"
 lsblk -dno NAME,SIZE,TYPE "$TARGET" 2>/dev/null || echo "[selftest] (lsblk del destino falló)"

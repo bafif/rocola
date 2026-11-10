@@ -1,8 +1,8 @@
 #!/bin/bash
 # rocola-bt-pair — emparejá un parlante o auricular Bluetooth con la rocola.
 #
-# TUI con whiptail (mismo estilo que el instalador). La app lo abre en otra VT
-# (openvt) desde el menú "Salida de audio". Una vez conectado, WirePlumber expone el
+# TUI con whiptail para la consola o SSH; desde la UI se empareja en el menú «Salida de
+# audio» (BtPairScene, que hace lo mismo). Una vez conectado, WirePlumber expone el
 # dispositivo como un "sink" de PipeWire y aparece en el selector de salida.
 #
 # Pensado para parlantes/auriculares BT estándar ("just works", sin PIN). Necesita un
@@ -57,18 +57,17 @@ MAC="$(whiptail --title "$TITLE" --menu "Elegí el dispositivo a emparejar:" 18 
         "${MENU_ARGS[@]}" 3>&1 1>&2 2>&3)" || exit 0
 [ -n "$MAC" ] || exit 0
 
-# Emparejar / confiar / conectar en una sola sesión de bluetoothctl, con agente
-# "NoInputNoOutput" (acepta el emparejamiento "just works" sin pedir PIN).
+# Emparejar, confiar y conectar, cada paso con su propio bluetoothctl: así cada uno
+# espera la respuesta de BlueZ antes de salir. Con los comandos por stdin, bluetoothctl
+# leía hasta el final de la entrada y salía en el acto, y BlueZ cancela un emparejamiento
+# cuando el que lo pidió se va. Sin agente, BlueZ empareja como NoInputNoOutput ("just
+# works", sin PIN). Un paso que falla (pair en un parlante ya emparejado) no corta los
+# demás: lo que cuenta es si queda conectado.
 whiptail --title "$TITLE" --infobox "Conectando con $MAC…" 8 60
 OUT="$(
-$BT <<EOF 2>&1
-power on
-agent NoInputNoOutput
-default-agent
-pair $MAC
-trust $MAC
-connect $MAC
-EOF
+    timeout 40 $BT pair "$MAC" 2>&1
+    timeout 10 $BT trust "$MAC" 2>&1
+    timeout 30 $BT connect "$MAC" 2>&1
 )"
 
 sleep 2

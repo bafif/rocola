@@ -89,7 +89,15 @@ write_vga() {
 }
 
 write_crt15() {
-    local pref="${PREFERRED_RES:-640x480i_60}"
+    # Sin resolución elegida, la del estándar de TV: un CRT PAL no muestra los 60 Hz de
+    # NTSC (o los muestra rodando).
+    local pref="$PREFERRED_RES"
+    if [ -z "$pref" ]; then
+        case "$TV_STANDARD" in
+            pal | PAL) pref=768x576i_50 ;;
+            *) pref=640x480i_60 ;;
+        esac
+    fi
     {
         echo "# CRT 15 kHz — generado por rocola-display-setup (ajustar por monitor)."
         echo "# El 15 kHz requiere KMS: arrancá la entrada de GRUB 'aceleración GPU / CRT 15 kHz'."

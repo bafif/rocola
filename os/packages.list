@@ -19,7 +19,8 @@ firmware-brcm80211         # wifi Broadcom
 wireless-regdb             # base de datos regulatoria de wifi
 
 # --- Núcleo del sistema / arranque ---
-linux-image-686-pae        # kernel i386 (PAE). Fallback no-PAE: linux-image-686
+linux-image-686-pae        # kernel i386 (PAE), el de siempre
+linux-image-686            # respaldo sin PAE para CPUs que no lo tienen (entrada propia en GRUB)
 live-boot                  # arranque live desde squashfs + overlay
 live-boot-initramfs-tools
 initramfs-tools
@@ -51,6 +52,7 @@ usbutils
 util-linux
 iproute2                  # ip(8) — diagnóstico de red (faltaba)
 whiptail                  # TUI del instalador
+kbd                       # chvt: el instalador pasa a su consola (tty8) y vuelve a la UI
 
 # --- SSH de troubleshooting (opt-in, APAGADO por defecto) ---
 # sshd se instala pero no arranca salvo que se bootee con 'rocola.ssh' (entrada
@@ -92,6 +94,5 @@ python3-mutagen            # lectura de tags/carátulas (opcional pero útil)
 fonts-dejavu-core          # fuente de fallback
 
 # --- Video CRT / 15 kHz ---
-# 'switchres' no está en Debian; se compila/instala en el builder o vía paquete propio.
-# Acá dejamos lo necesario para modelines manuales:
+# Modelines fijos (display/modelines/). 'switchres' no está en Debian y no se incluye.
 read-edid                  # parseo de EDID para autodetección

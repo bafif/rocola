@@ -42,11 +42,14 @@ ensure-os: | $(OUT)
 		echo "Imagen $(OS_IMAGE) no existe; construyendo…"; $(MAKE) rootfs; \
 	else echo "Usando $(OS_IMAGE) existente (usá 'make rootfs' para reconstruir)"; fi
 
+# Exporta a un .tmp y lo renombra solo si salió bien: si el export falla, make se corta
+# en vez de seguir con el rootfs.tar de un build anterior (o con uno a medias).
 .PHONY: export
 export: ensure-os ## Exporta el rootfs de la imagen del SO a un tar
-	cid=$$(podman create --platform linux/386 $(OS_IMAGE)); \
-	podman export $$cid -o $(ROOTFS_TAR); \
-	podman rm $$cid
+	cid=$$(podman create --platform linux/386 $(OS_IMAGE)) && \
+	trap 'podman rm -f $$cid >/dev/null; rm -f $(ROOTFS_TAR).tmp' EXIT && \
+	podman export $$cid -o $(ROOTFS_TAR).tmp && \
+	mv -f $(ROOTFS_TAR).tmp $(ROOTFS_TAR)
 
 # El builder no monta nada del repo: el rootfs entra con `podman cp` y la imagen sale igual, así ningún
 # contenedor escribe en el repo.

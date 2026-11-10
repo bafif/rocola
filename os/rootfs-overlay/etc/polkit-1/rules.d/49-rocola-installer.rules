@@ -1,0 +1,14 @@
+// Rocola: el usuario 'rocola' puede arrancar el instalador guiado y nada más.
+//
+// La app corre como 'rocola', sin root ni sudo, y el instalador necesita root. Desde el
+// menú «Instalar en disco» la app pide `systemctl start rocola-installer.service`; esta
+// regla autoriza solo ese verbo sobre esa unidad. El instalador pide elegir el disco y
+// tipear la confirmación antes de tocar nada, y la unidad solo corre desde el pendrive.
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.systemd1.manage-units" &&
+        subject.user == "rocola" &&
+        action.lookup("unit") == "rocola-installer.service" &&
+        action.lookup("verb") == "start") {
+        return polkit.Result.YES;
+    }
+});

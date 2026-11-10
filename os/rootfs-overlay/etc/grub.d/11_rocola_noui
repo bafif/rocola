@@ -1,0 +1,43 @@
+#!/bin/sh
+# Rocola: entrada de GRUB para arrancar el sistema instalado sin la UI.
+#
+# Arranca como la entrada normal pero con 'rocola.noui' (y nomodeset, que una consola
+# de texto no necesita KMS): el autologin deja una consola en tty1 en vez de abrir la
+# interfaz, para mirar los logs cuando la UI no levanta. Reemplaza a la «recovery mode»
+# de Debian, que en la rocola no sirve porque pide la clave de root y root está
+# bloqueado (se apaga en /etc/default/grub.d/rocola.cfg).
+#
+# Lo corre update-grub. Si algo no cierra, no escribe la entrada y sale bien: un error
+# acá haría fallar update-grub, y con él la instalación.
+
+prefix="/usr"
+exec_prefix="/usr"
+datarootdir="/usr/share"
+. "${pkgdatadir:-/usr/share/grub}/grub-mkconfig_lib" || exit 0
+
+kernel=$(ls -1 /boot/vmlinuz-*-686-pae 2>/dev/null | sort -V | tail -n 1)
+[ -n "$kernel" ] || kernel=$(ls -1 /boot/vmlinuz-* 2>/dev/null | sort -V | tail -n 1)
+[ -n "$kernel" ] || exit 0
+version=${kernel#/boot/vmlinuz-}
+[ -f "/boot/initrd.img-$version" ] || exit 0
+
+if [ -n "${GRUB_DEVICE_UUID}" ] && [ "${GRUB_DISABLE_LINUX_UUID}" != "true" ]; then
+    root="UUID=${GRUB_DEVICE_UUID}"
+else
+    root="${GRUB_DEVICE}"
+fi
+[ -n "$root" ] || exit 0
+
+access=$(prepare_grub_to_access_device "${GRUB_DEVICE_BOOT}" | grub_add_tab) || exit 0
+dir=$(make_system_path_relative_to_its_root /boot) || exit 0
+
+echo "Found Rocola console entry (no UI): $kernel" >&2
+cat <<EOF
+menuentry 'Rocola — consola sin UI (recuperación)' --class gnu-linux --class os {
+$access
+	echo	'Linux $version, sin la interfaz...'
+	linux	$dir/vmlinuz-$version root=$root ro ${GRUB_CMDLINE_LINUX} nomodeset rocola.noui
+	initrd	$dir/initrd.img-$version
+}
+EOF
+exit 0

@@ -1,0 +1,30 @@
+# El instalador guiado (whiptail) como root, en su propia consola.
+#
+# La app corre como 'rocola', que no es root ni tiene sudo. Desde el menú «Instalar en
+# disco» la app hace `systemctl start rocola-installer.service` y polkit le deja
+# arrancar esta unidad y ninguna otra (49-rocola-installer.rules). No se habilita: solo
+# corre cuando alguien la pide.
+#
+# Usa tty8 y no tty2..tty6: en esas, al cambiar de consola logind levanta un getty
+# (autovt@) que se pelearía la terminal con el instalador. Al terminar (o si se
+# cancela) vuelve a tty1, donde sigue la UI.
+[Unit]
+Description=Rocola — instalador guiado en disco
+# El instalador clona el pendrive: en una rocola ya instalada no hay nada que clonar.
+ConditionPathIsDirectory=/run/live/medium
+
+[Service]
+Type=oneshot
+Environment=TERM=linux
+TTYPath=/dev/tty8
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty
+StandardOutput=tty
+StandardError=tty
+ExecStartPre=/usr/bin/chvt 8
+ExecStart=/usr/local/bin/rocola-install
+ExecStopPost=-/usr/bin/chvt 1
+# Clonar un disco lento lleva su tiempo; un oneshot tiene 90 s por defecto.
+TimeoutStartSec=infinity

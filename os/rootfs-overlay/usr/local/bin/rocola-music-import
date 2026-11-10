@@ -8,16 +8,30 @@ set -euo pipefail
 # Las variables existen para los tests (os/tests/music-import.sh); en la imagen no se usan.
 DEST="${ROCOLA_MUSIC_DIR:-/music}"
 PRELOAD="${ROCOLA_PRELOAD_DIR:-/opt/rocola/music}"
+LIVE_MEDIUM="${ROCOLA_LIVE_MEDIUM:-/run/live/medium}"
 mkdir -p "$DEST"
 
 log() { echo "[rocola-music-import] $*"; }
 
-# 1) Música precargada en la imagen (solo si /music está vacío).
-if [ -d "$PRELOAD" ] && [ -z "$(ls -A "$DEST" 2>/dev/null)" ]; then
-    if [ -n "$(ls -A "$PRELOAD" 2>/dev/null)" ]; then
-        log "Copiando música precargada de $PRELOAD a $DEST…"
-        rsync -a --info=progress2 "$PRELOAD"/ "$DEST"/ || true
+# Lo que hay en una carpeta además de lost+found (lo crea mkfs) y .gitkeep (del repo).
+has_music() {
+    [ -n "$(find "$1" -mindepth 1 -maxdepth 1 ! -name lost+found ! -name .gitkeep -print -quit 2>/dev/null)" ]
+}
+
+# 1) Música precargada en la imagen.
+#    En el pendrive se monta la carpeta encima de /music en vez de copiarla: el sistema en
+#    vivo corre en RAM, y una copia ocupaba la biblioteca dos veces en memoria y demoraba
+#    el arranque de la UI hasta terminar. Lo que se importe de un USB en la sesión en vivo
+#    cae en la misma carpeta, y el instalador lo lleva a la partición de música.
+#    En un sistema instalado la copia el instalador; acá solo se cubre una /music vacía.
+if [ -d "$LIVE_MEDIUM" ]; then
+    if [ -d "$PRELOAD" ] && ! mountpoint -q "$DEST"; then
+        log "Montando la música precargada ($PRELOAD) en $DEST…"
+        mount --bind "$PRELOAD" "$DEST" || log "no se pudo montar $PRELOAD en $DEST"
     fi
+elif has_music "$PRELOAD" && ! has_music "$DEST"; then
+    log "Copiando música precargada de $PRELOAD a $DEST…"
+    rsync -a --no-links --exclude=/.gitkeep "$PRELOAD"/ "$DEST"/ || true
 fi
 
 # 2) Música desde USB. Se pasa el punto de montaje como argumento, o se intenta
@@ -45,7 +59,8 @@ import_from() {
     for ext in mp3 flac ogg m4a wav opus aac; do filters+=(--include="*.$(ci "$ext")"); done
     for name in cover folder; do filters+=(--include="$(ci "$name").*"); done
     filters+=(--exclude='*')
-    rsync -a --ignore-existing --prune-empty-dirs "${filters[@]}" "$src"/ "$DEST"/ || true
+    # --no-links: un enlace simbólico del pendrive no entra (podría apuntar fuera de él).
+    rsync -a --no-links --ignore-existing --prune-empty-dirs "${filters[@]}" "$src"/ "$DEST"/ || true
 }
 
 if [ "${1:-}" != "" ]; then

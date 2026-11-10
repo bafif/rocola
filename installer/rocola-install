@@ -1,9 +1,10 @@
 #!/bin/bash
 # rocola-install — instalador guiado: clona el SO de la rocola al disco interno.
 #
-# Disparo manual (desde el menú de la rocola o por consola). Nunca formatea un disco
-# que no se haya elegido y confirmado. TUI con whiptail (navegable con los controles
-# de arcade o el teclado).
+# Disparo manual: menú de la rocola → «Instalar en disco», que arranca
+# rocola-installer.service (corre esto como root en tty8), o `systemctl start
+# rocola-installer` desde una consola. Nunca formatea un disco que no se haya elegido y
+# confirmado. TUI con whiptail: se maneja con teclado (la confirmación se tipea).
 #
 # Estrategia de clonado: rsync del sistema en vivo (/) al disco destino, excluyendo
 # dirs volátiles y la propia media de instalación. Particiona BIOSBOOT + ESP + ROOT +
@@ -15,6 +16,14 @@ set -euo pipefail
 
 TITLE="Rocola — Instalador"
 LOG=/tmp/rocola-install.log
+
+# La rocola no tiene sudo ni clave de root: el camino es la unidad de systemd, que
+# polkit le deja arrancar al usuario rocola.
+if [ "$(id -u)" -ne 0 ]; then
+    echo "rocola-install corre como root. Abrilo desde el menú de la rocola («Instalar en disco»)" >&2
+    echo "o con: systemctl start rocola-installer" >&2
+    exit 1
+fi
 exec 3>>"$LOG"
 
 # Modo desatendido (para QEMU/CI/factory): si ROCOLA_UNATTENDED=1 se saltan todos
@@ -32,7 +41,6 @@ die() {
 }
 log() { echo "[$(date +%T)] $*" >&3; }
 
-[ "$(id -u)" -eq 0 ] || exec sudo -- "$0" "$@"
 [ "$UNATTENDED" = 1 ] || command -v whiptail >/dev/null || die "falta whiptail"
 
 # --- Detectar la media de instalación (para excluirla del destino) -----------
@@ -48,6 +56,9 @@ if [ -n "$LIVE_SRC" ]; then
     LIVE_DISK="${LIVE_DISK:-$LIVE_SRC}"
 fi
 log "Media live: ${LIVE_SRC:-?} (disco ${LIVE_DISK:-?})"
+# Se clona el sistema en vivo. Desde una rocola ya instalada no hay pendrive que excluir
+# y el disco del propio sistema aparecería como destino.
+[ -n "$LIVE_SRC" ] || die "el instalador corre desde el pendrive: arrancá la PC con el pendrive de la rocola"
 
 # Tamaño mínimo del destino: BIOSBOOT 2 MiB + ESP 256 MiB + ROOT 12 GiB (fijos, ver el
 # particionado) y algo de lugar para /music. Con menos, sgdisk fallaba a mitad de camino
@@ -189,7 +200,7 @@ rsync_rc=0
 rsync -aHAXx --info=progress2 \
     --exclude=/proc --exclude=/sys --exclude=/dev --exclude=/run \
     --exclude=/tmp --exclude=/mnt --exclude=/media --exclude=/target \
-    --exclude=/music --exclude=/lost+found \
+    --exclude=/music --exclude=/lost+found --exclude='/opt/rocola/music/*' \
     --exclude=/run/live --exclude='/var/cache/apt/archives/*' \
     / "$T" >&3 2>&1 || rsync_rc=$?
 case "$rsync_rc" in
@@ -198,12 +209,25 @@ case "$rsync_rc" in
     *) die "rsync falló (código $rsync_rc)";;
 esac
 
+# Música precargada: va a la partición de música, no a ROOT (12 GB fijos). En el
+# pendrive /music es esa misma carpeta (ver rocola-music-import), así que también viaja
+# lo importado desde un USB durante la sesión en vivo. Solo si la partición no tiene
+# música, como al conservar una: nunca se mezcla con la de otra instalación. Un fallo
+# acá no tira abajo una instalación que ya está escrita.
+PRELOAD=/opt/rocola/music
+if [ -z "$(find "$T/music" -mindepth 1 -maxdepth 1 ! -name lost+found -print -quit)" ] \
+   && [ -n "$(find "$PRELOAD" -mindepth 1 -maxdepth 1 ! -name .gitkeep -print -quit 2>/dev/null)" ]; then
+    echo "Copiando la música precargada…"; log "música precargada -> /music"
+    rsync -a --no-links --exclude=/.gitkeep "$PRELOAD"/ "$T/music"/ >&3 2>&1 \
+        || log "la copia de la música precargada terminó con código $?"
+fi
+
 # fstab por UUID
 echo "Generando fstab…"; log "fstab"
 {
     echo "# generado por rocola-install"
     echo "UUID=$(blkid -s UUID -o value "$P_ROOT")  /          ext4  defaults,noatime  0 1"
-    echo "UUID=$(blkid -s UUID -o value "$P_ESP")   /boot/efi  vfat  umask=0077        0 1"
+    echo "UUID=$(blkid -s UUID -o value "$P_ESP")   /boot/efi  vfat  umask=0077        0 2"
     echo "UUID=$(blkid -s UUID -o value "$P_DATA")  /music     ext4  defaults,noatime  0 2"
 } > "$T/etc/fstab"
 

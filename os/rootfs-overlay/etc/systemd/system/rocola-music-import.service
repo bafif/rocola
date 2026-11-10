@@ -1,12 +1,11 @@
-# Importa la música PRECARGADA (/opt/rocola/music) a /music y re-escanea MPD, al
-# arrancar. Sin esto, la música precargada en la imagen nunca llegaba a MPD (que
-# escanea /music), y la biblioteca quedaba vacía. Corre una vez por arranque;
-# rocola-music-import sólo copia la precargada si /music está vacío (no pisa la
-# música en el sistema instalado, donde /music es una partición aparte).
+# Deja la música PRECARGADA (/opt/rocola/music) en /music, que es lo que escanea MPD.
+# En el pendrive monta esa carpeta encima de /music (instantáneo, sin copiar a RAM); en
+# un sistema instalado la copia el instalador y esto solo cubre una /music vacía. Corre
+# una vez por arranque, antes del autologin de la UI. MPD no corre todavía: lo lanza la
+# sesión de 'rocola' (rocola-session), que le pide escanear /music al arrancarlo.
 [Unit]
-Description=Rocola — importar música precargada a /music y escanear MPD
-After=mpd.service local-fs.target
-Wants=mpd.service
+Description=Rocola — música precargada en /music
+After=local-fs.target
 Before=getty.target
 
 [Service]
