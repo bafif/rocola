@@ -82,7 +82,10 @@ if [ "$UNATTENDED" = 1 ]; then
     log "modo desatendido: destino=$TARGET keep_music=$KEEP_MUSIC display=$DISP_MODE"
 else
     # --- Listar discos candidatos --------------------------------------------
-    mapfile -t DISKS < <(lsblk -dnpo NAME,TYPE | awk '$2=="disk"{print $1}')
+    # -e 1,2: sin discos RAM (lsblk los saca solo, pero deja de hacerlo si se le pasa
+    # -e) ni disketeras (major 2), que figuran como "disk" y en una PC vieja salían
+    # primeras en la lista.
+    mapfile -t DISKS < <(lsblk -dnpo NAME,TYPE -e 1,2 | awk '$2=="disk"{print $1}')
     MENU_ITEMS=()
     for d in "${DISKS[@]}"; do
         [ "$d" = "$LIVE_DISK" ] && continue          # excluir el pendrive de instalación
