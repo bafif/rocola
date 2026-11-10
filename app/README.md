@@ -1,5 +1,7 @@
 # app/ — UI de la rocola
 
+*[English](README.en.md) · Español*
+
 Interfaz a pantalla completa hecha con **pygame (SDL2)** que controla **MPD**. En la imagen corre el
 `python3-pygame` de Debian bookworm (2.1.2); el desarrollo y la CI usan pygame-ce, con la misma API.
 
@@ -40,6 +42,8 @@ Desde la raíz del repo, lo mismo es `make app-deps`, `make app-test`, `make app
 `make app-run`.
 
 Ajustes por variables de entorno (ver `config.py`): `ROCOLA_MPD_HOST`, `ROCOLA_MPD_PORT`,
-`ROCOLA_RES` (p. ej. `640x480` para simular CRT), `ROCOLA_THEME`, `ROCOLA_WINDOWED=1`.
+`ROCOLA_RES` (p. ej. `640x480` para simular CRT), `ROCOLA_THEME`, `ROCOLA_WINDOWED=1`, y
+`ROCOLA_LANG=es` o `en` para el idioma (si no, el guardado desde el menú o el del locale; ver
+`i18n.py`).
 
 Ver también [../docs/07-rocola-app.md](../docs/07-rocola-app.md).

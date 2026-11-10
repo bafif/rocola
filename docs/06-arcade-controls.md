@@ -1,5 +1,7 @@
 # 06 · Controles de arcade
 
+*[English](06-arcade-controls.en.md) · Español*
+
 La rocola se maneja con **controles de arcade** (joystick + botones), sin teclado ni mouse en el uso
 diario.
 

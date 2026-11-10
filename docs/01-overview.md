@@ -1,5 +1,7 @@
 # 01 · Visión general
 
+*[English](01-overview.en.md) · Español*
+
 ## El problema
 
 Hay muchas computadoras de escritorio viejas dando vueltas. Convertir una en una rocola (jukebox)

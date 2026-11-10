@@ -1,5 +1,7 @@
 # 14 · Audio: salida, PipeWire y Bluetooth
 
+*[English](14-audio.en.md) · Español*
+
 La idea es que suene en la mayor variedad posible de PCs viejas: salida analógica (line-out o
 auriculares de la placa madre), HDMI o DisplayPort, USB (un DAC o auriculares) y Bluetooth
 (parlante o auricular A2DP). Y que la salida se pueda ver y elegir desde la UI con los controles
@@ -54,7 +56,7 @@ sobrevive a un reinicio.
 
 En el menú (tecla **F10** o el botón de menú):
 
-- **Salida de audio** lista los sinks de PipeWire y marca el actual con `●`. Con las flechas te
+- **Salida de audio** lista los sinks de PipeWire y marca el actual con `*`. Con las flechas te
   movés, y Enter fija la salida y reproduce un tono de prueba para confirmarlo de oído. Al final
   está «+ Emparejar Bluetooth…».
 - **Información del sistema** muestra la salida de audio activa, el driver de audio

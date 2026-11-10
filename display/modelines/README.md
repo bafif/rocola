@@ -1,5 +1,7 @@
 # Modelines
 
+*[English](README.en.md) · Español*
+
 Perfiles de video que `rocola-display-setup` inserta en la config de Xorg.
 
 - **`15khz.conf`** — modelines para CRT de arcade/TV (15 kHz). Valores de referencia;

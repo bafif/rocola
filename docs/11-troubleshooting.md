@@ -1,5 +1,7 @@
 # 11 · Resolución de problemas
 
+*[English](11-troubleshooting.en.md) · Español*
+
 ## Build
 
 **`make rootfs` falla con "exec format error" / no corre i386**
@@ -30,7 +32,7 @@ Containerfile (`rm -rf /var/lib/apt/lists/*`).
 - Regrabá el pendrive (ver [10](10-flashing-usb.md)); puede haber quedado a medias.
 - Para UEFI muy viejo: usá modo BIOS/CSM.
 - Si se cuelga apenas arranca el kernel en una CPU muy vieja (algunos Pentium M, VIA C3, AMD
-  Geode), probá la entrada «Rocola — CPU sin PAE (kernel 686)».
+  Geode), probá la entrada «Rocola — CPU sin PAE · without PAE (kernel 686)».
 
 **Arranca pero queda en consola, no abre la rocola**
 La UI la lanza el autologin de tty1 (`~rocola/.bash_profile` → `startx` → `rocola-session`).
@@ -42,15 +44,15 @@ journalctl -b | grep -iE 'startx|xinit|Xorg|rocola-session'
 Suele ser video (ver abajo) o que Xorg no levantó.
 
 Si la UI se cae 5 veces en 2 minutos, el autologin deja de relanzarla y la consola muestra cómo
-seguir. Para entrar a la consola a propósito: en el pendrive, la entrada de GRUB «Rocola —
-recuperación (consola, sin UI)»; en el disco instalado, «Rocola — consola sin UI (recuperación)».
+seguir. Para entrar a la consola a propósito: la entrada de GRUB «Rocola — consola de recuperación ·
+recovery console», que está en el pendrive y en el disco instalado.
 El usuario `rocola` está en el grupo `systemd-journal`, así que ahí `journalctl` muestra los logs
 de todo el sistema sin root.
 
 ## SSH de troubleshooting (remoto)
 
 Para depurar una rocola que no abre la UI, el ISO trae un SSH que está apagado por defecto. Solo
-se habilita si arrancás con la entrada de GRUB **«Troubleshooting (SSH)»** (que pasa `rocola.ssh`
+se habilita si arrancás con la entrada de GRUB **«Rocola — SSH por red · SSH troubleshooting»** (que pasa `rocola.ssh`
 en la línea de comandos del kernel); en el arranque normal sshd no se levanta. Entra como root y
 solo con clave pública, sin contraseñas, y las host keys se generan en RAM en cada arranque, así que
 la imagen no lleva claves fijas.
@@ -63,7 +65,7 @@ build.
 1. Pegá tu clave **pública** en `os/rootfs-overlay/root/.ssh/authorized_keys` (una línea, p. ej.
    `ssh-ed25519 AAAA... vos@tu-pc`). Nunca pongas la clave privada.
 2. Reconstruí y regrabá: `make rootfs && make image`, luego `make flash DEV=/dev/sdX`.
-3. Booteá la PC con la entrada de GRUB **"Troubleshooting (SSH)"**.
+3. Booteá la PC con la entrada de GRUB **«Rocola — SSH por red · SSH troubleshooting»**.
 4. La rocola toma IP por DHCP (systemd-networkd). Averiguá la IP (en tu router, o con consola local
    `ip -4 addr`) y conectate:
    ```bash

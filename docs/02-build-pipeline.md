@@ -1,5 +1,7 @@
 # 02 · Pipeline de build
 
+*[English](02-build-pipeline.en.md) · Español*
+
 De código a pendrive en tres pasos: **SO (contenedor) → rootfs → imagen booteable**.
 
 ```

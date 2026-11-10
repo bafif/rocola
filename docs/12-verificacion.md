@@ -1,5 +1,7 @@
 # 12 · Verificación (qué está probado y qué no)
 
+*[English](12-verificacion.en.md) · Español*
+
 Acá anoto qué construí y arranqué de punta a punta, qué problemas aparecieron en el camino y qué
 falta probar, que es sobre todo lo que depende de hardware físico. Todo lo de este documento lo
 armé y lo probé en una PC x86-64 con contenedores (que corren i386 nativo) y QEMU/KVM.

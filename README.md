@@ -36,6 +36,9 @@ The screenshots use an invented demo library.
   screen. Logo, fonts and colors come from a replaceable theme.
 - **Audio outputs**: analog, HDMI, USB and **Bluetooth** speakers through PipeWire, selectable
   from the UI; on an installed system the choice survives reboots.
+- **English and Spanish**: one image with both languages. The UI and the installer follow the boot
+  entry or the system's language, and the menu switches them; an installed jukebox remembers the
+  choice.
 - **Your music**: preloaded in the image, plus import from a second USB stick into a persistent
   `/music` partition that survives reinstalls.
 
@@ -47,7 +50,7 @@ over BIOS and UEFI. Songs on a USB stick plugged in while it runs show up in the
 own. The live system was also booted on real hardware from Ventoy. Not yet validated
 on physical hardware: 15 kHz video on a real CRT, a real arcade encoder, and music import from a
 second USB stick. Details and the bugs found along the way:
-[docs/12-verificacion.md](docs/12-verificacion.md).
+[docs/12-verificacion.en.md](docs/12-verificacion.en.md).
 
 ## Download and flash (no build needed)
 
@@ -60,7 +63,7 @@ second USB stick. Details and the bugs found along the way:
 
    | Tool | How |
    |------|-----|
-   | **Rufus** (Windows) | Select the stick and the `.iso`, then choose **"Write in DD Image mode"**. Step-by-step guide (Spanish): [docs/13](docs/13-rufus-windows.md). |
+   | **Rufus** (Windows) | Select the stick and the `.iso`, then choose **"Write in DD Image mode"**. Step-by-step guide: [docs/13](docs/13-rufus-windows.en.md). |
    | **Ventoy** (Windows/Linux) | Install Ventoy on the stick once, then just **copy** the `.iso` to it. |
    | **balenaEtcher** | *Flash from file*, pick the `.iso` and the stick, *Flash*. |
    | **dd** (Linux) | `make flash DEV=/dev/sdX` from a clone of this repo, or `dd` by hand. |
@@ -70,10 +73,13 @@ can be written with any of the tools above.
 
 ## Use
 
-1. Plug the stick into the old PC and boot from it (change the boot order if needed).
-2. The live jukebox starts: music can play right away.
+1. Plug the stick into the old PC and boot from it (change the boot order if needed). For the
+   jukebox in English, pick **Rocola — English** in the boot menu; the plain **Rocola** entry
+   starts it in Spanish.
+2. The live jukebox starts: music can play right away. The menu's **Language / Idioma** option
+   switches between English and Spanish at any time.
 3. To install it, plug in a keyboard (the installer asks you to type a confirmation word), open the
-   menu (**F10** or arcade button 3), choose **Instalar en disco**, pick the
+   menu (**F10** or arcade button 3), choose **Install to disk**, pick the language, the
    target disk (**14 GB or more**: 12 GB for the system, the rest for music), confirm, pick the
    monitor type (modern/VGA or 15 kHz) and reboot.
 4. Remove the stick: from now on the PC boots straight into the jukebox.
@@ -90,13 +96,13 @@ Default controls (keyboard / arcade):
 | Previous / next | P / N | 4 / 5 |
 | Volume − / + | − / + | 6 / 7 |
 
-More in [docs/06-arcade-controls.md](docs/06-arcade-controls.md).
+More in [docs/06-arcade-controls.en.md](docs/06-arcade-controls.en.md).
 
 ## Adding music
 
 - **Preloaded**: put folders in `os/rootfs-overlay/opt/rocola/music/` before `make rootfs`.
 - **From USB**: plug in a stick with songs; the jukebox detects it and imports them into the data
-  partition (`/music`). See [docs/08-music-management.md](docs/08-music-management.md).
+  partition (`/music`). See [docs/08-music-management.en.md](docs/08-music-management.en.md).
 
 ## Build from source
 
@@ -104,7 +110,7 @@ Requirements: **Podman** (rootless is enough) and `make`. Everything else runs i
 no `debootstrap`, loop devices or `--privileged` are needed, so it also works in WSL2 and CI, and no
 container mounts the repository: the rootfs and the image go in and out with `podman cp`. On x86-64
 hosts the i386 containers run natively; on other hosts, register binfmt once (see
-[docs/02-build-pipeline.md](docs/02-build-pipeline.md)).
+[docs/02-build-pipeline.en.md](docs/02-build-pipeline.en.md)).
 
 ```bash
 make rootfs                        # build the OS as a container image (FROM i386/debian:bookworm)
@@ -137,7 +143,7 @@ make app-run    # the UI in a window; needs a local MPD on 127.0.0.1:6600
 
 Settings come from `/etc/rocola/rocola.toml` and `ROCOLA_*` environment variables
 (`ROCOLA_RES=640x480` simulates a CRT). `ROCOLA_SCREENSHOT=out.png` renders one scene to a PNG and
-exits. Reference: [docs/07-rocola-app.md](docs/07-rocola-app.md).
+exits. Reference: [docs/07-rocola-app.en.md](docs/07-rocola-app.en.md).
 
 ## Layout
 
@@ -150,28 +156,28 @@ display/    15 kHz modelines and the VGA/CRT video setup
 docs/       one document per subsystem
 ```
 
-Design overview: [ARCHITECTURE.md](ARCHITECTURE.md).
+Design overview: [ARCHITECTURE.en.md](ARCHITECTURE.en.md).
 
 ## Documentation
 
-The detailed docs are in Spanish.
+Every document is also in Spanish: the link at the top of each one switches language.
 
 | Doc | Topic |
 |-----|-------|
-| [01](docs/01-overview.md) | Overview and goals |
-| [02](docs/02-build-pipeline.md) | Build pipeline (container to image) |
-| [03](docs/03-boot-and-live.md) | Boot, live system, autologin, autostart |
-| [04](docs/04-installer.md) | Guided installer and partitioning |
-| [05](docs/05-display-crt-15khz.md) | Video: VGA and 15 kHz CRT |
-| [06](docs/06-arcade-controls.md) | Arcade controls |
-| [07](docs/07-rocola-app.md) | The app (SDL2 UI + MPD) |
-| [08](docs/08-music-management.md) | Music management |
-| [09](docs/09-branding-theming.md) | Branding and themes |
-| [10](docs/10-flashing-usb.md) | Flashing the USB stick |
-| [11](docs/11-troubleshooting.md) | Troubleshooting |
-| [12](docs/12-verificacion.md) | What is tested and what is not |
-| [13](docs/13-rufus-windows.md) | Flashing with Rufus on Windows |
-| [14](docs/14-audio.md) | Audio output (PipeWire), Bluetooth and output selection |
+| [01](docs/01-overview.en.md) | Overview and goals |
+| [02](docs/02-build-pipeline.en.md) | Build pipeline (container to image) |
+| [03](docs/03-boot-and-live.en.md) | Boot, live system, autologin, autostart |
+| [04](docs/04-installer.en.md) | Guided installer and partitioning |
+| [05](docs/05-display-crt-15khz.en.md) | Video: VGA and 15 kHz CRT |
+| [06](docs/06-arcade-controls.en.md) | Arcade controls |
+| [07](docs/07-rocola-app.en.md) | The app (SDL2 UI + MPD) |
+| [08](docs/08-music-management.en.md) | Music management |
+| [09](docs/09-branding-theming.en.md) | Branding and themes |
+| [10](docs/10-flashing-usb.en.md) | Flashing the USB stick |
+| [11](docs/11-troubleshooting.en.md) | Troubleshooting |
+| [12](docs/12-verificacion.en.md) | What is tested and what is not |
+| [13](docs/13-rufus-windows.en.md) | Flashing with Rufus on Windows |
+| [14](docs/14-audio.en.md) | Audio output (PipeWire), Bluetooth and output selection |
 
 ## Caveats
 

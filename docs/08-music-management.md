@@ -1,5 +1,7 @@
 # 08 · Gestión de música
 
+*[English](08-music-management.en.md) · Español*
+
 Dos vías para cargar canciones, combinables: **precargada en la imagen** y **import desde un 2º USB**.
 La biblioteca vive en una **partición de datos persistente** (`/music`).
 

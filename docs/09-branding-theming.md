@@ -1,5 +1,7 @@
 # 09 · Branding y temas
 
+*[English](09-branding-theming.en.md) · Español*
+
 La estética es **100% propia y reemplazable** sin tocar la lógica de la app. Logos, colores y fuentes
 se cargan desde `app/assets/` según un archivo de tema.
 
@@ -37,10 +39,12 @@ title = "fonts/PressStart2P.ttf"
 body  = "fonts/Inter-Regular.ttf"
 [branding]
 logo   = "logo.svg"
-title  = "MI ROCOLA"
+title  = { es = "MI ROCOLA", en = "MY JUKEBOX" }
 ```
 
 `app/rocola/theme.py` lee este archivo; el código **nunca** hardcodea colores ni rutas de imagen.
+El título del encabezado puede ser un solo texto (`title = "BAR PEPE"`) o uno por idioma de la
+rocola, como arriba; si falta el del idioma activo, se usa el que haya.
 
 ## Consideraciones para CRT
 

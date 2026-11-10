@@ -1,5 +1,7 @@
 # Arquitectura de Rocola
 
+*[English](ARCHITECTURE.en.md) · Español*
+
 Este documento describe el diseño del sistema: cómo se construye la imagen, cómo arranca, cómo se
 instala y cómo encajan los subsistemas. Para el detalle de cada parte, ver [`docs/`](docs/).
 
@@ -78,14 +80,15 @@ Disparo **manual** desde la rocola en vivo (menú → «Instalar en disco»; F10
 
 ```
 rocola-install (whiptail, como root en tty8; se maneja con teclado)
-  1. Detecta discos (modelo, tamaño)         → se elige el destino (mínimo 14 GB)
-  2. Confirmación tipeada anti-borrado        (muestra qué se va a destruir)
-  3. Particiona destino (GPT):
+  1. Pregunta el idioma (español | inglés)   → lo guarda en el disco instalado
+  2. Detecta discos (modelo, tamaño)         → se elige el destino (mínimo 14 GB)
+  3. Confirmación tipeada anti-borrado        (muestra qué se va a destruir)
+  4. Particiona destino (GPT):
         BIOSBOOT (ef02, BIOS) · ESP (FAT32, UEFI) · ROOT (ext4) · DATOS /music (ext4, persistente)
-  4. Clona el SO:  rsync del sistema vivo (/)  →  ROOT; la música precargada → /music
-  5. Pregunta tipo de monitor (moderno/VGA | 15 kHz) → persiste la elección
-  6. Instala GRUB en el destino (BIOS + UEFI x64), genera fstab; mismo modo de video que el live
-  7. Reboot → la PC arranca la rocola sola desde el disco
+  5. Clona el SO:  rsync del sistema vivo (/)  →  ROOT; la música precargada → /music
+  6. Pregunta tipo de monitor (moderno/VGA | 15 kHz) → persiste la elección
+  7. Instala GRUB en el destino (BIOS + UEFI x64), genera fstab; mismo modo de video que el live
+  8. Reboot → la PC arranca la rocola sola desde el disco
 ```
 
 El instalador nunca formatea un disco sin que alguien lo haya elegido y confirmado.
@@ -131,6 +134,8 @@ Detalle: [docs/06-arcade-controls.md](docs/06-arcade-controls.md).
 - **MPD** gestiona biblioteca, cola y reproducción (liviano, ideal i386).
 - **La UI** es un cliente MPD: muestra portadas/listas, "now playing", y manda comandos.
 - Renderiza a la resolución nativa del monitor (320×240/640×480 en CRT, o mayor en VGA/moderno).
+- Habla español o inglés: arranca en el del sistema (o el de la entrada «Rocola — English» de GRUB)
+  y se cambia en el menú, «Idioma / Language», que lo guarda en `/etc/rocola/language.conf`.
 
 Detalle: [docs/07-rocola-app.md](docs/07-rocola-app.md).
 

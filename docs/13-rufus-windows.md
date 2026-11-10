@@ -1,5 +1,7 @@
 # 13 · Grabar con Rufus (Windows)
 
+*[English](13-rufus-windows.en.md) · Español*
+
 [Rufus](https://rufus.ie) es la forma más común de grabar el `.iso` a un pendrive en Windows. La
 imagen de la rocola es una ISO 9660 híbrida (isohybrid): ya trae MBR protectivo y GPT,
 `grub2-mbr` para BIOS, la partición EFI (`/efi.img`) para UEFI x64 y El Torito con *boot-info-table*.

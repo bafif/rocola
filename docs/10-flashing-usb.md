@@ -1,5 +1,7 @@
 # 10 · Grabar el pendrive
 
+*[English](10-flashing-usb.en.md) · Español*
+
 Cómo pasar la imagen de la rocola a un pendrive. Tené en cuenta que el pendrive se borra entero.
 
 La imagen es una **ISO 9660 híbrida (isohybrid)**: el mismo archivo arranca por **BIOS y UEFI x64**

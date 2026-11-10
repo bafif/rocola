@@ -37,6 +37,9 @@ Las capturas usan una biblioteca de demostración inventada.
   El logo, las fuentes y los colores salen de un tema que se puede reemplazar.
 - **Salidas de audio**: analógica, HDMI, USB y parlantes **Bluetooth** con PipeWire, elegibles desde
   la UI; en un sistema instalado la elección se mantiene entre reinicios.
+- **Español e inglés**: una sola imagen con los dos idiomas. La interfaz y el instalador siguen la
+  entrada de arranque o el idioma del sistema, el menú los cambia y la rocola instalada se acuerda
+  de lo que elegiste.
 - **Tu música**: precargada en la imagen y, además, importada desde un segundo pendrive a una
   partición `/music` persistente que sobrevive a las reinstalaciones.
 
@@ -72,9 +75,12 @@ x64 y se puede grabar con cualquiera de las herramientas de arriba.
 ## Usarla
 
 1. Enchufá el pendrive en la PC vieja y arrancá desde él (cambiá el orden de arranque si hace falta).
-2. Arranca la rocola en vivo: ya puede sonar música.
+   La entrada **Rocola** del menú de arranque la abre en español, y **Rocola — English**, en
+   inglés.
+2. Arranca la rocola en vivo: ya puede sonar música. La opción **Idioma / Language** del menú pasa
+   de español a inglés y al revés cuando quieras.
 3. Para instalarla, enchufá un teclado (el instalador pide tipear una palabra de confirmación),
-   abrí el menú (**F10** o el botón 3 de arcade), elegí **Instalar en disco**, elegí
+   abrí el menú (**F10** o el botón 3 de arcade), elegí **Instalar en disco**, el idioma,
    el disco de destino (**14 GB o más**: 12 GB para el sistema y el resto para la música), confirmá,
    elegí el tipo de monitor (moderno/VGA o 15 kHz) y reiniciá.
 4. Sacá el pendrive: desde ese momento la PC arranca directo en la rocola.

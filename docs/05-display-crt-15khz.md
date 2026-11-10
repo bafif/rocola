@@ -1,5 +1,7 @@
 # 05 · Video: VGA y CRT 15 kHz
 
+*[English](05-display-crt-15khz.en.md) · Español*
+
 La rocola tiene que andar en **monitores modernos o VGA (31 kHz o más)** y en **CRT de arcade o TV
 (15 kHz)** sin configurar nada después de instalar. Es la parte más delicada del proyecto, y acá
 cuento cómo la encaré y hasta dónde llega.
@@ -21,8 +23,8 @@ cuento cómo la encaré y hasta dónde llega.
    da, y mandarle 15 kHz lo dejaría en negro. Los 15 kHz se piden a propósito.
 3. **15 kHz**: aplica los modelines fijos de `display/modelines/15khz.conf` y elige la resolución
    según el estándar de TV (`TV_STANDARD`): 640×480i a 60 Hz para NTSC, 768×576i a 50 Hz para PAL.
-   `PREFERRED_RES` la cambia. Necesita KMS: se arranca con la entrada de GRUB «aceleración GPU /
-   CRT 15 kHz».
+   `PREFERRED_RES` la cambia. Necesita KMS: se arranca con la entrada de GRUB «Rocola — GPU / CRT
+   15 kHz (KMS)».
 4. **Sin vuelta automática**: el sistema no puede saber si el monitor muestra imagen. Si un CRT
    queda en negro, se enchufa un monitor VGA y se cambia `MODE` en `/etc/rocola/display.conf` (o se
    reinstala eligiendo VGA).

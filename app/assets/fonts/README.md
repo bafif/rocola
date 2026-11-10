@@ -1,5 +1,7 @@
 # Fuentes
 
+*[English](README.en.md) · Español*
+
 Poné acá las tipografías (`.ttf`/`.otf`) que use tu tema y referencialas desde
 `themes/<tema>/theme.toml` (claves `[fonts] title` y `body`).
 

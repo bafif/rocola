@@ -1,5 +1,7 @@
 # 04 · Instalador guiado
 
+*[English](04-installer.en.md) · Español*
+
 Clona el SO del pendrive al disco interno. **Disparo manual** (no automático) y con confirmación
 explícita: el sistema **nunca** formatea un disco solo.
 
@@ -12,6 +14,10 @@ unidad y ninguna otra. La unidad pasa a la consola tty8, corre `rocola-install` 
 `installer/`, enlazado en `/usr/local/bin/`) como root y al terminar vuelve a la UI. Desde una
 consola es lo mismo: `systemctl start rocola-installer`.
 
+Lo primero que pregunta es el idioma (español o inglés). Arranca marcado el de la rocola (el
+del menú «Idioma / Language», la entrada «Rocola — English» de GRUB o el locale) y el que elijas
+queda como idioma de la rocola instalada.
+
 Es una TUI con `whiptail` que se maneja con **teclado**: la confirmación se tipea, y un encoder de
 arcade en modo joystick no manda teclas a una consola de texto. Instalar se hace una vez; alcanza
 con enchufar un teclado para eso.
@@ -19,25 +25,28 @@ con enchufar un teclado para eso.
 ## Flujo
 
 ```
-1. Detección de discos   → lista modelo + tamaño de cada /dev/sdX, /dev/nvmeX, etc.
+1. Idioma                → español | inglés; viene marcado el de la rocola, y el elegido se
+                           guarda en el disco instalado (/etc/rocola/language.conf)
+2. Detección de discos   → lista modelo + tamaño de cada /dev/sdX, /dev/nvmeX, etc.
                            (los de menos de 14 GB salen marcados como «muy chico»)
-2. Selección             → se elige el disco de destino (mínimo 14 GB)
-3. Confirmación          → muestra qué se va a borrar y pide escribir "BORRAR"
-4. Particionado destino (GPT):
+3. Selección             → se elige el disco de destino (mínimo 14 GB)
+4. Confirmación          → muestra qué se va a borrar y pide escribir "BORRAR"
+                           ("ERASE" si se eligió inglés)
+5. Particionado destino (GPT):
      ┌─────────┬──────────┬──────────────┬───────────────────────────┐
      │ BIOSBOOT│ ESP 256M │ ROOT 12G     │ DATOS /music (resto)      │
      │ 2M ef02 │ FAT32    │ ext4         │ ext4 (persistente)        │
      └─────────┴──────────┴──────────────┴───────────────────────────┘
-5. Clonado               → rsync del sistema vivo (/) → ROOT (excluye /proc,/sys,/dev,/music…)
+6. Clonado               → rsync del sistema vivo (/) → ROOT (excluye /proc,/sys,/dev,/music…)
                            La música precargada (y la importada en la sesión en vivo) va a
                            la partición /music, si no tiene música; no ocupa ROOT.
-6. Tipo de monitor       → moderno/VGA | 15 kHz  → se persiste (ver doc 05)
-7. Bootloader            → GRUB BIOS (i386-pc, embebido en BIOSBOOT) + GRUB-EFI amd64
+7. Tipo de monitor       → moderno/VGA | 15 kHz  → se persiste (ver doc 05)
+8. Bootloader            → GRUB BIOS (i386-pc, embebido en BIOSBOOT) + GRUB-EFI amd64
                            (BOOTX64.EFI en la ESP, --removable); /etc/fstab por UUID.
                            Si el pendrive arrancó con la entrada por defecto (nomodeset)
                            y el monitor no es de 15 kHz, el disco arranca igual: mismo
                            video genérico (/etc/default/grub.d/rocola-video.cfg).
-8. Reboot                → la PC arranca la rocola desde el disco, sola
+9. Reboot                → la PC arranca la rocola desde el disco, sola
 ```
 
 ## Seguridad (anti-borrado)
@@ -78,6 +87,9 @@ que reemplazan los prompts de la TUI:
 ROCOLA_UNATTENDED=1 ROCOLA_TARGET=/dev/sdX \
   ROCOLA_KEEP_MUSIC=no ROCOLA_DISPLAY=auto  rocola-install
 ```
+
+`ROCOLA_LANG=es` (o `en`) fija además el idioma de la rocola instalada; sin ella, queda el de su
+locale.
 
 En uso normal no se usa: el menú de la rocola siempre lanza el flujo interactivo con confirmación.
 Lo usa el arnés de prueba (`rocola-selftest.service`, que solo se activa con `rocola.selftest` en

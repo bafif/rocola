@@ -1,5 +1,7 @@
 # 07 · La app (UI SDL2 + MPD)
 
+*[English](07-rocola-app.en.md) · Español*
+
 La rocola en sí: una **UI propia** a pantalla completa hecha con **SDL2** (Python + pygame) que
 usa **MPD** como motor de audio.
 
@@ -40,6 +42,7 @@ reciente de pygame hay que probarlo en la ISO.
 | `audio.py` | salidas de PipeWire vía `pactl`: listar, elegir y recordar la salida |
 | `bt.py` | emparejar parlantes Bluetooth vía `bluetoothctl` |
 | `sysinfo.py` | datos de la pantalla de información (drivers, resolución, IP) |
+| `i18n.py` | los textos de pantalla en español e inglés, y qué idioma mostrar |
 
 ## Escenas (UI)
 
@@ -60,13 +63,24 @@ reciente de pygame hay que probarlo en la ISO.
   una vez por canción, en bloques de 1 MiB (`binarylimit`), y se ignora si pesa más de 8 MB. Los
   textos largos se cortan con «…».
 - **Menú** (botón 3 o F10): salida de audio, información del sistema, probar controles, actualizar
-  la biblioteca y, desde el pendrive, instalar en disco.
+  la biblioteca, idioma y, desde el pendrive, instalar en disco.
 - **Salida de audio**: elegir entre las salidas de PipeWire (analógica, HDMI, USB, Bluetooth) y
   emparejar un parlante Bluetooth.
 - **Información**: drivers de audio y video, resolución, modo de pantalla, equipo, IP y kernel.
 - **Probar controles**: muestra qué manda cada tecla o botón (el nombre o el índice que va en
   `[keys]`/`[buttons]`, ver [06](06-arcade-controls.md)) y qué acción le toca. Se sale con Atrás dos
   veces seguidas o a los 15 s sin tocar nada.
+
+## Idioma
+
+La rocola habla español o inglés. Al arrancar usa el idioma guardado en
+`/etc/rocola/language.conf`; si no hay, el de la entrada de GRUB (`rocola.lang=en` en «Rocola —
+English»), y si tampoco, el del sistema: español si el locale (`LANGUAGE`, `LC_ALL`,
+`LC_MESSAGES`, `LANG`) prefiere español, inglés si no. La opción **«Idioma / Language»** del menú
+pasa de uno al otro en el momento y lo guarda en ese archivo (en el pendrive dura hasta reiniciar,
+como todo lo del modo live; en el disco instalado queda). El instalador también lo pregunta y lo
+guarda. Los textos están en `app/rocola/i18n.py`; un test falla si a uno le falta un idioma o si
+aparece un texto de pantalla escrito fuera de ahí.
 
 ## Render y rendimiento
 
@@ -95,6 +109,7 @@ configuración.
 | `resolution` (`"640x480"` o `[640, 480]`) | `ROCOLA_RES` | resolución nativa |
 | `windowed` | `ROCOLA_WINDOWED=1` | `false` |
 | `fps` | — | `30` |
+| — (`/etc/rocola/language.conf`, ver «Idioma») | `ROCOLA_LANG=es\|en` | según el locale |
 | `[keys]`, `[buttons]` (mapeos de controles, ver [06](06-arcade-controls.md)) | — | los de `input.py` |
 
 `ROCOLA_SCREENSHOT=/ruta.png` (y `ROCOLA_SCREENSHOT_SCENE=library|nowplaying|menu|audio|info|inputtest|btpair`)
