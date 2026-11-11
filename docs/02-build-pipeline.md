@@ -46,21 +46,28 @@ kernel, `live-boot` y GRUB se instalaron en el paso 1, el rootfs es **autosufici
 1. Desempaqueta `rootfs.tar`.
 2. `mksquashfs` → `filesystem.squashfs` (incluye `/boot`, para que el sistema **instalado** tenga
    kernel+initrd al clonarse desde la raíz viva).
-3. Copia kernel+initrd a `/live/` y escribe `boot/grub/grub.cfg` (entradas normal y "modo seguro VGA").
+3. Copia kernel+initrd a `/live/` y escribe `boot/grub/grub.cfg` con las entradas del menú (ver
+   [03 · Menú de arranque](03-boot-and-live.md#menú-de-arranque)).
 4. **`grub-mkrescue`** ensambla `rocola-i386.img`: una **ISO híbrida (isohybrid)** con El Torito para
    **BIOS** (core GRUB i386-pc) **y UEFI x64** (imagen EFI + `/EFI/BOOT/BOOTX64.EFI`).
 
-Todo esto corre sin privilegios ni loop devices: `grub-mkrescue` trabaja en espacio de usuario
-(xorriso y mtools), así que `make image` usa un contenedor común, sin `--privileged`. Es lo que
-permite construir en WSL2 y en el CI, donde `losetup -P` no crea los nodos de las particiones. El
-`.img` que sale se graba con `dd` y arranca por BIOS y por UEFI; live-boot monta el squashfs con un
-overlay en RAM.
+`grub-mkrescue` trabaja en espacio de usuario (xorriso y mtools), así que no hacen falta loop
+devices: en WSL2 y en el CI `losetup -P` no crea los nodos de las particiones.
 
 Resultado: `out/rocola-i386.img`, ISO híbrida booteable por BIOS y por UEFI x64.
+
+`make image` reutiliza la imagen del SO si ya existe, sin reconstruirla. Después de cambiar algo en
+`os/`, `app/`, `installer/` o `display/`, corré `make rootfs` antes de `make image`.
 
 ## Paso 4 — Grabar (`make flash DEV=/dev/sdX`)
 
 `dd` de la imagen al pendrive. Ver [10 · Grabar el pendrive](10-flashing-usb.md).
+
+## Versiones publicadas (`make release VERSION=vX.Y.Z`)
+
+Copia la imagen como `out/release/rocola-i386-<versión>.iso` y escribe su `SHA256SUMS.txt`: son los
+dos archivos que se suben a cada versión de GitHub. La extensión `.iso` es para que Windows, Rufus y
+Ventoy la reconozcan; el contenido es el mismo `.img`.
 
 ## Verificación rápida
 
