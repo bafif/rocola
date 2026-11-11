@@ -103,7 +103,9 @@ display.
 not raise it again until it restarts.
 
 When a song starts, the marquee's lamps run for 4 seconds (2 with `suave`, never with `apagado`) and
-then stay lit. While they run, the jukebox draws and sends to the screen only that row.
+then stay lit; in the attraction mode they run all the time. While they run, the jukebox draws and
+sends to the screen only that row, one frame per step. On starting, the marquee lights up over a
+second (with `apagado`, already lit).
 
 ## Tools
 

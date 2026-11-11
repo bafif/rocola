@@ -177,6 +177,16 @@ class Skin:
         surface.blit(self._backdrop(surface.get_size()), rect.topleft, rect)
         return rect
 
+    def shade(self, surface: pygame.Surface, rect: pygame.Rect, amount: float) -> pygame.Rect:
+        """Darken `rect` by `amount`, from 0 (as it is) to 1 (black): a light not yet on."""
+        rect = pygame.Rect(rect)
+        if amount > 0:
+            shadow = self._layers.get_or(("shade", rect.size), lambda: _layer(rect.size))
+            shadow.fill((0, 0, 0))
+            shadow.set_alpha(round(255 * min(1.0, amount)))
+            surface.blit(shadow, rect.topleft)
+        return rect
+
     def panel(self, surface: pygame.Surface) -> None:
         """The operator panel's backdrop: the same theme, sober, with no artwork."""
         surface.fill(self.theme.color("background"))

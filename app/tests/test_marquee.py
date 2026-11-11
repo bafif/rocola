@@ -19,6 +19,9 @@ from rocola.theme import Theme
 class FakeApp:
     motion_only = False
     song_started = None
+    booted_at = None
+    attract = False
+    BOOT_S = 1.0
 
     def __init__(self, level="completo"):
         self.theme = Theme.load(Config().theme_dir)
@@ -141,6 +144,7 @@ def test_the_loop_draws_only_the_lamps_while_they_run_then_a_still_frame(monkeyp
     monkeypatch.delenv("ROCOLA_SCREENSHOT", raising=False)
     monkeypatch.setattr(rapp.RocolaApp, "HEARTBEAT_S", 30.0)
     monkeypatch.setattr(ui.JukeboxScene, "CHASE_S", {"completo": 0.4})
+    monkeypatch.setattr(rapp.RocolaApp, "BOOT_S", 0.05)  # lit almost at once
 
     frames = []
     real = ui.LibraryScene.draw

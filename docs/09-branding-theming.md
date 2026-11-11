@@ -103,8 +103,9 @@ tipo de pantalla.
 subir hasta que se reinicia.
 
 Cuando arranca un tema, las lámparas de la marquesina corren 4 segundos (2 en `suave`, nunca en
-`apagado`) y después quedan prendidas. Mientras corren, la rocola dibuja y manda a la pantalla sólo
-esa fila.
+`apagado`) y después quedan prendidas; en el modo atracción corren todo el tiempo. Mientras corren,
+la rocola dibuja y manda a la pantalla sólo esa fila, un cuadro por paso. Al prender, la marquesina
+se enciende en un segundo (en `apagado`, ya prendida).
 
 ## Herramientas
 

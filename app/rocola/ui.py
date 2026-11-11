@@ -84,6 +84,7 @@ class JukeboxScene(Scene):
     # What the legend at the bottom shows here: (control, action, text) — the action's
     # button number goes on the cap.
     LEGEND: list[tuple[str, str, str]] = []
+    _marquee_shown = ("", "")  # what the marquee said in the last whole frame
 
     def _layout(self, surface) -> tuple[pygame.Rect, pygame.Rect, pygame.Rect]:
         """Where the marquee, its lamps and the rest of the screen go (the rest ends above
@@ -110,29 +111,66 @@ class JukeboxScene(Scene):
         ]
 
     def _chase_step(self) -> int | None:
-        """The step the running lamps are on, or None when they rest (all lit)."""
+        """The step the running lamps are on, or None when they rest (all lit). They run for
+        a moment when a song starts, and for as long as the attraction mode lasts."""
+        level = self.app.effects.level
+        now = time.monotonic()
+        if self.app.attract and level != "apagado":
+            return int(now * 1000) // self.skin.chaser()[1]
         started = self.app.song_started
         if started is None:
             return None
-        elapsed = time.monotonic() - started
-        if not 0 <= elapsed < self.CHASE_S.get(self.app.effects.level, 0.0):
+        elapsed = now - started
+        if not 0 <= elapsed < self.CHASE_S.get(level, 0.0):
             return None
         return int(elapsed * 1000) // self.skin.chaser()[1]
 
+    def _lighting(self) -> float | None:
+        """How lit the marquee is in the first second after the jukebox starts (0 to 1), or
+        None once it is (the app drops the start then, or when a button skips it)."""
+        started = self.app.booted_at
+        if started is None:
+            return None
+        return max(0.0, min(1.0, (time.monotonic() - started) / max(0.001, self.app.BOOT_S)))
+
     @property
     def animating(self) -> bool:
-        return self._chase_step() is not None
+        return self._lighting() is not None or self._chase_step() is not None
+
+    @property
+    def fps(self) -> int | None:
+        """Frames a second while only the lamps run: one per step. None for the app's own."""
+        if self._lighting() is not None:
+            return None
+        return -(-1000 // self.skin.chaser()[1])
 
     def _lamps(self) -> list[bool]:
         count = self.skin.chaser()[0]
+        lighting = self._lighting()
+        if lighting is not None:  # lighting up: one lamp after the other
+            return progress(count, lighting)
         step = self._chase_step()
         return [True] * count if step is None else chase(count, step)
+
+    def _marquee_text(self, subtitle: str) -> tuple[str, str]:
+        """The marquee's title and subtitle; in the attraction mode, the invitation is the title."""
+        if self.app.attract:
+            return t("attract.invite"), self.app.marquee_title()
+        return self.app.marquee_title(), subtitle
+
+    def _draw_marquee(self, surface, rect: pygame.Rect, text: tuple[str, str]) -> pygame.Rect:
+        drawn = self.skin.marquee(surface, rect, *text)
+        lighting = self._lighting()
+        if lighting is not None:
+            self.skin.shade(surface, rect, 1.0 - lighting)
+        return drawn
 
     def _frame(self, surface, subtitle: str) -> pygame.Rect:
         """The cabinet, the marquee and its lamps; the rect left for the scene."""
         marquee, lamps, rest = self._layout(surface)
+        self._marquee_shown = self._marquee_text(subtitle)
         self.skin.backdrop(surface)
-        self.skin.marquee(surface, marquee, self.app.marquee_title(), subtitle)
+        self._draw_marquee(surface, marquee, self._marquee_shown)
         self.skin.lamps(surface, lamps, self._lamps())
         self._draw_legend(surface, self._legend_rect(surface))
         return rest
@@ -141,10 +179,15 @@ class JukeboxScene(Scene):
         return self.skin.legend(surface, rect, self._legend_items())
 
     def _motion(self, surface) -> list:
-        """A frame where only the lamps moved: they alone are drawn and sent to the screen."""
-        lamps = self._layout(surface)[1]
+        """A frame where only the lamps moved (and the marquee, while it lights up): they alone
+        are drawn and sent to the screen."""
+        marquee, lamps, _rest = self._layout(surface)
+        rects = []
+        if self._lighting() is not None:
+            rects.append(self._draw_marquee(surface, marquee, self._marquee_shown))
         self.skin.restore(surface, lamps)
-        return [self.skin.lamps(surface, lamps, self._lamps())]
+        rects.append(self.skin.lamps(surface, lamps, self._lamps()))
+        return rects
 
 
 class LibraryScene(JukeboxScene):
@@ -380,6 +423,10 @@ class NowPlayingScene(JukeboxScene):
     @property
     def animating(self) -> bool:
         return self._turning() or super().animating
+
+    @property
+    def fps(self) -> int | None:
+        return None if self._turning() else super().fps
 
     def _angle(self) -> int:
         """Which of the record's rotated labels shows now: by the clock, not by the frame, so it

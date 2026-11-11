@@ -46,6 +46,8 @@ CATALOG: dict[str, dict[str, str]] = {
     "library.one_song": {"es": "1 canción", "en": "1 song"},
     "library.songs": {"es": "{n} canciones", "en": "{n} songs"},
     "library.page": {"es": "Página {page} de {pages}", "en": "Page {page} of {pages}"},
+    # The attraction mode: nobody has touched anything and there is no music
+    "attract.invite": {"es": "¡ELEGÍ UNA CANCIÓN!", "en": "PICK A SONG!"},
     # The legend of the buttons, at the bottom of the jukebox's screens
     "legend.move": {"es": "Mover", "en": "Move"},
     "legend.page": {"es": "Página", "en": "Page"},

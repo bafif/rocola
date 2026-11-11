@@ -73,6 +73,12 @@ reciente de pygame hay que probarlo en la ISO.
   los del gabinete: la palanca (↑↓, ←→) y cada botón como una tapa redonda con su número, el mismo
   de [06](06-arcade-controls.md) y de «Probar controles» (sin número si ningún botón hace esa
   acción). Lo que no entra se deja afuera; en la biblioteca, a la derecha va la página.
+- **Al prender y sin nadie**: al arrancar, la marquesina se enciende en un segundo y sus lámparas se
+  prenden de a una (cualquier botón lo saltea; con `effects = "apagado"` arranca prendida). Si nadie
+  toca nada durante 5 minutos: con música, pasa sola a «Reproduciendo»; sin música, entra en modo
+  atracción, con las lámparas corriendo y la marquesina que invita a elegir una canción. En los dos
+  casos el primer botón vuelve a la pantalla de antes y no hace nada más. «Probar controles» y el
+  emparejamiento Bluetooth no se dejan solos.
 - **Menú** (botón 3 o F10): salida de audio, información del sistema, probar controles, actualizar
   la biblioteca, idioma y, desde el pendrive, instalar en disco. El menú y las pantallas que siguen
   son el **panel del operador**: el mismo tema en versión sobria (fondo liso, la letra de texto, sin

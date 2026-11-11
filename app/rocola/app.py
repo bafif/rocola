@@ -39,6 +39,21 @@ class RocolaApp:
     # MPD): a scene may then draw again just what moves and send only that to the screen.
     motion_only = False
 
+    # When the jukebox started (time.monotonic()): the marquee lights up over the first
+    # second. None once it is lit, or when a button skipped it.
+    booted_at: float | None = None
+    # Nobody touching anything this long: with music, the now playing screen; without it,
+    # the attraction mode (lamps that run, a marquee that invites to pick a song).
+    IDLE_S = 300.0
+    BOOT_S = 1.0
+    # Screens that run something of their own and are never left by themselves.
+    NO_IDLE = ("inputtest", "btpair")
+    last_input = 0.0
+    attract = False
+    # The screen to go back to with the first button after the jukebox went somewhere by
+    # itself; that button does nothing else.
+    _resume: str | None = None
+
     def __init__(self) -> None:
         self.config = Config.load()
         i18n.set_language(i18n.detect())
@@ -97,7 +112,12 @@ class RocolaApp:
             "inputtest": ui.InputTestScene(self),
             "btpair": ui.BtPairScene(self),
         }
-        self.set_scene(self.config.screenshot_scene if self.config.screenshot else "library")
+        shot = self.config.screenshot_scene if self.config.screenshot else ""
+        self.attract = shot == "attract"  # the capture of the attraction mode
+        self.set_scene("library" if shot in ("", "attract") else shot)
+        self.last_input = time.monotonic()
+        lit = shot or self.effects.level == "apagado"
+        self.booted_at = None if lit else time.monotonic()
 
         # Modo captura: render de unos frames, guardar PNG y salir (dev/CI).
         if self.config.screenshot:
@@ -128,8 +148,10 @@ class RocolaApp:
                 if animating:
                     self.effects.frame((time.perf_counter() - started) * 1000)
             self._poll_state()
-            if animating:
-                self.clock.tick(self.config.fps)
+            self._check_boot(time.monotonic())
+            self._check_idle(time.monotonic())
+            if animating:  # lamps alone step a few times a second: no need for 30 frames
+                self.clock.tick(getattr(self.scene, "fps", None) or self.config.fps)
 
         self._shutdown()
 
@@ -171,6 +193,9 @@ class RocolaApp:
             ):
                 action = self.input.translate(event)
                 self.dirty = True
+                touched = action is not None or event.type in (pygame.KEYDOWN, pygame.JOYBUTTONDOWN)
+                if touched and self._wake():
+                    continue  # the first button only wakes the jukebox
                 record = getattr(self.scene, "record", None)
                 if record is not None:
                     record(event, action)  # la prueba de controles recibe todo, crudo
@@ -197,6 +222,45 @@ class RocolaApp:
 
     def open_menu(self) -> None:
         self.set_scene("menu")
+
+    def scene_name(self) -> str:
+        return next((name for name, s in self.scenes.items() if s is self.scene), "")
+
+    def _wake(self) -> bool:
+        """Someone touched a control: note it, and if the jukebox was lighting up, inviting or
+        had gone to now playing by itself, go back to how it was. True if that was all."""
+        self.last_input = time.monotonic()
+        woke = self.booted_at is not None or self.attract or self._resume is not None
+        self.booted_at = None
+        self.attract = False
+        if self._resume is not None:
+            name, self._resume = self._resume, None
+            if name != self.scene_name():
+                self.set_scene(name)
+        return woke
+
+    def _check_boot(self, now: float) -> None:
+        if self.booted_at is not None and now - self.booted_at >= self.BOOT_S:
+            self.booted_at = None  # lit: from here a button does what it says
+
+    def _check_idle(self, now: float) -> None:
+        """Nobody has touched anything for IDLE_S: with music, go to now playing (R-31);
+        without it, the attraction mode on the selector (D4)."""
+        if now - self.last_input < self.IDLE_S or self.scene is None:
+            return
+        name = self.scene_name()
+        if name in self.NO_IDLE:
+            return
+        playing = self.state["status"].get("state") == "play"
+        if self.attract != (not playing):
+            self.attract = not playing
+            self.dirty = True
+        target = "nowplaying" if playing else "library"
+        if name != target or self.attract:
+            if self._resume is None:
+                self._resume = name
+            if name != target:
+                self.set_scene(target)
 
     # --- MPD --------------------------------------------------------------
     def _connect_mpd(self, retries: int = 30) -> bool:

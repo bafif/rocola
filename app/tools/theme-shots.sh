@@ -5,7 +5,7 @@
 # (crt15 320×240, crt 640×480, tv 720×576, lcd 1280×720) y deja los PNG en
 # <salida>/<tema>/<tipo>-<escena>.png. La música es de mentira (tools/fake-mpd.py): la
 # biblioteca con varios artistas (tarjetas de índice) y, en <tipo>-songs.png, con uno solo
-# (tarjetas de canción).
+# (tarjetas de canción). <tipo>-attract.png es el modo atracción.
 #
 # Uso: make theme-shots THEME=ambar      (o app/tools/theme-shots.sh <tema> [salida])
 set -euo pipefail
@@ -50,5 +50,6 @@ for spec in crt15:320x240 crt:640x480 tv:720x576 lcd:1280x720; do
         shot "$display" "$res" "$scene" "$port_many" "$out/$display-$scene.png"
     done
     shot "$display" "$res" library "$port_one" "$out/$display-songs.png"
+    shot "$display" "$res" attract "$port_many" "$out/$display-attract.png"
 done
 echo "theme-shots: $out"

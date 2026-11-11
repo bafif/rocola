@@ -133,6 +133,9 @@ def test_cover_is_fetched_once_per_song(polled_app):
 class FakeApp:
     motion_only = False
     song_started = None
+    booted_at = None
+    attract = False
+    BOOT_S = 1.0
 
     def __init__(self, theme, state):
         from rocola.effects import EffectsGovernor

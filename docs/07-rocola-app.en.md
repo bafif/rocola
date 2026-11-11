@@ -73,6 +73,12 @@ pygame function has to be tested on the ISO.
   like the cabinet's: the stick (↑↓, ←→) and each button as a round cap with its number, the same as
   in [06](06-arcade-controls.en.md) and “Test controls” (no number when no button does that action).
   What does not fit is left out; in the library, the page goes at the right.
+- **At start and with nobody around**: on starting, the marquee lights up over a second and its
+  lamps come on one after the other (any button skips it; with `effects = "apagado"` it starts lit).
+  If nobody touches anything for 5 minutes: with music, it goes to “Now playing” by itself; without
+  music, it enters the attraction mode, with the lamps running and the marquee inviting to pick a
+  song. Either way, the first button goes back to the screen from before and does nothing else.
+  “Test controls” and Bluetooth pairing are never left by themselves.
 - **Menu** (button 3 or F10): audio output, system information, test controls, update the library,
   language and, when running from the USB stick, install to disk. The menu and the screens below
   are the **operator panel**: the same theme in its sober version (plain background, the text font,
