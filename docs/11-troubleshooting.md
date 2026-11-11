@@ -30,6 +30,7 @@ Containerfile (`rm -rf /var/lib/apt/lists/*`).
 **La PC no bootea del pendrive**
 - Activá USB/Legacy boot en la BIOS; probá el menú de booteo (F12/F8/Esc).
 - Regrabá el pendrive (ver [10](10-flashing-usb.md)); puede haber quedado a medias.
+- Por UEFI, desactivá Secure Boot: el cargador de la rocola no está firmado (ver [13](13-rufus-windows.md)).
 - Para UEFI muy viejo: usá modo BIOS/CSM.
 - Si se cuelga apenas arranca el kernel en una CPU muy vieja (algunos Pentium M, VIA C3, AMD
   Geode), probá la entrada «Rocola — CPU sin PAE · without PAE (kernel 686)».
@@ -52,8 +53,8 @@ de todo el sistema sin root.
 ## SSH de troubleshooting (remoto)
 
 Para depurar una rocola que no abre la UI, el ISO trae un SSH que está apagado por defecto. Solo
-se habilita si arrancás con la entrada de GRUB **«Rocola — SSH por red · SSH troubleshooting»** (que pasa `rocola.ssh`
-en la línea de comandos del kernel); en el arranque normal sshd no se levanta. Entra como root y
+se habilita si arrancás con la entrada de GRUB **«Rocola — SSH por red · SSH troubleshooting»** (que
+pasa `rocola.ssh` en la línea de comandos del kernel); en el arranque normal sshd no se levanta. Entra como root y
 solo con clave pública, sin contraseñas, y las host keys se generan en RAM en cada arranque, así que
 la imagen no lleva claves fijas.
 
@@ -81,13 +82,20 @@ que esté `rocola.ssh`).
 **Pantalla negra o "fuera de rango" en CRT 15 kHz**
 - El hardware puede no soportar 15 kHz por esa salida (ver [05](05-display-crt-15khz.md)). Probá la
   opción VGA/moderno.
-- Forzá fallback VGA arrancando con el modo seguro (entrada de GRUB / `display.conf`).
+- Para volver a VGA, enchufá un monitor VGA y poné `MODE=vga` en `/etc/rocola/display.conf` (o
+  reinstalá eligiendo VGA).
+
+**Pantalla negra con la entrada «Rocola — GPU / CRT 15 kHz (KMS)»**
+En algunas APU de AMD (Picasso, Raven2) el driver `amdgpu` no anda con el kernel i386. Usá la
+entrada por defecto, «Rocola» (ver [05](05-display-crt-15khz.md#driver-de-video)).
 
 **Imagen corrida/sin sincronizar en CRT**
 Ajustá el modeline (posición/tamaño) en `display/modelines/`; cada CRT varía un poco.
 
 **Monitor moderno se ve a baja resolución**
-Verificá que `display.conf` no esté forzando 15 kHz; debería usar EDID.
+Con la entrada por defecto, la imagen sale por el framebuffer del firmware, a la resolución que deja
+GRUB. Para la del monitor, arrancá con «Rocola — GPU / CRT 15 kHz (KMS)»; si instalás desde esa
+entrada, el disco queda igual. Revisá también que `display.conf` no esté forzando 15 kHz.
 
 ## Audio
 
@@ -101,7 +109,8 @@ Verificá que `display.conf` no esté forzando 15 kHz; debería usar EDID.
 
 **Los botones no responden / hacen otra cosa**
 - Mirá si el encoder está en modo teclado o joystick; ambos deberían andar (ver [06](06-arcade-controls.md)).
-- Usá la pantalla de test de input para ver qué manda cada botón y reasigná en la config.
+- Con menú → «Probar controles» ves qué manda cada botón; reasignalos con `[keys]` y `[buttons]` en
+  `/etc/rocola/rocola.toml`.
 
 ## Música
 

@@ -84,6 +84,7 @@ qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -hda out/rocola-i386.img -m 204
 ## Booting on the old PC
 
 Open the boot menu (usually F12/F8/Esc/Del depending on the machine) and choose the USB drive. If it
-doesn't show up, enable "USB boot"/"Legacy boot" in the BIOS.
+doesn't show up, enable "USB boot"/"Legacy boot" in the BIOS. On UEFI, turn Secure Boot off: the
+jukebox's boot loader isn't signed.
 
 Next: [11 · Troubleshooting](11-troubleshooting.en.md).

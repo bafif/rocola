@@ -30,6 +30,7 @@ Containerfile (`rm -rf /var/lib/apt/lists/*`).
 **The PC won't boot from the USB stick**
 - Enable USB/Legacy boot in the BIOS; try the boot menu (F12/F8/Esc).
 - Re-flash the USB stick (see [10](10-flashing-usb.en.md)); it may have been only partially written.
+- On UEFI, turn Secure Boot off: the jukebox's boot loader isn't signed (see [13](13-rufus-windows.en.md)).
 - For very old UEFI: use BIOS/CSM mode.
 - If it hangs right after the kernel starts on a very old CPU (some Pentium M, VIA C3, AMD
   Geode), try the "Rocola — CPU sin PAE · without PAE (kernel 686)" entry.
@@ -52,8 +53,8 @@ system without root.
 ## Troubleshooting SSH (remote)
 
 To debug a jukebox that won't open the UI, the ISO ships an SSH server that's off by default. It's only
-enabled if you boot with the GRUB entry **"Rocola — SSH por red · SSH troubleshooting"** (which passes `rocola.ssh`
-on the kernel command line); on a normal boot sshd doesn't start. It logs in as root and
+enabled if you boot with the GRUB entry **"Rocola — SSH por red · SSH troubleshooting"** (which passes
+`rocola.ssh` on the kernel command line); on a normal boot sshd doesn't start. It logs in as root and
 only with a public key, no passwords, and the host keys are generated in RAM on every boot, so
 the image doesn't carry fixed keys.
 
@@ -73,21 +74,28 @@ build.
    ```
 
 The hardened config is in `etc/ssh/sshd_config.d/10-rocola.conf`; the cmdline gate is handled by the
-`rocola-ssh-maybe` script (triggered by `rocola-ssh.service` on every boot, but it exits immediately unless
-`rocola.ssh` is present).
+`rocola-ssh-maybe` script (triggered by `rocola-ssh.service` on every boot, but it exits immediately
+unless `rocola.ssh` is present).
 
 ## Video / CRT
 
 **Black screen or "out of range" on a 15 kHz CRT**
 - The hardware may not support 15 kHz on that output (see [05](05-display-crt-15khz.en.md)). Try the
   VGA/modern option.
-- Force the VGA fallback by booting in safe mode (GRUB entry / `display.conf`).
+- To go back to VGA, plug in a VGA monitor and set `MODE=vga` in `/etc/rocola/display.conf` (or
+  reinstall choosing VGA).
+
+**Black screen with the "Rocola — GPU / CRT 15 kHz (KMS)" entry**
+On some AMD APUs (Picasso, Raven2) the `amdgpu` driver doesn't work with the i386 kernel. Use the
+default entry, "Rocola" (see [05](05-display-crt-15khz.en.md#video-driver)).
 
 **Shifted/unsynced picture on a CRT**
 Adjust the modeline (position/size) in `display/modelines/`; every CRT varies a bit.
 
 **Modern monitor looks low-res**
-Check that `display.conf` isn't forcing 15 kHz; it should use EDID.
+With the default entry, the picture goes through the firmware's framebuffer, at the resolution GRUB
+leaves. For the monitor's own, boot with "Rocola — GPU / CRT 15 kHz (KMS)"; if you install from that
+entry, the disk stays the same. Also check that `display.conf` isn't forcing 15 kHz.
 
 ## Audio
 
@@ -100,8 +108,10 @@ Check that `display.conf` isn't forcing 15 kHz; it should use EDID.
 ## Controls
 
 **The buttons don't respond / do something else**
-- Check whether the encoder is in keyboard or joystick mode; both should work (see [06](06-arcade-controls.en.md)).
-- Use the input test screen to see what each button sends and remap it in the config.
+- Check whether the encoder is in keyboard or joystick mode; both should work (see
+  [06](06-arcade-controls.en.md)).
+- Menu → "Test controls" shows what each button sends; remap them with `[keys]` and `[buttons]` in
+  `/etc/rocola/rocola.toml`.
 
 ## Music
 

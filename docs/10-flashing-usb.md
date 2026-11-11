@@ -84,6 +84,7 @@ qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -hda out/rocola-i386.img -m 204
 ## Bootear en la PC vieja
 
 Entrá al menú de booteo (suele ser F12/F8/Esc/Supr según el equipo) y elegí el pendrive. Si no
-aparece, habilitá "USB boot"/"Legacy boot" en la BIOS.
+aparece, habilitá "USB boot"/"Legacy boot" en la BIOS. Por UEFI, desactivá Secure Boot: el cargador de
+la rocola no está firmado.
 
 Siguiente: [11 · Resolución de problemas](11-troubleshooting.md).
