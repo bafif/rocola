@@ -22,6 +22,8 @@ rocola/
   audio.py      PipeWire outputs (pactl)
   bt.py         Bluetooth pairing (bluetoothctl)
   sysinfo.py    data for the info screen
+  i18n.py       the on-screen texts in Spanish and English
+  themecheck.py python -m rocola.theme check: contrast, accented letters and files of a theme
 tests/          pytest (fake MPD, dummy SDL)
 assets/
   fonts/

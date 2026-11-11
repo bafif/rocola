@@ -16,5 +16,5 @@ licencia al lado y anotada acá. Se incluyen sin modificar.
 | `Oswald-Medium.ttf`, `Oswald-SemiBold.ttf` | Oswald | The Oswald Project Authors | SIL OFL 1.1 ([`Oswald-OFL.txt`](Oswald-OFL.txt)) | [googlefonts/OswaldFont](https://github.com/googlefonts/OswaldFont/tree/main/fonts/ttf) (las estáticas: el pygame de bookworm dibuja una variable sólo en su peso por defecto) | Ámbar: los datos y los números |
 | `VT323-Regular.ttf` | VT323 | The VT323 Project Authors | SIL OFL 1.1 ([`VT323-OFL.txt`](VT323-OFL.txt)) | [google/fonts](https://github.com/google/fonts/tree/main/ofl/vt323) | Ámbar a 15 kHz: todo, sin suavizado |
 
-Licencias confirmadas el 11/11/2026, al incorporarlas. `make theme-check` comprueba que cada una
-tenga «ÁÉÍÓÚÜÑ¿¡».
+Las licencias se revisan al incorporar cada fuente. `make theme-check` comprueba que cada una tenga
+«ÁÉÍÓÚÜÑ¿¡».
