@@ -94,7 +94,7 @@ porque más de uno puede volver a aparecer si se cambia el build o el instalador
 |----------|---------|---------|
 | Builder con loop devices | `make image` fallaba en WSL2 | pasar a `grub-mkrescue`, que no pide privilegios |
 | Argumentos de `grub-mkrescue` | xorriso rechazaba `-quiet` y `--volid=` | `-- -volid ROCOLA` (sintaxis de mkisofs) |
-| La UI no arrancaba | tty1 quedaba en el login de texto, sin la UI | el servicio propio que la abría se reemplazó por el autologin de `rocola` en tty1 y `exec startx` desde `~/.bash_profile`, con `console-getty` enmascarado |
+| rocola.service no arrancaba | tty1 quedaba en el login de texto, sin la UI | enmascarar `getty@tty1` y hacer del servicio un reemplazo de getty (sin `Conflicts`, que hacía que systemd lo descartara) |
 | squashfs sin `/boot` | el sistema instalado se quedaba sin kernel | incluir `/boot` en el squashfs |
 | Xorg sin root | `Cannot open virtual console` | `Xwrapper.config` con `needs_root_rights=yes` |
 | El instalador borraba `/music` | `--zap-all` destruía la partición que había que conservar | al conservar la música no se reparticiona, solo se reformatean ESP y ROOT |
