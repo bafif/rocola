@@ -1,0 +1,8 @@
+# Pasa los SVG de los temas a PNG (`make theme-assets`). Los SVG entran y los PNG salen por
+# tar en la entrada y la salida estándar: el contenedor no monta nada del repo.
+FROM docker.io/library/debian:bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get -o Acquire::Retries=5 update \
+    && apt-get -o Acquire::Retries=5 install -y --no-install-recommends librsvg2-bin \
+    && rm -rf /var/lib/apt/lists/*

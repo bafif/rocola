@@ -93,6 +93,17 @@ pantalla sola llega en una versión siguiente.
 `off`). Si los cuadros tardan en promedio más de 20 ms, la rocola baja un nivel sola y no vuelve a
 subir hasta que se reinicia.
 
+## Herramientas
+
+- `make theme-check [THEME=ambar]` (o `python -m rocola.theme check <tema>`): para cada tipo de pantalla,
+  el contraste de cada texto contra lo que tiene detrás (en el TV, por luminancia), que las fuentes
+  tengan «ÁÉÍÓÚÜÑ¿¡» y que existan y carguen los archivos que nombra el tema. Los tests lo corren
+  sobre cada tema incluido.
+- `make theme-assets`: pasa cada `src/<ruta>.svg` de cada tema a `<ruta>.png`, en un contenedor de
+  Podman. Los PNG se commitean.
+- `make theme-shots THEME=ambar`: una captura de cada pantalla en cada tipo de pantalla, en
+  `out/shots/<tema>/`.
+
 ## Cambiar de tema
 
 El tema activo se elige con `theme` en `/etc/rocola/rocola.toml` (o con la variable

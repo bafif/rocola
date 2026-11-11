@@ -93,6 +93,17 @@ jukebox detecting the display by itself comes in a later version.
 `off`). If frames take more than 20 ms on average, the jukebox lowers it one step by itself and does
 not raise it again until it restarts.
 
+## Tools
+
+- `make theme-check [THEME=ambar]` (or `python -m rocola.theme check <theme>`): for each kind of
+  display, the contrast of every text against what is behind it (on a TV, by luminance), that the
+  fonts have «ÁÉÍÓÚÜÑ¿¡», and that the files the theme names exist and load. The tests run it on
+  every bundled theme.
+- `make theme-assets`: turns each theme's `src/<path>.svg` into `<path>.png`, in a Podman
+  container. The PNGs are committed.
+- `make theme-shots THEME=ambar`: a screenshot of every screen on every kind of display, in
+  `out/shots/<theme>/`.
+
 ## Changing the theme
 
 The active theme is set with `theme` in `/etc/rocola/rocola.toml` (or with the `ROCOLA_THEME`

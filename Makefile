@@ -92,6 +92,18 @@ app-test: ## Corre los tests de la app (pytest, sin display ni audio)
 app-lint: ## Lint y formato de la app (ruff)
 	cd app && uv run ruff check . && uv run ruff format --check .
 
+.PHONY: theme-assets
+theme-assets: ## Pasa los SVG de src/ de cada tema a PNG (Podman; los PNG se commitean)
+	app/tools/theme-assets.sh
+
+.PHONY: theme-check
+theme-check: ## Revisa contraste, letras con tilde y archivos de los temas: make theme-check [THEME=ambar]
+	cd app && uv run python -m rocola.theme check $(or $(THEME),--all)
+
+.PHONY: theme-shots
+theme-shots: ## Capturas de cada pantalla en cada tipo de pantalla: make theme-shots THEME=ambar
+	app/tools/theme-shots.sh $(or $(THEME),ambar) $(OUT)/shots
+
 .PHONY: os-test
 os-test: ## Tests de los scripts del SO que corren sin root (import de música)
 	bash os/tests/music-import.sh
