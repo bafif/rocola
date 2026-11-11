@@ -5,7 +5,8 @@
 Everything on screen comes from a theme: the app knows no colors and no image files. A theme is a
 folder in `app/assets/themes/` with a `theme.toml` and, if it has artwork, its images. The jukebox
 ships with **Ámbar**, the default theme, with its pieces, its fonts and a version of its own for
-15 kHz.
+15 kHz, and **Display**, with seven-segment LED numbers, which has no artwork yet and is drawn with
+its colors alone (chosen with `theme = "display"`, see [07](07-rocola-app.en.md)).
 
 ## Layout
 
@@ -122,7 +123,8 @@ tubes and the row of lamps.
 
 - `make theme-check [THEME=ambar]` (or `python -m rocola.theme check <theme>`): for each kind of
   display, the contrast of every text against what is behind it (on a TV, by luminance), that the
-  fonts have «ÁÉÍÓÚÜÑ¿¡», and that the files the theme names exist and load. The tests run it on
+  fonts have «ÁÉÍÓÚÜÑ¿¡» (the `digits` one, only the numbers and the capitals of the codes: a
+  seven-segment font is enough), and that the files the theme names exist and load. The tests run it on
   every bundled theme.
 - `make theme-assets`: turns each theme's `src/<path>.svg` into `<path>.png`, in a Podman
   container. The PNGs are committed.

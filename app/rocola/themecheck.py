@@ -18,6 +18,11 @@ from .theme import FONT_ROLES, Color, Theme, _read
 
 # Letters every font has to draw: a title in Spanish uses all of them.
 SAMPLE = "ÁÉÍÓÚÜÑ¿¡áéíóúüñ"
+# The digits font only draws the codes of the cards (a page letter, never I or O, and the place
+# in it) and the numbers of the buttons: a seven-segment font is enough.
+SAMPLES = {"digits": "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ"}
+# A character no font has: what a font draws for it is what it draws for any letter it lacks.
+_ABSENT = "\U0010fffd"
 
 # Text and what is behind it, by role: the pairs every screen uses.
 PAIRS = (
@@ -79,14 +84,28 @@ def check(theme_dir: Path, displays: tuple[str, ...] = DISPLAYS) -> list[str]:
                 )
         problems += [f"{display}: missing file {name}" for name in theme.missing]
         for role in FONT_ROLES:
-            font = theme.font(role, 24)
-            lacking = [ch for ch, m in zip(SAMPLE, font.metrics(SAMPLE)) if m is None]
-            if lacking:
-                problems.append(f"{display}: font {role} has no {''.join(lacking)}")
+            absent = lacking(theme.font(role, 24), SAMPLES.get(role, SAMPLE))
+            if absent:
+                problems.append(f"{display}: font {role} has no {absent}")
         for name in theme._pieces:
             if theme.piece(name) is None:
                 problems.append(f"{display}: piece {name} does not load")
     return list(dict.fromkeys(problems))  # the same problem on every display, once
+
+
+def lacking(font: pygame.font.Font, text: str) -> str:
+    """The characters of `text` that `font` has no glyph for.
+
+    SDL never says a glyph is missing (its metrics are those of the empty box the font draws
+    instead), so each letter is drawn and compared with a character no font has.
+    """
+    blank = _drawn(font, _ABSENT)
+    return "".join(ch for ch in text if _drawn(font, ch) == blank)
+
+
+def _drawn(font: pygame.font.Font, ch: str) -> tuple[tuple[int, int], bytes]:
+    img = font.render(ch, False, (255, 255, 255), (0, 0, 0))
+    return img.get_size(), pygame.image.tobytes(img, "RGB")
 
 
 def main(argv: list[str]) -> int:

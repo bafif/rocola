@@ -1,0 +1,40 @@
+# Display: rocola de los 80. Gabinete negro, números de LED rojo de siete segmentos, texto en ámbar
+# y luces verdes. Pensado primero para 15 kHz: 320×240 tal cual. Formato en docs/09.
+# Todavía sin arte: la rocola lo dibuja sólo con estos colores. Las fuentes están en
+# app/assets/fonts/, cada una con su licencia (README.md de esa carpeta).
+version = 2
+name    = "Display"
+
+[colors]
+background = "#0b0b0b"   # el gabinete
+surface    = "#161616"   # las tarjetas y la botonera
+text       = "#ffb000"   # LED ámbar
+text_dim   = "#b47c00"
+on_dark    = "#ffb000"
+on_dark_dim = "#b47c00"
+accent     = "#ff2a1a"   # LED rojo: los códigos y las franjas
+glow       = "#39ff6a"   # LED verde: el cursor y las lámparas
+
+[fonts]
+marquee = "fonts/VT323-Regular.ttf"       # letra de terminal
+strip   = "fonts/VT323-Regular.ttf"
+body    = "fonts/VT323-Regular.ttf"
+digits  = "fonts/DSEG7Classic-Bold.ttf"   # siete segmentos: los códigos y los números
+
+[effects]
+record = { rpm = 45 }
+chaser = { lamps = 16, step_ms = 100 }
+
+[variant.crt15]   # CRT por RGB a 15 kHz: 320×240 o 384×288
+fonts.antialias    = false
+effects.glow       = "plano"     # el fósforo hace el halo: lámparas de color liso
+colors.text_dim    = "#e89a00"   # 7:1 sobre las tarjetas
+colors.on_dark_dim = "#e89a00"
+colors.accent      = "#ff8068"   # el rojo, más claro: 7:1
+
+[variant.tv]      # TV por compuesto, S-Video o conversor
+safe_area          = 0.10
+effects.glow       = "plano"
+colors.text_dim    = "#e89a00"   # más contraste de luminancia
+colors.on_dark_dim = "#e89a00"
+colors.accent      = "#ff8068"   # el rojo saturado se corre en compuesto

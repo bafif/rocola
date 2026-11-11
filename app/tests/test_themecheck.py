@@ -4,7 +4,7 @@ import pygame
 import pytest
 
 from rocola.config import ASSETS_DIR
-from rocola.themecheck import check, contrast, luma, main
+from rocola.themecheck import SAMPLE, SAMPLES, check, contrast, lacking, luma, main
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -53,6 +53,26 @@ colors.on_dark = "#ffffff"
     assert "lcd: missing file fonts/nope.ttf" in problems
     assert "lcd: missing file missing.png" in problems
     assert "lcd: piece strip does not load" in problems
+
+
+def test_a_font_without_the_spanish_letters_is_reported(tmp_path):
+    # SDL draws an empty box for a letter a font lacks and never says so: the check has to see it.
+    seven_segments = pygame.font.Font(str(ASSETS_DIR / "fonts" / "DSEG7Classic-Bold.ttf"), 24)
+    assert lacking(seven_segments, SAMPLE) == SAMPLE
+    assert lacking(seven_segments, SAMPLES["digits"]) == ""
+    terminal = pygame.font.Font(str(ASSETS_DIR / "fonts" / "VT323-Regular.ttf"), 24)
+    assert lacking(terminal, SAMPLE) == ""
+    (tmp_path / "theme.toml").write_text(
+        """
+[fonts]
+body = "fonts/DSEG7Classic-Bold.ttf"
+digits = "fonts/DSEG7Classic-Bold.ttf"
+""",
+        encoding="utf-8",
+    )
+    problems = check(tmp_path, ("lcd",))
+    assert f"lcd: font body has no {SAMPLE}" in problems
+    assert not any("font digits" in p for p in problems)  # codes and numbers are enough there
 
 
 def test_broken_or_missing_toml(tmp_path):

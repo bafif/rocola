@@ -1,4 +1,4 @@
-"""Every scene, at every size a jukebox runs at: no text falls off the screen."""
+"""Every scene, with every theme and at every size a jukebox runs at: no text falls off."""
 
 from __future__ import annotations
 
@@ -7,13 +7,16 @@ import pytest
 
 from rocola import app as rapp
 from rocola import audio, bt, library, ui
-from rocola.config import Config
+from rocola.config import ASSETS_DIR
 from rocola.effects import EffectsGovernor
 from rocola.skin import Skin
 from rocola.theme import Theme
 
 # The size each kind of display usually runs at, and the kind.
 SCREENS = [((320, 240), "crt15"), ((640, 480), "crt"), ((720, 576), "tv"), ((1280, 720), "lcd")]
+THEMES = sorted(p.parent.name for p in (ASSETS_DIR / "themes").glob("*/theme.toml"))
+CASES = [(size, display, theme) for theme in THEMES for size, display in SCREENS]
+IDS = [f"{theme}-{display}" for _size, display, theme in CASES]
 
 SONGS = [
     {
@@ -26,9 +29,9 @@ SONGS = [
 ]
 
 
-def make_app(size, display):
+def make_app(size, display, theme):
     app = rapp.RocolaApp.__new__(rapp.RocolaApp)  # no MPD, no loop
-    app.theme = Theme.load(Config().theme_dir, display)
+    app.theme = Theme.load(ASSETS_DIR / "themes" / theme, display)
     app.skin = Skin(app.theme)
     app.effects = EffectsGovernor()
     app.state = {  # paused, with a next song: the most lines "Now playing" can show
@@ -68,11 +71,11 @@ def scenes(app, monkeypatch):
     return out
 
 
-@pytest.mark.parametrize(("size", "display"), SCREENS, ids=[d for _s, d in SCREENS])
-def test_no_scene_cuts_text(size, display, monkeypatch):
+@pytest.mark.parametrize(("size", "display", "theme"), CASES, ids=IDS)
+def test_no_scene_cuts_text(size, display, theme, monkeypatch):
     pygame.init()
     screen = pygame.display.set_mode(size)
-    app = make_app(size, display)
+    app = make_app(size, display, theme)
     bounds = app.theme.safe_rect(size)  # inside the margin of the display, not just the screen
     cut = []
     real, real_legend = app.skin.text, app.skin.legend
@@ -99,11 +102,11 @@ def test_no_scene_cuts_text(size, display, monkeypatch):
     assert not cut
 
 
-@pytest.mark.parametrize(("size", "display"), SCREENS, ids=[d for _s, d in SCREENS])
-def test_the_selector_shows_a_page_of_cards_inside_the_safe_area(size, display, monkeypatch):
+@pytest.mark.parametrize(("size", "display", "theme"), CASES, ids=IDS)
+def test_the_selector_shows_a_page_of_cards_inside_the_safe_area(size, display, theme, monkeypatch):
     pygame.init()
     screen = pygame.display.set_mode(size)
-    app = make_app(size, display)
+    app = make_app(size, display, theme)
     safe = app.theme.safe_rect(size)
     cards = []
     real = app.skin.card

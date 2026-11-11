@@ -4,7 +4,9 @@
 
 Todo lo que se ve sale de un tema: la app no conoce colores ni archivos de imagen. Un tema es una
 carpeta de `app/assets/themes/` con un `theme.toml` y, si tiene arte, sus imágenes. La rocola trae
-**Ámbar**, el tema por defecto, con sus piezas, sus fuentes y una versión propia para 15 kHz.
+**Ámbar**, el tema por defecto, con sus piezas, sus fuentes y una versión propia para 15 kHz, y
+**Display**, de números de LED de siete segmentos, que todavía no tiene arte y se dibuja sólo con sus
+colores (se elige con `theme = "display"`, ver [07](07-rocola-app.md)).
 
 ## Estructura
 
@@ -121,7 +123,8 @@ fila de lámparas.
 
 - `make theme-check [THEME=ambar]` (o `python -m rocola.theme check <tema>`): para cada tipo de pantalla,
   el contraste de cada texto contra lo que tiene detrás (en el TV, por luminancia), que las fuentes
-  tengan «ÁÉÍÓÚÜÑ¿¡» y que existan y carguen los archivos que nombra el tema. Los tests lo corren
+  tengan «ÁÉÍÓÚÜÑ¿¡» (la de `digits`, sólo los números y las mayúsculas de los códigos: alcanza una de
+  siete segmentos) y que existan y carguen los archivos que nombra el tema. Los tests lo corren
   sobre cada tema incluido.
 - `make theme-assets`: pasa cada `src/<ruta>.svg` de cada tema a `<ruta>.png`, en un contenedor de
   Podman. Los PNG se commitean.
