@@ -12,10 +12,15 @@ armé y lo probé en una PC x86-64 con contenedores (que corren i386 nativo) y Q
    los paquetes, el overlay, los symlinks de systemd y el initramfs con live-boot. La capa pesa unos
    478 MB.
 2. **Contenido del rootfs.** La arquitectura es i386, con el kernel `6.1.0-686-pae` y su initrd; el
-   initrd incluye `sr_mod`, `squashfs` y `overlay` (`MODULES=most`). Los servicios `mpd`, `rocola` y
-   `rocola-display-setup` quedan habilitados, el usuario `rocola` tiene sus grupos, están
-   `grub-install`, `update-grub` y `efibootmgr` (los necesita el instalador) y la app importa bien
-   (pygame 2.1.2 con SDL 2.26.5).
+   initrd incluye `sr_mod`, `squashfs` y `overlay` (`MODULES=most`). El usuario `rocola` tiene sus
+   grupos, están `grub-install`, `update-grub` y `efibootmgr` (los necesita el instalador) y la app
+   importa bien (pygame 2.1.2 con SDL 2.26.5). Los servicios que arrancan solos son
+   `rocola-hostname`, `rocola-display-setup`, `rocola-selftest`, `rocola-music-import`, `rocola-ssh`
+   (que sólo prende sshd con `rocola.ssh`), `systemd-networkd` y `bluetooth`. `mpd.service` y
+   `mpd.socket` están enmascarados: a MPD lo lanza `rocola-session` dentro de la sesión de `rocola`
+   (ver [14](14-audio.md)), y la UI arranca por el autologin de tty1, sin servicio propio. Así lo
+   fija hoy `os/Containerfile`; en mayo `mpd` y `rocola` eran servicios del sistema, y el próximo
+   build lo vuelve a comprobar en la imagen.
 3. **Render de la UI** sin pantalla (`SDL_VIDEODRIVER=dummy`). Las escenas de biblioteca, now-playing
    y menú se dibujan con el branding (logo SVG y colores del tema). Se ven en
    [screenshots/ui-menu.png](screenshots/ui-menu.png) y [ui-nowplaying.png](screenshots/ui-nowplaying.png).
