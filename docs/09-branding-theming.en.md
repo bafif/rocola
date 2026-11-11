@@ -4,8 +4,8 @@
 
 Everything on screen comes from a theme: the app knows no colors and no image files. A theme is a
 folder in `app/assets/themes/` with a `theme.toml` and, if it has artwork, its images. The jukebox
-ships with **Ámbar** (a late-1940s jukebox), the default theme; until its artwork arrives it is drawn
-with its colors alone.
+ships with **Ámbar**, the default theme, with its pieces, its fonts and a version of its own for
+15 kHz.
 
 ## Layout
 
@@ -91,7 +91,7 @@ Nothing is required: if the theme is missing or broken, the jukebox starts in bl
 
 The kind comes from `display` in `/etc/rocola/rocola.toml` (see [07](07-rocola-app.en.md)); if it is
 not there, from `/etc/rocola/display.conf` (`MODE=crt15` is `crt15`), and otherwise it is `lcd`. The
-jukebox detecting the display by itself comes in a later version.
+jukebox doesn't detect the kind of display by itself yet.
 
 The cards go in two columns, the left one first, top to bottom. Their code is the page and the place
 on it: with 10 a page, the eleventh card is B1 (the letters skip I and O, and after Z come AA,
@@ -109,9 +109,9 @@ then stay lit; in the attraction mode they run all the time. While they run, the
 sends to the screen only that row, one frame per step. On starting, the marquee lights up over a
 second (with `apagado`, already lit).
 
-`glow = "plano"` draws the lamps as flat circles, without their pieces' blurred glow: Ámbar uses it
-on a TV and at 15 kHz, where the phosphor makes the halo. At 15 kHz Ámbar also brings its own artwork
-drawn on the 240p grid (`src/240p/`): no wood grain, flat colors and lines of 2 px or more.
+`glow = "plano"` draws the lamps as flat circles, without their pieces' blurred glow; Ámbar uses it
+on a TV and at 15 kHz. A variant can also change the pieces: Ámbar's `crt15` one uses those in
+`240p/`, drawn for that resolution (their SVGs are in `src/240p/`).
 
 `bubbles = { tubes = 2, per_tube = 7 }` puts a tube at each side of the jukebox's screens
 (`tubes = 0` takes them out) with that many bubbles, which rise by the clock: 15 frames a second

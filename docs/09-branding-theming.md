@@ -4,8 +4,7 @@
 
 Todo lo que se ve sale de un tema: la app no conoce colores ni archivos de imagen. Un tema es una
 carpeta de `app/assets/themes/` con un `theme.toml` y, si tiene arte, sus imágenes. La rocola trae
-**Ámbar** (una rocola de fines de los 40), el tema por defecto; hasta que llegue su arte se dibuja
-sólo con sus colores.
+**Ámbar**, el tema por defecto, con sus piezas, sus fuentes y una versión propia para 15 kHz.
 
 ## Estructura
 
@@ -90,8 +89,8 @@ Nada es obligatorio: si falta el tema o está roto, la rocola arranca en blanco 
 | `tv` | TV por compuesto, S-Video o conversor | 10 % | 14 px | 6 |
 
 El tipo sale de `display` en `/etc/rocola/rocola.toml` (ver [07](07-rocola-app.md)); si no está, de
-`/etc/rocola/display.conf` (`MODE=crt15` es `crt15`) y, si no, es `lcd`. Que la rocola detecte la
-pantalla sola llega en una versión siguiente.
+`/etc/rocola/display.conf` (`MODE=crt15` es `crt15`) y, si no, es `lcd`. La rocola todavía no detecta
+sola el tipo de pantalla.
 
 Las tarjetas van en dos columnas, primero la de la izquierda de arriba abajo. Su código es la página
 y el lugar en ella: con 10 por página, la undécima es B1 (las letras saltean la I y la O, y después
@@ -104,15 +103,14 @@ tipo de pantalla.
 `off`). Si los cuadros tardan en promedio más de 20 ms, la rocola baja un nivel sola y no vuelve a
 subir hasta que se reinicia.
 
-Cuando arranca un tema, las lámparas de la marquesina corren 4 segundos (2 en `suave`, nunca en
+Cuando empieza una canción, las lámparas de la marquesina corren 4 segundos (2 en `suave`, nunca en
 `apagado`) y después quedan prendidas; en el modo atracción corren todo el tiempo. Mientras corren,
 la rocola dibuja y manda a la pantalla sólo esa fila, un cuadro por paso. Al prender, la marquesina
 se enciende en un segundo (en `apagado`, ya prendida).
 
-`glow = "plano"` dibuja las lámparas como círculos lisos, sin el brillo desenfocado de sus piezas:
-Ámbar lo usa en el TV y a 15 kHz, donde el fósforo hace el halo. A 15 kHz, además, Ámbar trae su
-propio arte dibujado en la grilla de 240p (`src/240p/`): sin la veta de la madera, en colores planos
-y con líneas de 2 px o más.
+`glow = "plano"` dibuja las lámparas como círculos lisos, sin el brillo desenfocado de sus piezas;
+Ámbar lo usa en el TV y a 15 kHz. Una variante también puede cambiar las piezas: la de `crt15` de
+Ámbar usa las de `240p/`, dibujadas para esa resolución (sus SVG están en `src/240p/`).
 
 `bubbles = { tubes = 2, per_tube = 7 }` pone un tubo a cada lado de las pantallas de la rocola
 (`tubes = 0` los saca) con esas burbujas, que suben por reloj: 15 cuadros por segundo en `completo`,
