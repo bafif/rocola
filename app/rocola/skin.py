@@ -72,6 +72,14 @@ class Skin:
     def line_height(self, size: int, role: str = "body") -> int:
         return self.font(role, size).get_height()
 
+    def shrink_to(self, size: int, height: int, role: str = "body") -> int:
+        """`size`, or smaller until a line fits in `height` (never under the display's minimum)."""
+        while size > 1 and self.line_height(size, role) > height:
+            if self.font(role, size - 1) is self.font(role, size):
+                break  # both are already the smallest the display allows
+            size -= 1
+        return size
+
     def fit(self, text: str, max_width: int, size: int, role: str = "body") -> str:
         """`text` cut with "…" so it is at most `max_width` pixels wide."""
         font = self.font(role, size)

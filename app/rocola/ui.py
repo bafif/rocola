@@ -341,18 +341,22 @@ class MenuScene(Scene):
         skin = self.skin
         skin.panel(surface)
         self.app.draw_header(surface, t("header.menu"))
-        size = max(18, h // 16)
-        y = self.app.header_h + h // 6
+        size, small = max(18, h // 16), max(14, h // 26)
+        top = self.app.header_h + 8
+        notice_h = skin.line_height(small) + 10 if self.notice else 0
+        # On a short screen (320×240 at 15 kHz) the gaps shrink, then the letters, so the
+        # last option and the notice are never left below the bottom edge.
+        pitch = min(skin.line_height(size) + 14, (h - top - notice_h - 4) // len(self.options))
+        size = skin.shrink_to(size, pitch)
+        slack = h - top - notice_h - pitch * len(self.options)
+        y = top + max(0, min(h // 6 - 8, slack // 2))
         for i, key in enumerate(self.options):
             selected = i == self.index
             tone = "alert" if selected else "normal"
             prefix = "> " if selected else "  "
-            drawn = skin.text(
-                surface, prefix + t(f"menu.{key}"), (w // 2, y), size, tone, align="center"
-            )
-            y += drawn.height + 14
+            skin.text(surface, prefix + t(f"menu.{key}"), (w // 2, y), size, tone, align="center")
+            y += pitch
         if self.notice:
-            small = max(14, h // 26)
             skin.text(
                 surface, self.notice, (w // 2, y + 10), small, "alert", "body", w - 32, "center"
             )
@@ -551,7 +555,9 @@ class InputTestScene(Scene):
         y = self.app.header_h + 12
         skin.text(surface, t("input.intro"), (16, y), size, "dim", max_width=w - 32)
         y += line_h + 6
-        for line in self.lines or [t("input.waiting")]:
+        hint_top = h - skin.line_height(max(13, h // 26)) - 6
+        fits = max(1, (hint_top - y) // line_h)  # the newest ones, as many as fit
+        for line in (self.lines or [t("input.waiting")])[-fits:]:
             skin.text(surface, line, (16, y), size, max_width=w - 32)
             y += line_h
 

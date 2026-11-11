@@ -189,6 +189,8 @@ class Theme:
     effects: dict = field(default_factory=dict)
     safe_area: float = PROFILES["lcd"].safe_area
     antialias: bool = True
+    # Files the theme names and that are not there (`python -m rocola.theme check` lists them).
+    missing: list[str] = field(default_factory=list)
     _fonts: dict[str, Path | None] = field(default_factory=dict, repr=False)
     _pieces: dict[str, tuple[Path, tuple | None]] = field(default_factory=dict, repr=False)
     _font_cache: dict = field(default_factory=dict, repr=False)
@@ -225,12 +227,16 @@ class Theme:
                 colors[role] = FALLBACK_COLORS[role]
 
         fonts = _table(data, "fonts")
+        font_files = {role: _resolve(theme_dir, fonts.get(role)) for role in FONT_ROLES}
+        missing = [str(fonts[r]) for r in FONT_ROLES if fonts.get(r) and font_files[r] is None]
         pieces: dict[str, tuple[Path, tuple | None]] = {}
         for name, value in _table(data, "pieces").items():
             spec = value if isinstance(value, dict) else {"file": value}
             path = _resolve(theme_dir, spec.get("file"))
             if path is not None:
                 pieces[name] = (path, _slice(spec.get("slice")))
+            else:
+                missing.append(str(spec.get("file")))
 
         safe = data.get("safe_area")
         if not isinstance(safe, (int, float)) or isinstance(safe, bool) or not 0 <= safe <= 0.25:
@@ -246,7 +252,8 @@ class Theme:
             effects=dict(_table(data, "effects")),
             safe_area=float(safe),
             antialias=antialias if isinstance(antialias, bool) else True,
-            _fonts={role: _resolve(theme_dir, fonts.get(role)) for role in FONT_ROLES},
+            missing=missing,
+            _fonts=font_files,
             _pieces=pieces,
         )
 
@@ -317,3 +324,9 @@ def _read(path: Path) -> dict:
     if tomllib is None or not path.is_file():
         return {}
     return tomllib.loads(path.read_text(encoding="utf-8"))
+
+
+if __name__ == "__main__":  # python -m rocola.theme check <theme>…
+    from .themecheck import main
+
+    sys.exit(main(sys.argv[1:]))

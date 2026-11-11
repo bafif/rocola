@@ -19,9 +19,12 @@ record  = { rpm = 45 }
 chaser  = { lamps = 16, step_ms = 120 }
 
 [variant.crt15]   # CRT por RGB a 15 kHz: 320×240 o 384×288
-effects.bubbles = { tubes = 2, per_tube = 3 }
+colors.text_dim    = "#5a3418"   # 7:1 sobre el papel
+colors.on_dark_dim = "#c8b9a0"   # 7:1 sobre la madera
+effects.bubbles    = { tubes = 2, per_tube = 3 }
 
 [variant.tv]      # TV por compuesto, S-Video o conversor
-safe_area       = 0.10
-colors.text_dim = "#5a3418"   # más contraste de luminancia
-effects.glow    = "plano"
+safe_area          = 0.10
+colors.text_dim    = "#5a3418"   # más contraste de luminancia
+colors.on_dark_dim = "#c8b9a0"
+effects.glow       = "plano"
