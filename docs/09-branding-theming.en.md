@@ -66,7 +66,8 @@ title = { es = "MI ROCOLA", en = "MY JUKEBOX" }
   cabinet, behind everything), `marquee` (the marquee; the text keeps off its side cuts), `strip`
   (the paper of a song's card: the jukebox draws the stripe, after the code), `index` (an artist's
   or an album's; without it, `strip` in a frame), `cursor` (the light around the chosen card) and
-  `lamp_on` and `lamp_off` (the lamps).
+  `lamp_on` and `lamp_off` (the lamps) and `tube` (the bubble tube; the jukebox draws the
+  bubbles).
 - **Effects**: the parameters each screen reads. `chaser = { lamps = 16, step_ms = 120 }` are the
   lamps under the marquee: how many, and how long each step lasts when they run.
 - **Variants**: `[variant.lcd]`, `[variant.crt]`, `[variant.crt15]` and `[variant.tv]` are laid over
@@ -107,6 +108,11 @@ When a song starts, the marquee's lamps run for 4 seconds (2 with `suave`, never
 then stay lit; in the attraction mode they run all the time. While they run, the jukebox draws and
 sends to the screen only that row, one frame per step. On starting, the marquee lights up over a
 second (with `apagado`, already lit).
+
+`bubbles = { tubes = 2, per_tube = 7 }` puts a tube at each side of the jukebox's screens
+(`tubes = 0` takes them out) with that many bubbles, which rise by the clock: 15 frames a second
+with `completo`, 8 with `suave`, and still with `apagado`. Those frames send to the screen only the
+tubes and the row of lamps.
 
 ## Tools
 

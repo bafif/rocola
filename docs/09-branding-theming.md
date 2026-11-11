@@ -66,7 +66,8 @@ title = { es = "MI ROCOLA", en = "MY JUKEBOX" }
   gabinete, detrás de todo), `marquee` (la marquesina; el texto no pisa sus cortes de los
   costados), `strip` (el papel de la tarjeta de una canción: la franja la dibuja la rocola, después
   del código), `index` (la de un artista o un álbum; sin ella, `strip` con un marco), `cursor` (la
-  luz alrededor de la tarjeta elegida) y `lamp_on` y `lamp_off` (las lámparas).
+  luz alrededor de la tarjeta elegida), `lamp_on` y `lamp_off` (las lámparas) y `tube` (el tubo de
+  burbujas; las burbujas las dibuja la rocola).
 - **Efectos**: los parámetros que lee cada pantalla. `chaser = { lamps = 16, step_ms = 120 }` son
   las lámparas bajo la marquesina: cuántas y cuánto dura cada paso cuando corren.
 - **Variantes**: `[variant.lcd]`, `[variant.crt]`, `[variant.crt15]` y `[variant.tv]` se superponen
@@ -107,6 +108,11 @@ Cuando arranca un tema, las lámparas de la marquesina corren 4 segundos (2 en `
 `apagado`) y después quedan prendidas; en el modo atracción corren todo el tiempo. Mientras corren,
 la rocola dibuja y manda a la pantalla sólo esa fila, un cuadro por paso. Al prender, la marquesina
 se enciende en un segundo (en `apagado`, ya prendida).
+
+`bubbles = { tubes = 2, per_tube = 7 }` pone un tubo a cada lado de las pantallas de la rocola
+(`tubes = 0` los saca) con esas burbujas, que suben por reloj: 15 cuadros por segundo en `completo`,
+8 en `suave` y quietas en `apagado`. En esos cuadros se mandan a la pantalla sólo los tubos y la
+fila de lámparas.
 
 ## Herramientas
 

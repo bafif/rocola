@@ -91,6 +91,7 @@ class FakeApp:
 
     def __init__(self):
         self.skin = Skin(Theme.load(Config().theme_dir))
+        self.skin.bubbles = lambda: (0, 5)  # no tubes here: they have their own tests
         self.effects = EffectsGovernor()
         self.state = {"song": {}, "status": {}, "cover": None}
 

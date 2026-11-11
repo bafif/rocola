@@ -8,6 +8,7 @@ Ninguna escena nombra un color, una fuente ni una imagen.
 from __future__ import annotations
 
 import io
+import math
 import threading
 import time
 
@@ -80,24 +81,33 @@ class JukeboxScene(Scene):
 
     # How long the lamps run when a song starts, by effects level (effects.py).
     CHASE_S = {"completo": 4.0, "suave": 2.0, "apagado": 0.0}
+    # Frames a second for the bubbles, by effects level ("apagado": they stay still).
+    BUBBLES_FPS = {"completo": 15, "suave": 8}
 
     # What the legend at the bottom shows here: (control, action, text) — the action's
     # button number goes on the cap.
     LEGEND: list[tuple[str, str, str]] = []
     _marquee_shown = ("", "")  # what the marquee said in the last whole frame
 
-    def _layout(self, surface) -> tuple[pygame.Rect, pygame.Rect, pygame.Rect]:
-        """Where the marquee, its lamps and the rest of the screen go (the rest ends above
-        the legend, which is `_legend_rect`)."""
+    def _layout(self, surface) -> tuple[pygame.Rect, pygame.Rect, pygame.Rect, list]:
+        """Where the marquee, its lamps, the rest of the screen and the bubble tubes at its
+        sides go (the rest ends above the legend, which is `_legend_rect`)."""
         h = surface.get_height()
         safe = self.skin.safe_rect(surface)
         total = max(40, h // 7)
         lamps_h = max(8, total // 5)
+        gap = max(4, h // 60)
         marquee = pygame.Rect(safe.x, safe.y, safe.w, total - lamps_h)
         lamps = pygame.Rect(safe.x, marquee.bottom, safe.w, lamps_h)
-        top = lamps.bottom + max(4, h // 60)
-        bottom = self._legend_rect(surface).y - max(4, h // 60)
-        return marquee, lamps, pygame.Rect(safe.x, top, safe.w, bottom - top)
+        top = lamps.bottom + gap
+        rest = pygame.Rect(safe.x, top, safe.w, self._legend_rect(surface).y - gap - top)
+        tubes = []
+        if self.skin.bubbles()[0]:
+            width = max(8, safe.w // 32)
+            tubes = [pygame.Rect(rest.x, rest.y, width, rest.h)]
+            tubes.append(pygame.Rect(rest.right - width, rest.y, width, rest.h))
+            rest = rest.inflate(-2 * (width + gap), 0)
+        return marquee, lamps, rest, tubes
 
     def _legend_rect(self, surface) -> pygame.Rect:
         safe = self.skin.safe_rect(surface)
@@ -133,16 +143,39 @@ class JukeboxScene(Scene):
             return None
         return max(0.0, min(1.0, (time.monotonic() - started) / max(0.001, self.app.BOOT_S)))
 
+    def _bubbling(self) -> bool:
+        return bool(self.skin.bubbles()[0]) and self.app.effects.level in self.BUBBLES_FPS
+
+    def _bubbles(self, side: int) -> list[tuple[float, float]]:
+        """Where the bubbles of one tube are now: they rise by the clock, each at its pace,
+        wobbling a little; with the effects off they stay where they start."""
+        count = self.skin.bubbles()[1]
+        now = time.monotonic() if self._bubbling() else 0.0
+        out = []
+        for i in range(count):
+            phase = (i / count + side * 0.37) % 1.0
+            speed = 0.10 + 0.04 * ((i * 7 + side * 3) % 5) / 4  # tubes a second
+            up = (now * speed + phase) % 1.0
+            across = 0.5 + 0.3 * math.sin(now * 2.3 + i * 1.7 + side)
+            out.append((across, up))
+        return out
+
     @property
     def animating(self) -> bool:
-        return self._lighting() is not None or self._chase_step() is not None
+        return self._lighting() is not None or self._chase_step() is not None or self._bubbling()
 
     @property
     def fps(self) -> int | None:
-        """Frames a second while only the lamps run: one per step. None for the app's own."""
+        """Frames a second when only lamps and bubbles move: a frame per step of the lamps,
+        and what the bubbles need. None for the app's own (30)."""
         if self._lighting() is not None:
             return None
-        return -(-1000 // self.skin.chaser()[1])
+        rates = []
+        if self._chase_step() is not None:
+            rates.append(-(-1000 // self.skin.chaser()[1]))
+        if self._bubbling():
+            rates.append(self.BUBBLES_FPS[self.app.effects.level])
+        return max(rates) if rates else None
 
     def _lamps(self) -> list[bool]:
         count = self.skin.chaser()[0]
@@ -166,12 +199,14 @@ class JukeboxScene(Scene):
         return drawn
 
     def _frame(self, surface, subtitle: str) -> pygame.Rect:
-        """The cabinet, the marquee and its lamps; the rect left for the scene."""
-        marquee, lamps, rest = self._layout(surface)
+        """The cabinet, the marquee and its lamps, the tubes; the rect left for the scene."""
+        marquee, lamps, rest, tubes = self._layout(surface)
         self._marquee_shown = self._marquee_text(subtitle)
         self.skin.backdrop(surface)
         self._draw_marquee(surface, marquee, self._marquee_shown)
         self.skin.lamps(surface, lamps, self._lamps())
+        for side, tube in enumerate(tubes):
+            self.skin.tube(surface, tube, self._bubbles(side))
         self._draw_legend(surface, self._legend_rect(surface))
         return rest
 
@@ -181,12 +216,14 @@ class JukeboxScene(Scene):
     def _motion(self, surface) -> list:
         """A frame where only the lamps moved (and the marquee, while it lights up): they alone
         are drawn and sent to the screen."""
-        marquee, lamps, _rest = self._layout(surface)
+        marquee, lamps, _rest, tubes = self._layout(surface)
         rects = []
         if self._lighting() is not None:
             rects.append(self._draw_marquee(surface, marquee, self._marquee_shown))
         self.skin.restore(surface, lamps)
         rects.append(self.skin.lamps(surface, lamps, self._lamps()))
+        if self._bubbling():
+            rects += [self.skin.tube(surface, t, self._bubbles(i)) for i, t in enumerate(tubes)]
         return rects
 
 

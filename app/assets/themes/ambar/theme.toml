@@ -25,6 +25,7 @@ cabinet  = "cabinet.png"                                   # nogal, con la veta 
 marquee  = { file = "marquee.png", slice = [40, 16, 40, 16] }  # vidrio ámbar en aro de bronce
 strip    = { file = "strip.png",   slice = [6, 6, 6, 6] }      # papel: la franja la pone la rocola
 index    = { file = "index.png",   slice = [10, 10, 10, 10] }  # papel con marco bordó
+tube     = { file = "tube.png",    slice = [0, 12, 0, 12] }    # vidrio con líquido ámbar
 lamp_on  = "lamp_on.png"
 lamp_off = "lamp_off.png"
 

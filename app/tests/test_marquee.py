@@ -26,6 +26,7 @@ class FakeApp:
     def __init__(self, level="completo"):
         self.theme = Theme.load(Config().theme_dir)
         self.skin = Skin(self.theme)
+        self.skin.bubbles = lambda: (0, 5)  # no tubes here: they have their own tests
         self.effects = EffectsGovernor(level)
         self.state = {"song": {}, "status": {}, "cover": None}
 
@@ -76,7 +77,7 @@ def test_a_frame_where_only_the_lamps_move_sends_only_them(screen):
     app = FakeApp()
     scene = ui.LibraryScene(app)
     scene.draw(screen)
-    _marquee, lamps, rest = scene._layout(screen)
+    _marquee, lamps, rest, _tubes = scene._layout(screen)
     screen.fill((255, 0, 255), rest)  # anything drawn below the lamps must stay as it is
     app.song_started = time.monotonic()
     app.motion_only = True
@@ -146,6 +147,7 @@ def test_the_loop_draws_only_the_lamps_while_they_run_then_a_still_frame(monkeyp
     monkeypatch.setattr(rapp.RocolaApp, "HEARTBEAT_S", 30.0)
     monkeypatch.setattr(ui.JukeboxScene, "CHASE_S", {"completo": 0.4})
     monkeypatch.setattr(rapp.RocolaApp, "BOOT_S", 0.05)  # lit almost at once
+    monkeypatch.setattr(Skin, "bubbles", lambda self: (0, 5))  # no tubes: nothing else moves
 
     frames = []
     real = ui.LibraryScene.draw

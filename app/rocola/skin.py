@@ -87,6 +87,13 @@ class Skin:
         spec = spec if isinstance(spec, dict) else {}
         return _int(spec.get("lamps"), 16, 4, 64), _int(spec.get("step_ms"), 120, 40, 1000)
 
+    def bubbles(self) -> tuple[int, int]:
+        """The bubble tubes at the sides: how many (0 or 2, one a side) and bubbles in each."""
+        spec = self.theme.effect("bubbles")
+        spec = spec if isinstance(spec, dict) else {}
+        tubes = _int(spec.get("tubes"), 0, 0, 2)
+        return (2 if tubes else 0), _int(spec.get("per_tube"), 5, 1, 12)
+
     def rpm(self) -> float:
         """How fast the record on the now playing screen turns (45 unless the theme says)."""
         spec = self.theme.effect("record")
@@ -357,6 +364,10 @@ class Skin:
         left, right = max(pad, cuts[0]), max(pad, cuts[2])
         inner = h - 2 * pad  # the letters shrink to fit (down to the display's minimum)
         code_size = self.shrink_to(max(10, h * 2 // 5), inner, "digits")
+        while self.font("digits", code_size).size("M00")[0] > w // 4:  # a narrow card: the
+            if self.font("digits", code_size - 1) is self.font("digits", code_size):
+                break  # title needs the room more (never under the display's minimum)
+            code_size -= 1
         cimg = self.render(code, code_size, "code", "digits")
         layer.blit(cimg, (left, (h - cimg.get_height()) // 2))
         x = left + pad + max(cimg.get_width(), self.font("digits", code_size).size("M00")[0])
@@ -369,9 +380,14 @@ class Skin:
                 (start, h // 2 - band // 2, w - right // 2 - start, band),
             )
         line = max(10, h * 3 // 10)
+        while self.font("strip", line).size("abcdefghijklmn")[0] > text_w:  # ~14 letters fit
+            if self.font("strip", line - 1) is self.font("strip", line):
+                break  # never under the display's minimum
+            line -= 1
         if subtitle:
             line = self.shrink_to(line, inner * 11 // 20, "strip")
             small = self.shrink_to(max(10, h // 4), inner - self.line_height(line, "strip"))
+            small = min(small, line)  # the second line never bigger than the title
             top = self.render(title, line, "ink", "strip", text_w)
             bottom = self.render(subtitle, small, "ink_dim", "body", text_w)
             gap = band // 2 + 1 if kind == "strip" else 1  # above and below the stripe
@@ -401,6 +417,32 @@ class Skin:
             else:
                 color = self.theme.color("glow") if state else dim
                 pygame.draw.circle(surface, color, (cx, rect.centery), radius)
+        return rect
+
+    def tube(
+        self, surface: pygame.Surface, rect: pygame.Rect, bubbles: list[tuple[float, float]]
+    ) -> pygame.Rect:
+        """A bubble tube over the cabinet, with `bubbles` at (across, up) as fractions of it."""
+        rect = pygame.Rect(rect)
+        surface.blit(self._backdrop(surface.get_size()), rect.topleft, rect)
+        piece = self.theme.piece("tube")
+        cap = 0
+        if piece is not None:
+            surface.blit(piece.render(*rect.size), rect.topleft)
+            cap = (piece.slice[1] if piece.slice else rect.w // 2) + 1
+        else:  # in colors: the liquid in a rim of light
+            liquid = mix(self.theme.color("glow"), self.theme.color("background"), 0.45)
+            radius = rect.w // 2
+            pygame.draw.rect(surface, liquid, rect, border_radius=radius)
+            pygame.draw.rect(surface, self.theme.color("glow"), rect, 2, border_radius=radius)
+            cap = radius
+        size = max(2, rect.w // 5)
+        inside = rect.inflate(-2 * size, -2 * (cap + size))
+        color = self.theme.color("on_dark")
+        for across, up in bubbles:
+            x = inside.x + round(across * inside.w)
+            y = inside.bottom - round(up * inside.h)
+            pygame.draw.circle(surface, color, (x, y), size, max(1, size // 2))
         return rect
 
     def record(self, diameter: int, label: pygame.Surface | None) -> Record:
