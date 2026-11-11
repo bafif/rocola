@@ -3,13 +3,10 @@
 *[English](13-rufus-windows.en.md) · Español*
 
 [Rufus](https://rufus.ie) es la forma más común de grabar el `.iso` a un pendrive en Windows. La
-imagen de la rocola es una ISO 9660 híbrida (isohybrid): ya trae MBR protectivo y GPT,
-`grub2-mbr` para BIOS, la partición EFI (`/efi.img`) para UEFI x64 y El Torito con *boot-info-table*.
-O sea, el medio booteable entero ya está dentro del archivo y lo único que hay que hacer es copiarlo
-tal cual.
-
-Por eso Rufus pregunta menos de lo que parece: alcanza con **grabar en modo DD**, y en ese modo
-todas las demás opciones se deshabilitan y se ignoran.
+imagen de la rocola es una ISO 9660 híbrida (isohybrid): ya trae MBR protectivo y GPT, `grub2-mbr`
+para BIOS, la partición EFI (`/efi.img`) para UEFI x64 y El Torito con *boot-info-table*. El medio
+booteable entero está dentro del archivo, así que alcanza con **grabarlo en modo DD**: en ese modo las
+demás opciones se deshabilitan o se ignoran.
 
 ## Los pasos
 
@@ -19,9 +16,8 @@ todas las demás opciones se deshabilitan y se ignoran.
 4. Aparece *ISOHybrid image detected*. Elegí **«Escribir en modo Imagen DD» (Write in DD Image mode)**.
 5. Confirmá el borrado y esperá a que termine.
 
-En modo DD, Rufus copia la imagen byte a byte, igual que `dd if=…iso of=/dev/sdX`, que es como probé
-el arranque por BIOS y por UEFI en QEMU. No hace falta elegir MBR o GPT, sistema de archivos,
-cluster, formato ni «fixes»: Rufus no arma nada, solo copia.
+En modo DD, Rufus copia la imagen byte a byte, igual que `dd if=…iso of=/dev/sdX`. No hace falta
+elegir MBR o GPT, sistema de archivos, cluster, formato ni «fixes»: Rufus no arma nada, solo copia.
 
 ## ¿Por qué modo DD y no modo ISO?
 
@@ -44,20 +40,10 @@ quedan deshabilitadas o se ignoran; solo importarían si grabaras en modo ISO.
 |-----------------|----------|------------|
 | **Partition scheme: MBR / GPT** | Tabla de particiones que arma Rufus (MBR = BIOS viejo; GPT = UEFI puro). | Ignorada: se usa la del ISO (MBR protectivo + GPT). |
 | **Target system: BIOS / UEFI** | Para qué firmware prepara el arranque Rufus. | Ignorada: la imagen ya arranca por BIOS **y** UEFI x64. |
-| **Add fixes for old BIOSes (extra partition, align, etc.)** | Tweak de Rufus que agrega una partición chica y alinea, para BIOS que se niegan a bootear de USB. | Ignorada. La imagen ya trae arranque BIOS real (`grub2-mbr` + boot-info-table); **no** son "los fixes de Rufus", es otro mecanismo. |
+| **Add fixes for old BIOSes (extra partition, align, etc.)** | Tweak de Rufus que agrega una partición chica y alinea, para BIOS que se niegan a bootear de USB. | Ignorada. La imagen trae su propio arranque BIOS (`grub2-mbr` + boot-info-table); el casillero es algo que Rufus agrega solo en modo ISO. |
 | **Enable UEFI media validation** | (Rufus 4.5+) Inserta un validador que al **arrancar** recalcula un MD5 de los archivos para detectar corrupción/alteración del pendrive. Modifica el medio → **solo modo ISO**. | No aplica. (Para verificar la descarga, usá el `SHA256SUMS.txt`, ver abajo.) |
 | **File system / Cluster size** | Qué FAT/NTFS y tamaño de cluster usa la partición que crea Rufus. | Ignorado: el contenido lo define el ISO. |
 | **Quick format** | Formato rápido (solo metadata) vs completo (chequea bloques dañados, lento). | Irrelevante. |
-
-## «¿Pero la imagen no trae ya los fixes?»
-
-Sí y no, y conviene tener clara la diferencia:
-
-- Sí, porque la imagen ya arranca sola por BIOS (de 32 y 64 bits) y por UEFI x64, sin ayuda de
-  nadie. Eso sale del esquema que arma `grub-mkrescue` (ver
-  [02 · Build pipeline](02-build-pipeline.md) y [12 · Verificación](12-verificacion.md)).
-- No, porque el casillero *«Add fixes for old BIOSes»* es algo que hace Rufus en modo ISO, no algo
-  que esté dentro de la imagen. Como grabás en modo DD, ese casillero no participa.
 
 ## UEFI y Secure Boot
 
