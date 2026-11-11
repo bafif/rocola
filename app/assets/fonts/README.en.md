@@ -2,19 +2,19 @@
 
 *English · [Español](README.md)*
 
-Put the typefaces (`.ttf`/`.otf`) your theme uses here and reference them from
-`themes/<tema>/theme.toml` (the `[fonts] title` and `body` keys).
+The typefaces the themes use. Each theme names them in its `theme.toml` (`[fonts]`, see
+[docs/09](../../../docs/09-branding-theming.en.md)); a missing one falls back to another of the theme
+and, last, to SDL's own, so the build never breaks because of a font.
 
-**No fonts are included by default**: if the theme doesn't specify one (or the file
-is missing), the app falls back to pygame/SDL's built-in font. That way the build
-never breaks because a typeface is missing.
+Only fonts whose license allows redistributing them (OFL or Apache), each with its license next to
+it and listed here. They are included unmodified.
 
-## Licenses
+| File | Font | Author | License | Source | Used by |
+|------|------|--------|---------|--------|---------|
+| `Limelight-Regular.ttf` | Limelight | Sorkin Type Co | SIL OFL 1.1, Reserved Font Name "Limelight" ([`Limelight-OFL.txt`](Limelight-OFL.txt)) | [google/fonts](https://github.com/google/fonts/tree/main/ofl/limelight) | Ámbar: the marquee |
+| `SpecialElite-Regular.ttf` | Special Elite | Astigmatic | Apache 2.0 ([`SpecialElite-LICENSE.txt`](SpecialElite-LICENSE.txt)) | [google/fonts](https://github.com/google/fonts/tree/main/apache/specialelite) | Ámbar: the cards |
+| `Oswald-Medium.ttf`, `Oswald-SemiBold.ttf` | Oswald | The Oswald Project Authors | SIL OFL 1.1 ([`Oswald-OFL.txt`](Oswald-OFL.txt)) | [googlefonts/OswaldFont](https://github.com/googlefonts/OswaldFont/tree/main/fonts/ttf) (the static ones: bookworm's pygame draws a variable font only at its default weight) | Ámbar: the data and the numbers |
+| `VT323-Regular.ttf` | VT323 | The VT323 Project Authors | SIL OFL 1.1 ([`VT323-OFL.txt`](VT323-OFL.txt)) | [google/fonts](https://github.com/google/fonts/tree/main/ofl/vt323) | Ámbar at 15 kHz: everything, without antialiasing |
 
-Only use fonts with a free/redistributable license (OFL, Apache, MIT). Document
-each one here. Some suggestions that fit the arcade/jukebox aesthetic:
-
-- **Press Start 2P** (OFL) — arcade-style headings.
-- **Inter** / **DejaVu Sans** (OFL) — body text that stays readable at low resolution.
-
-> Remember: readability at 320×240 / 640×480 and respecting the CRT's *title-safe area*.
+Licenses confirmed on 11/11/2026, when they were added. `make theme-check` checks that each one has
+"ÁÉÍÓÚÜÑ¿¡".

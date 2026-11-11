@@ -1,6 +1,7 @@
 # Ámbar: rocola de fines de los 40. Gabinete de madera, arco de vidrio ámbar iluminado,
 # tubos con burbujas y tarjetas de papel con franja bordó. Formato en docs/09.
-# El arte (pieces) y las fuentes llegan con la fase 4; hasta entonces se dibuja con los colores.
+# El arte (pieces) llega con la fase 4; hasta entonces se dibuja con los colores. Las fuentes
+# están en app/assets/fonts/, cada una con su licencia (README.md de esa carpeta).
 version = 2
 name    = "Ámbar"
 
@@ -13,12 +14,23 @@ on_dark    = "#f1e4c6"   # texto sobre la madera
 accent     = "#8c1c2c"   # franjas y códigos
 glow       = "#ffcf7a"   # cursor y lámparas
 
+[fonts]
+marquee = "fonts/Limelight-Regular.ttf"     # la marquesina
+strip   = "fonts/SpecialElite-Regular.ttf"  # las tarjetas: máquina de escribir
+body    = "fonts/Oswald-Medium.ttf"         # los datos y el panel
+digits  = "fonts/Oswald-SemiBold.ttf"       # los códigos y los números
+
 [effects]
 bubbles = { tubes = 2, per_tube = 7 }
 record  = { rpm = 45 }
 chaser  = { lamps = 16, step_ms = 120 }
 
 [variant.crt15]   # CRT por RGB a 15 kHz: 320×240 o 384×288
+fonts.marquee      = "fonts/VT323-Regular.ttf"   # letra de píxeles: a 240p, nada más se lee
+fonts.strip        = "fonts/VT323-Regular.ttf"
+fonts.body         = "fonts/VT323-Regular.ttf"
+fonts.digits       = "fonts/VT323-Regular.ttf"
+fonts.antialias    = false
 colors.text_dim    = "#5a3418"   # 7:1 sobre el papel
 colors.on_dark_dim = "#c8b9a0"   # 7:1 sobre la madera
 effects.bubbles    = { tubes = 2, per_tube = 3 }
