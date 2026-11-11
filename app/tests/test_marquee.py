@@ -165,3 +165,92 @@ def test_the_loop_draws_only_the_lamps_while_they_run_then_a_still_frame(monkeyp
     assert frames[0] is False  # the first frame, whole
     assert frames.count(True) >= 3  # the lamps running, alone
     assert frames[-1] is False and frames[-2] is True  # and once they stop, the still frame
+
+
+def playing(state="play"):
+    app = FakeApp()
+    app.state = {
+        "song": {"file": "a.mp3", "Title": "Uno", "Artist": "Alguien"},
+        "status": {"state": state, "volume": "60", "elapsed": "30", "duration": "120"},
+        "cover": None,
+        "next": {"file": "b.mp3", "Title": "Dos", "Artist": "Alguien"},
+    }
+    return app
+
+
+def test_the_record_turns_by_the_clock_and_stops_when_paused(screen, monkeypatch):
+    now = [100.0]
+    monkeypatch.setattr(ui.time, "monotonic", lambda: now[0])
+    app = playing()
+    scene = ui.NowPlayingScene(app)
+    scene.draw(screen)
+    assert scene.animating
+    assert scene._angle() == 0
+    now[0] += 0.04  # 45 rpm: a rotated label (9°) every thirtieth of a second
+    assert scene._angle() == 1
+    now[0] += 0.13
+    assert scene._angle() == 5
+    app.state["status"]["state"] = "pause"
+    scene.draw(screen)  # the poll that brings the pause also asks for a frame
+    now[0] += 10
+    assert scene._angle() == 5  # paused: it stays where it was
+    assert not scene.animating
+    app.state["status"]["state"] = "play"
+    assert scene._angle() == 5
+    now[0] += 0.04
+    assert scene._angle() == 6  # and goes on from there
+
+
+def test_with_the_effects_off_the_record_stays_still(screen):
+    app = playing()
+    app.effects = EffectsGovernor("apagado")
+    scene = ui.NowPlayingScene(app)
+    scene.draw(screen)
+    assert not scene.animating
+
+
+def test_while_it_plays_a_frame_sends_only_the_lamps_and_the_record(screen):
+    app = playing()
+    scene = ui.NowPlayingScene(app)
+    scene.draw(screen)
+    lamps = scene._layout(screen)[1]
+    record = scene._record_rect
+    app.motion_only = True
+    assert scene.draw(screen) == [lamps, record]
+
+
+def test_now_playing_shows_how_far_the_volume_and_what_comes_next(screen):
+    app = playing("pause")
+    texts = []
+    real = app.skin.text
+    app.skin.text = lambda surface, text, *a, **k: (
+        texts.append(text) or real(surface, text, *a, **k)
+    )
+    ui.NowPlayingScene(app).draw(screen)
+    assert texts == [
+        "Uno",
+        "Alguien",
+        "0:30 / 2:00",
+        "Volumen",
+        "En pausa",
+        "A continuación: Alguien — Dos",
+    ]
+
+
+def test_the_app_asks_for_the_next_song_only_when_the_queue_changes():
+    app = rapp.RocolaApp.__new__(rapp.RocolaApp)
+    app.state = {"next": {}}
+    app.dirty = False
+    asked = []
+
+    class MPD:
+        def song_at(self, pos):
+            asked.append(pos)
+            return {"file": f"{pos}.mp3"}
+
+    app.mpd = MPD()
+    app._update_next({"playlist": "5", "nextsong": "3"})
+    app._update_next({"playlist": "5", "nextsong": "3"})
+    assert asked == [3] and app.state["next"] == {"file": "3.mp3"}
+    app._update_next({"playlist": "6"})  # the last song of the queue: nothing next
+    assert asked == [3] and app.state["next"] == {}

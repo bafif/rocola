@@ -16,7 +16,7 @@ import pygame
 from . import audio, bt, i18n, library, sysinfo
 from . import input as actions
 from .i18n import t
-from .skin import chase
+from .skin import chase, progress
 
 
 class Scene:
@@ -233,7 +233,8 @@ class LibraryScene(JukeboxScene):
 
 
 def _load_cover(data: bytes, side: int):
-    """Decode a cover image and fit it in a `side` x `side` square; None if unreadable."""
+    """Decode a cover and crop it to a `side` x `side` square (the record's label); None if
+    it cannot be read."""
     try:
         img = pygame.image.load(io.BytesIO(data))
         if pygame.display.get_surface() is not None:
@@ -243,24 +244,46 @@ def _load_cover(data: bytes, side: int):
     iw, ih = img.get_size()
     if not iw or not ih:
         return None
-    scale = side / max(iw, ih)
-    size = (max(1, round(iw * scale)), max(1, round(ih * scale)))
+    crop = min(iw, ih)  # the middle of a cover that is not square
+    img = img.subsurface(((iw - crop) // 2, (ih - crop) // 2, crop, crop))
     try:
-        return pygame.transform.smoothscale(img, size)
+        return pygame.transform.smoothscale(img, (side, side))
     except ValueError:  # smoothscale only takes 24/32-bit surfaces
-        return pygame.transform.scale(img, size)
+        return pygame.transform.scale(img, (side, side))
+
+
+def _clock(seconds: float) -> str:
+    seconds = max(0, int(seconds))
+    return f"{seconds // 60}:{seconds % 60:02d}"
+
+
+def _seconds(status: dict) -> tuple[float, float]:
+    """How far the song has gone and how long it is, in seconds (0 when MPD does not say)."""
+    old = (status.get("time") or "").split(":")  # "elapsed:duration", from MPDs before 0.20
+    values = []
+    for key, i in (("elapsed", 0), ("duration", 1)):
+        value = status.get(key) or (old[i] if len(old) == 2 else "")
+        try:
+            values.append(max(0.0, float(value)))
+        except ValueError:
+            values.append(0.0)
+    return values[0], values[1]
 
 
 class NowPlayingScene(JukeboxScene):
-    """What is playing: the cover (if the song has one), title, artist, album, state."""
-
-    MARGIN = 16
+    """What is playing: a 45 that turns with the cover as its label (still when paused or with
+    the effects off), the title, the artist and the album, lamps for how far the song has gone
+    and for the volume, and the song that comes next."""
 
     def __init__(self, app):
         super().__init__(app)
-        self._cover_src: bytes | None = None  # the bytes the cached image came from
-        self._cover_side = 0
+        self._cover_src: bytes | None = None  # the bytes the record's label came from
         self._cover_img = None
+        self._record = None
+        self._record_d = 0
+        self._record_rect: pygame.Rect | None = None
+        self._turned = 0.0  # seconds the record turned before it last stopped
+        self._turning_since: float | None = None
 
     def handle(self, action: str) -> None:
         if action in (actions.BACK, actions.SELECT):
@@ -278,71 +301,119 @@ class NowPlayingScene(JukeboxScene):
         elif action == actions.MENU:
             self.app.open_menu()
 
-    def _cover(self, side: int):
-        """The current song's cover scaled to `side`, decoded once per song."""
-        data = self.app.state.get("cover")
-        if data is not self._cover_src or side != self._cover_side:
-            self._cover_src, self._cover_side = data, side
-            self._cover_img = _load_cover(data, side) if data else None
-        return self._cover_img
+    def _turning(self) -> bool:
+        playing = self.app.state.get("status", {}).get("state") == "play"
+        return playing and self.app.effects.level != "apagado"
+
+    @property
+    def animating(self) -> bool:
+        return self._turning() or super().animating
+
+    def _angle(self) -> int:
+        """Which of the record's rotated labels shows now: by the clock, not by the frame, so it
+        turns at its speed at 50 and at 60 Hz, and stays where it was while paused."""
+        now = time.monotonic()
+        if self._turning():
+            if self._turning_since is None:
+                self._turning_since = now
+            seconds = self._turned + now - self._turning_since
+        else:
+            if self._turning_since is not None:
+                self._turned += now - self._turning_since
+                self._turning_since = None
+            seconds = self._turned
+        return self._record.index(seconds, self.skin.rpm())
+
+    def _record_for(self, diameter: int):
+        """The record with this song's cover as its label, built once per song and size."""
+        data = self.app.state.get("cover") if self.app.state.get("song") else None
+        if self._record is None or data is not self._cover_src or diameter != self._record_d:
+            self._cover_src, self._record_d = data, diameter
+            label_d = int(diameter * 0.19) * 2  # what Record makes of it
+            self._cover_img = _load_cover(data, max(1, label_d)) if data else None
+            self._record = self.skin.record(diameter, self._cover_img)
+        return self._record
+
+    def _motion(self, surface) -> list:
+        rects = super()._motion(surface)
+        if self._turning() and self._record is not None and self._record_rect is not None:
+            self.skin.restore(surface, self._record_rect)
+            rects.append(self._record.draw(surface, self._record_rect.center, self._angle()))
+        return rects
 
     def draw(self, surface) -> list | None:
         if self.app.motion_only:
             return self._motion(surface)
         h = surface.get_height()
-        skin = self.skin
         area = self._frame(surface, t("header.nowplaying"))
+        gap = max(8, h // 40)
+        diameter = min(area.h, area.w * 2 // 5)
+        record = self._record_for(diameter)
+        center = (area.x + diameter // 2, area.centery)
+        self._record_rect = record.draw(surface, center, self._angle())
+        x = area.x + diameter + gap
+        self._details(surface, pygame.Rect(x, area.y, area.right - x, area.h))
+        return None
 
+    def _details(self, surface, box: pygame.Rect) -> None:
+        """Title, artist, album, the lamps and what comes next, centered in `box`; what does
+        not fit leaves out the album first and then what comes next."""
+        skin = self.skin
+        h = surface.get_height()
         song = self.app.state.get("song", {})
         status = self.app.state.get("status", {})
+        upcoming = self.app.state.get("next") or {}
         big, body = max(22, h // 12), max(16, h // 20)
+        line = skin.line_height(body)
+        gap = max(3, h // 80)
         title = song.get("Title") or (_basename(song["file"]) if song.get("file") else "—")
-        lines = [
-            (title, big, "normal", "marquee"),
-            (song.get("Artist") or "", body, "dim", "body"),
-            (song.get("Album") or "", body, "dim", "body"),
-            (_status_line(status), body, "alert", "body"),
-        ]
-        lines = [line for line in lines if line[0]]
+        state = status.get("state", "stop")
+        volume = status.get("volume", "")
 
-        m = self.MARGIN
-        landscape = area.w >= area.h
-        side = min(area.h, (area.w - m) * 2 // 5) if landscape else min(area.w, area.h // 2)
-        cover = self._cover(side) if song.get("file") else None
+        # (what, height, how important: 0 always, then the order to leave them out)
+        rows = [("title", skin.line_height(big, "marquee"), 0)]
+        rows += [("artist", line, 0)] if song.get("Artist") else []
+        rows += [("album", line, 2)] if song.get("Album") else []
+        rows += [("progress", line, 0)] if song.get("file") else []
+        rows += [("volume", line, 0)] if volume.isdigit() else []  # MPD says -1 with no mixer
+        rows += [("state", line, 0)] if state != "play" else []
+        rows += [("next", line, 1)] if upcoming.get("file") else []
+        for level in (2, 1):
+            if sum(r[1] + gap for r in rows) - gap <= box.h:
+                break
+            rows = [r for r in rows if r[2] != level]
 
-        if cover is None:  # no cover: the text block, centered
-            x, text_w, centered = area.x, area.w, True
-            y = area.y + area.h // 8
-        elif landscape:  # cover on the left, text on the right, centered vertically
-            surface.blit(cover, (area.x, area.y + (area.h - cover.get_height()) // 2))
-            x = area.x + side + m
-            text_w, centered = area.right - x, False
-            block = sum(skin.line_height(size, role) + 10 for _t, size, _c, role in lines) - 10
-            y = area.y + max(0, (area.h - block) // 2)
-        else:  # cover on top, text below
-            surface.blit(cover, (area.centerx - cover.get_width() // 2, area.y))
-            x, text_w, centered = area.x, area.w, True
-            y = area.y + cover.get_height() + m
+        y = box.y + max(0, (box.h - (sum(r[1] + gap for r in rows) - gap)) // 2)
+        for what, height, _level in rows:
+            if what == "title":
+                skin.text(surface, title, (box.x, y), big, "normal", "marquee", box.w)
+            elif what in ("artist", "album"):
+                text = song.get("Artist" if what == "artist" else "Album", "")
+                skin.text(surface, text, (box.x, y), body, "dim", max_width=box.w)
+            elif what == "progress":
+                elapsed, duration = _seconds(status)
+                clock = _clock(elapsed) + (f" / {_clock(duration)}" if duration else "")
+                drawn = skin.text(surface, clock, (box.right, y), body, "dim", align="right")
+                fraction = elapsed / duration if duration else 0.0
+                self._lamp_row(surface, box.x, drawn.x - gap, y, height, fraction)
+            elif what == "volume":
+                drawn = skin.text(surface, t("nowplaying.volume"), (box.x, y), body, "dim")
+                self._lamp_row(surface, drawn.right + gap, box.right, y, height, int(volume) / 100)
+            elif what == "state":
+                skin.text(surface, t(_STATES.get(state, "status.stop")), (box.x, y), body, "alert")
+            else:
+                text = t("nowplaying.next", song=library.song_label(upcoming))
+                skin.text(surface, text, (box.x, y), body, "dim", max_width=box.w)
+            y += height + gap
 
-        align = "center" if centered else "left"
-        for text, size, tone, role in lines:
-            pos = (x + text_w // 2 if centered else x, y)
-            drawn = skin.text(surface, text, pos, size, tone, role, text_w, align)
-            y += drawn.height + 10
-        return None
+    def _lamp_row(self, surface, left: int, right: int, y: int, height: int, fraction: float):
+        width = right - left
+        if width >= 24:
+            count = max(4, min(20, width // max(8, height)))
+            self.skin.lamps(surface, pygame.Rect(left, y, width, height), progress(count, fraction))
 
 
 _STATES = {"play": "status.play", "pause": "status.pause", "stop": "status.stop"}
-
-
-def _status_line(status: dict) -> str:
-    """MPD's state and volume in words. MPD says volume -1 when it has no mixer (no
-    output open yet, or none at all): then the volume is left out."""
-    state = t(_STATES.get(status.get("state", "stop"), "status.stop"))
-    volume = status.get("volume")
-    if volume is None or volume.startswith("-"):
-        return state
-    return t("status.volume", state=state, volume=volume)
 
 
 class MenuScene(Scene):

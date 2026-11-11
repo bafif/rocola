@@ -87,6 +87,13 @@ class Skin:
         spec = spec if isinstance(spec, dict) else {}
         return _int(spec.get("lamps"), 16, 4, 64), _int(spec.get("step_ms"), 120, 40, 1000)
 
+    def rpm(self) -> float:
+        """How fast the record on the now playing screen turns (45 unless the theme says)."""
+        spec = self.theme.effect("record")
+        value = spec.get("rpm") if isinstance(spec, dict) else None
+        ok = isinstance(value, (int, float)) and not isinstance(value, bool) and 16 <= value <= 78
+        return float(value) if ok else 45.0
+
     # --- text -----------------------------------------------------------------
     def font(self, role: str, size: int) -> pygame.font.Font:
         return self.theme.font(role, size)
@@ -346,6 +353,10 @@ class Record:
         light = (*theme.color("on_dark"), 28)
         pygame.draw.polygon(self.shine, light, [(c, c), (d, int(d * 0.2)), (d, int(d * 0.45))])
         pygame.draw.polygon(self.shine, light, [(c, c), (0, int(d * 0.55)), (0, int(d * 0.8))])
+        disc = _layer((d, d), alpha=True)  # the shine stays on the vinyl
+        disc.fill((0, 0, 0, 0))
+        pygame.draw.circle(disc, (255, 255, 255, 255), (c, c), c)
+        self.shine.blit(disc, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
 
     def index(self, seconds: float, rpm: float = 45.0) -> int:
         """Which rotated label shows `seconds` after the record started."""

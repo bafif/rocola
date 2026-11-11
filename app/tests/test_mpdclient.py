@@ -161,3 +161,15 @@ def test_a_cut_answer_closes_the_connection(fake_mpd):
     with pytest.raises(OSError):
         client.all_files()
     assert not client.connected
+
+
+def test_song_at_a_place_in_the_queue(fake_mpd):
+    replies = {
+        "playlistinfo 1": ["file: b.mp3", "Title: Dos", "Pos: 1"],
+        "playlistinfo 7": "ACK [2@0] {playlistinfo} Bad song index",
+    }
+    client, srv = connect(fake_mpd, replies)
+    assert client.song_at(1) == {"file": "b.mp3", "Title": "Dos", "Pos": "1"}
+    assert client.song_at(7) == {}  # past the end of the queue (it changed meanwhile)
+    assert client.connected
+    assert srv.commands[-2:] == ["playlistinfo 1", "playlistinfo 7"]

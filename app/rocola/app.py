@@ -33,6 +33,8 @@ class RocolaApp:
     # When the song playing now started (time.monotonic()): the marquee's lamps run for a
     # moment after it. None until a song starts.
     song_started: float | None = None
+    # The queue's version and the place of the next song when it was last asked for.
+    _next_key: tuple | None = None
     # True while a frame is drawn only because something moves (no input, nothing new from
     # MPD): a scene may then draw again just what moves and send only that to the screen.
     motion_only = False
@@ -50,7 +52,7 @@ class RocolaApp:
         self.clock = None
         self.scenes: dict = {}
         self.scene = None
-        self.state: dict = {"song": {}, "status": {}, "cover": None}
+        self.state: dict = {"song": {}, "status": {}, "cover": None, "next": {}}
         self._cover_uri: str | None = None  # song whose cover is in state["cover"]
         self.header_h = 48
         self.running = False
@@ -235,6 +237,7 @@ class RocolaApp:
                 self.song_started = time.monotonic()
             self.state["status"], self.state["song"] = status, song
             self._update_cover()
+            self._update_next(status)
             if now - self._last_stats >= 5.0:
                 self._last_stats = now
                 self._check_library_changed()
@@ -247,6 +250,15 @@ class RocolaApp:
         if uri != self._cover_uri:
             self.state["cover"] = self.mpd.cover_art(uri) if uri else None
             self._cover_uri = uri  # after the fetch: if it fails, the next poll retries
+
+    def _update_next(self, status: dict) -> None:
+        """The song after this one in the queue ("Up next"), asked only when that changes."""
+        pos = status.get("nextsong", "")
+        key = (status.get("playlist"), pos)
+        if key != self._next_key:
+            self.state["next"] = self.mpd.song_at(int(pos)) if pos.isdigit() else {}
+            self._next_key = key  # after asking: if it fails, the next poll asks again
+            self.dirty = True
 
     def _check_library_changed(self) -> None:
         db_update = self.mpd.stats().get("db_update")

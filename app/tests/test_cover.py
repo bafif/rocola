@@ -136,11 +136,13 @@ class FakeApp:
     song_started = None
 
     def __init__(self, theme, state):
+        from rocola.effects import EffectsGovernor
         from rocola.skin import Skin
 
         self.theme = theme
         self.skin = Skin(theme)
         self.state = state
+        self.effects = EffectsGovernor()
 
     def draw_header(self, surface, subtitle=""):
         pass
@@ -164,22 +166,25 @@ def theme():
     return Theme.load(Config().theme_dir)
 
 
-def test_now_playing_draws_the_cover_on_the_left(screen, tmp_path):
+def test_now_playing_puts_the_cover_on_the_record(screen, tmp_path):
     state = {
         "song": {"file": URI, "Title": "Death on Two Legs", "Artist": "Queen"},
-        "status": {"state": "play", "volume": "70"},
+        "status": {"state": "pause", "volume": "70"},
         "cover": png_bytes(tmp_path, (40, 20), (200, 30, 30)),
     }
     scene = ui.NowPlayingScene(FakeApp(theme(), state))
     scene.draw(screen)
-    # Fitted in a square at the left of what the marquee leaves, centered on its height.
+    # The record at the left of what the marquee leaves; the cover, cropped square, its label.
     area = scene._layout(screen)[2]
-    side = min(area.h, (area.w - scene.MARGIN) * 2 // 5)
-    assert scene._cover_img.get_size() == (side, side // 2)
-    assert tuple(screen.get_at((area.x + side // 2, area.centery)))[:3] == (200, 30, 30)
-    cached = scene._cover_img
+    diameter = min(area.h, area.w * 2 // 5)
+    label = int(diameter * 0.19) * 2
+    assert scene._cover_img.get_size() == (label, label)
+    assert scene._record_rect.size == (diameter, diameter)
+    x, y = area.x + diameter // 2, area.centery
+    assert tuple(screen.get_at((x + label // 4, y)))[:3] == (200, 30, 30)
+    cached = scene._record
     scene.draw(screen)
-    assert scene._cover_img is cached  # decoded once, not every frame
+    assert scene._record is cached  # built once per song, not every frame
 
 
 def test_now_playing_without_a_readable_cover(screen):

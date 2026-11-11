@@ -58,13 +58,18 @@ def test_launch_installer_without_systemctl(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    ("status", "line"),
+    ("status", "seconds"),
     [
-        ({"state": "play", "volume": "40"}, "Reproduciendo   ·   volumen 40%"),
-        ({"state": "pause", "volume": "100"}, "En pausa   ·   volumen 100%"),
-        ({"state": "play", "volume": "-1"}, "Reproduciendo"),
-        ({}, "Detenido"),
+        ({"elapsed": "61.5", "duration": "185.2"}, (61.5, 185.2)),
+        ({"time": "12:180"}, (12.0, 180.0)),  # MPDs before 0.20
+        ({"elapsed": "3.0"}, (3.0, 0.0)),  # a stream: no length
+        ({}, (0.0, 0.0)),
+        ({"elapsed": "x", "time": "bad"}, (0.0, 0.0)),
     ],
 )
-def test_status_line(status, line):
-    assert ui._status_line(status) == line
+def test_how_far_the_song_has_gone(status, seconds):
+    assert ui._seconds(status) == seconds
+
+
+def test_clock():
+    assert [ui._clock(s) for s in (0, 61.9, 600, -3)] == ["0:00", "1:01", "10:00", "0:00"]

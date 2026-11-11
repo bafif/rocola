@@ -140,6 +140,14 @@ class MPDClient:
     def current_song(self) -> Dict[str, str]:
         return self._as_dict(self._send("currentsong"))
 
+    def song_at(self, pos: int) -> Dict[str, str]:
+        """The song at `pos` in the queue; empty when there is none (MPD answers a place past
+        the end with an ACK, which can happen when the queue changed since the last status)."""
+        try:
+            return self._as_dict(self._send(f"playlistinfo {pos}"))
+        except MPDAckError:
+            return {}
+
     def stats(self) -> Dict[str, str]:
         """Library stats; `db_update` is the time of the last database update."""
         return self._as_dict(self._send("stats"))

@@ -46,26 +46,29 @@ reciente de pygame hay que probarlo en la ISO.
 
 ## Escenas (UI)
 
-- **Biblioteca**: por artista y álbum. Arriba, «Todas las canciones» y los artistas (por nombre;
-  los temas sin tag de artista van al final, en «(sin artista)»), con cuántas canciones tiene cada
-  uno. Un artista muestra «Todas de …» y sus álbumes, del más viejo al más nuevo según el tag
-  `Date`; si tiene un solo álbum, se abre ese álbum directamente. Un álbum lista sus temas por
-  disco y número de pista. Se agrupa por `AlbumArtist` si está (así un compilado queda junto) y
-  si no por `Artist`. Con un solo artista (o ninguno con tags) queda la lista plana de canciones.
-  Se ve como tarjetas en dos columnas, una página por vez (10 en una pantalla plana, 8 en un monitor
-  de tubo, 6 a 15 kHz y en el TV), cada una con su código (A1, A2…) y la marquesina arriba, que dice
-  dónde se está. Los artistas y los álbumes son tarjetas de índice, con cuántas canciones tienen; las
-  canciones, tarjetas con el título y el artista. ↑/↓ de a una, ←/→ una página entera (de la última
-  vuelve a la primera); Atrás sube un nivel y, desde arriba, va a «Reproduciendo». Al recargarse la
-  biblioteca (pendrive, «Actualizar biblioteca») se vuelve al mismo lugar.
-  Seleccionar una canción → si no suena nada (o está en pausa) la reproduce; si ya suena otra, la
-  suma al final de la cola. Todo sale del `listallinfo` que ya se carga: navegar no le pide nada
-  más a MPD.
-- **Now playing**: título, artista, álbum, estado y volumen de lo que suena, con la **portada** a
-  la izquierda si la canción tiene una: la de su carpeta (`cover.jpg`, `cover.png` o `cover.webp`,
-  lo que busca el `albumart` de MPD) o, si no, la embebida en el archivo (`readpicture`). Se pide
-  una vez por canción, en bloques de 1 MiB (`binarylimit`), y se ignora si pesa más de 8 MB. Los
-  textos largos se cortan con «…».
+- **Biblioteca**: por artista y álbum. Arriba, «Todas las canciones» y los artistas (por nombre; los
+  temas sin tag de artista van al final, en «(sin artista)»), con cuántas canciones tiene cada uno.
+  Un artista muestra «Todas de …» y sus álbumes, del más viejo al más nuevo según el tag `Date`; si
+  tiene un solo álbum, se abre ese álbum directamente. Un álbum lista sus temas por disco y número
+  de pista. Se agrupa por `AlbumArtist` si está (así un compilado queda junto) y si no por `Artist`.
+  Con un solo artista (o ninguno con tags) queda la lista plana de canciones. Se ve como tarjetas en
+  dos columnas, una página por vez (10 en una pantalla plana, 8 en un monitor de tubo, 6 a 15 kHz y
+  en el TV), cada una con su código (A1, A2…) y la marquesina arriba, que dice dónde se está. Los
+  artistas y los álbumes son tarjetas de índice, con cuántas canciones tienen; las canciones,
+  tarjetas con el título y el artista. ↑/↓ de a una, ←/→ una página entera (de la última vuelve a la
+  primera); Atrás sube un nivel y, desde arriba, va a «Reproduciendo». Al recargarse la biblioteca
+  (pendrive, «Actualizar biblioteca») se vuelve al mismo lugar. Seleccionar una canción → si no
+  suena nada (o está en pausa) la reproduce; si ya suena otra, la suma al final de la cola. Todo
+  sale del `listallinfo` que ya se carga: navegar no le pide nada más a MPD.
+- **Reproduciendo**: a la izquierda, un disco de 45 que gira (por reloj: a 45 rpm igual a 50 que a
+  60 Hz; quieto en pausa y con `effects = "apagado"`) con la **portada** como etiqueta, recortada al
+  centro si no es cuadrada; a la derecha, título, artista, álbum, lámparas para lo que avanzó la
+  canción (con el tiempo) y para el volumen, el estado si no está sonando y «A continuación» (la
+  canción siguiente de la cola, pedida sólo cuando la cola cambia). Si no entra todo, primero se va
+  el álbum y después «A continuación». La portada es la de su carpeta (`cover.jpg`, `cover.png` o
+  `cover.webp`, lo que busca el `albumart` de MPD) o, si no, la embebida en el archivo
+  (`readpicture`). Se pide una vez por canción, en bloques de 1 MiB (`binarylimit`), y se ignora si
+  pesa más de 8 MB. Los textos largos se cortan con «…».
 - **Menú** (botón 3 o F10): salida de audio, información del sistema, probar controles, actualizar
   la biblioteca, idioma y, desde el pendrive, instalar en disco.
 - **Salida de audio**: elegir entre las salidas de PipeWire (analógica, HDMI, USB, Bluetooth) y

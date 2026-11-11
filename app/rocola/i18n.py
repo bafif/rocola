@@ -50,10 +50,8 @@ CATALOG: dict[str, dict[str, str]] = {
     "status.play": {"es": "Reproduciendo", "en": "Playing"},
     "status.pause": {"es": "En pausa", "en": "Paused"},
     "status.stop": {"es": "Detenido", "en": "Stopped"},
-    "status.volume": {
-        "es": "{state}   ·   volumen {volume}%",
-        "en": "{state}   ·   volume {volume}%",
-    },
+    "nowplaying.volume": {"es": "Volumen", "en": "Volume"},
+    "nowplaying.next": {"es": "A continuación: {song}", "en": "Up next: {song}"},
     # Menu
     "menu.audio": {"es": "Salida de audio", "en": "Audio output"},
     "menu.info": {"es": "Información del sistema", "en": "System info"},

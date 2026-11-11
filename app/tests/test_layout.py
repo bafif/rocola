@@ -8,6 +8,7 @@ import pytest
 from rocola import app as rapp
 from rocola import audio, bt, library, ui
 from rocola.config import Config
+from rocola.effects import EffectsGovernor
 from rocola.skin import Skin
 from rocola.theme import Theme
 
@@ -29,11 +30,13 @@ def make_app(size, display):
     app = rapp.RocolaApp.__new__(rapp.RocolaApp)  # no MPD, no loop
     app.theme = Theme.load(Config().theme_dir, display)
     app.skin = Skin(app.theme)
+    app.effects = EffectsGovernor()
     app.header_h = max(40, size[1] // 10)
-    app.state = {
+    app.state = {  # paused, with a next song: the most lines "Now playing" can show
         "song": SONGS[0],
-        "status": {"state": "play", "volume": "100"},
+        "status": {"state": "pause", "volume": "100", "elapsed": "61", "duration": "245"},
         "cover": None,
+        "next": SONGS[1],
     }
     app.scenes = {}
     app.screen = pygame.display.get_surface()

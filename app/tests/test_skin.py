@@ -123,6 +123,7 @@ def test_record_turns_by_the_clock(screen, tmp_path):
     assert rect.size == (120, 120)
     r, g, b = rgb(screen, (160 + 10, 120))  # the cover, as the label (under the shine)
     assert r < 30 and g < 30 and b > 220
+    assert record.shine.get_at((119, 30)).a == 0  # the shine stays on the vinyl
 
 
 def test_scenes_never_name_a_color():
