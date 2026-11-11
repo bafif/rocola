@@ -46,6 +46,17 @@ CATALOG: dict[str, dict[str, str]] = {
     "library.one_song": {"es": "1 canción", "en": "1 song"},
     "library.songs": {"es": "{n} canciones", "en": "{n} songs"},
     "library.page": {"es": "Página {page} de {pages}", "en": "Page {page} of {pages}"},
+    # The legend of the buttons, at the bottom of the jukebox's screens
+    "legend.move": {"es": "Mover", "en": "Move"},
+    "legend.page": {"es": "Página", "en": "Page"},
+    "legend.choose": {"es": "Elegir", "en": "Choose"},
+    "legend.back": {"es": "Atrás", "en": "Back"},
+    "legend.menu": {"es": "Menú", "en": "Menu"},
+    "legend.pause": {"es": "Pausa", "en": "Pause"},
+    "legend.play": {"es": "Seguir", "en": "Play"},
+    "legend.next": {"es": "Siguiente", "en": "Next"},
+    "legend.volume": {"es": "Volumen", "en": "Volume"},
+    "legend.library": {"es": "Biblioteca", "en": "Library"},
     # Now playing
     "status.play": {"es": "Reproduciendo", "en": "Playing"},
     "status.pause": {"es": "En pausa", "en": "Paused"},

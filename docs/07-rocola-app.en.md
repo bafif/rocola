@@ -69,8 +69,14 @@ pygame function has to be tested on the ISO.
   `cover.webp`, which is what MPD's `albumart` looks for) or, if not, the one embedded in the file
   (`readpicture`). It's requested once per song, in 1 MiB chunks (`binarylimit`), and ignored if
   it's larger than 8 MB. Long text gets cut off with “…”.
+- **Legend**: at the bottom of the library and of “Now playing”, what each control does there, drawn
+  like the cabinet's: the stick (↑↓, ←→) and each button as a round cap with its number, the same as
+  in [06](06-arcade-controls.en.md) and “Test controls” (no number when no button does that action).
+  What does not fit is left out; in the library, the page goes at the right.
 - **Menu** (button 3 or F10): audio output, system information, test controls, update the library,
-  language and, when running from the USB stick, install to disk.
+  language and, when running from the USB stick, install to disk. The menu and the screens below
+  are the **operator panel**: the same theme in its sober version (plain background, the text font,
+  no artwork and no effects) and everything inside the display's margin.
 - **Audio output**: choose among the PipeWire outputs (analog, HDMI, USB, Bluetooth) and pair a
   Bluetooth speaker.
 - **Information**: audio and video drivers, resolution, display mode, machine, IP and kernel.

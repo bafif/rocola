@@ -29,6 +29,9 @@ class FakeApp:
     def marquee_title(self):
         return "ROCOLA"
 
+    def button_label(self, action):
+        return ""
+
 
 @pytest.fixture
 def screen():
@@ -254,3 +257,46 @@ def test_the_app_asks_for_the_next_song_only_when_the_queue_changes():
     assert asked == [3] and app.state["next"] == {"file": "3.mp3"}
     app._update_next({"playlist": "6"})  # the last song of the queue: nothing next
     assert asked == [3] and app.state["next"] == {}
+
+
+def test_the_legend_puts_each_button_number_on_its_cap(monkeypatch):
+    from rocola import input as actions
+
+    app = rapp.RocolaApp.__new__(rapp.RocolaApp)
+    assert app.button_label(actions.SELECT) == ""  # no controls known: plain caps
+    app.input = actions.InputManager()  # the default map: Select is button 0, Menu 3
+    assert [app.button_label(a) for a in (actions.SELECT, actions.MENU, actions.UP)] == [
+        "0",
+        "3",
+        "",
+    ]
+    scene = ui.LibraryScene(app)
+    items = scene._legend_items()
+    assert [control for control, _cap, _text in items] == [
+        "stick_v",
+        "stick_h",
+        "button",
+        "button",
+        "button",
+    ]
+    assert [(cap, text) for _c, cap, text in items][2:] == [
+        ("0", "Elegir"),
+        ("1", "Atrás"),
+        ("3", "Menú"),
+    ]
+
+
+def test_the_legend_leaves_out_what_does_not_fit(screen):
+    app = FakeApp()
+    items = [("button", "0", "Elegir")] * 10
+    rect = pygame.Rect(10, 400, 200, 20)
+    drawn = app.skin.legend(screen, rect, items)
+    assert rect.contains(drawn) and drawn.w > 0
+    assert app.skin.legend(screen, pygame.Rect(10, 400, 5, 20), items).w == 0
+
+
+def test_now_playing_says_play_when_it_is_paused():
+    app = playing("pause")
+    assert ui.NowPlayingScene(app)._legend_items()[0][2] == "Seguir"
+    app.state["status"]["state"] = "play"
+    assert ui.NowPlayingScene(app)._legend_items()[0][2] == "Pausa"

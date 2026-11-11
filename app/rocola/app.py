@@ -54,7 +54,6 @@ class RocolaApp:
         self.scene = None
         self.state: dict = {"song": {}, "status": {}, "cover": None, "next": {}}
         self._cover_uri: str | None = None  # song whose cover is in state["cover"]
-        self.header_h = 48
         self.running = False
         self._last_poll = 0.0
         # MPD's `db_update` seen last; when it changes (music imported from a USB
@@ -79,7 +78,6 @@ class RocolaApp:
 
         self.theme = Theme.load(self.config.theme_dir, self.config.display)
         self.skin = Skin(self.theme)
-        self.header_h = max(40, self.screen.get_height() // 10)
         # Los nombres de tecla de rocola.toml se resuelven con SDL: después de pygame.init().
         self.input.keymap = rin.build_keymap(self.config.keys)
         self.input.buttonmap = rin.build_buttonmap(self.config.buttons)
@@ -278,10 +276,12 @@ class RocolaApp:
     def marquee_title(self) -> str:
         return self.theme.title_for(i18n.language())
 
-    def draw_header(self, surface, subtitle: str = "") -> None:
-        """The operator panel's header (the jukebox's own screens draw their marquee)."""
-        rect = pygame.Rect(0, 0, surface.get_width(), self.header_h)
-        self.skin.marquee(surface, rect, self.marquee_title(), subtitle)
+    def button_label(self, action: str) -> str:
+        """What the cap of `action`'s button says in the legends: its number, as docs/06 and
+        «Probar controles» call it; "" when no button does it (a keyboard only)."""
+        buttons = getattr(getattr(self, "input", None), "buttonmap", None) or {}
+        found = sorted(i for i, a in buttons.items() if a == action)
+        return str(found[0]) if found else ""
 
     # --- instalador -------------------------------------------------------
     def launch_installer(self) -> str | None:

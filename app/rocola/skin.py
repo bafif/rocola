@@ -181,6 +181,77 @@ class Skin:
         """The operator panel's backdrop: the same theme, sober, with no artwork."""
         surface.fill(self.theme.color("background"))
 
+    def panel_header(
+        self, surface: pygame.Surface, rect: pygame.Rect, title: str, subtitle: str = ""
+    ) -> pygame.Rect:
+        """The operator panel's header: the title in the text font, the jukebox's name at the
+        right and a rule underneath; no artwork and no effects."""
+        rect = pygame.Rect(rect)
+        rule = max(2, rect.h // 16)  # never 1 px: it flickers on an interlaced tube
+        size = self.shrink_to(max(14, rect.h * 3 // 5), rect.h - rule - 2)
+        y = rect.y + (rect.h - rule - self.line_height(size)) // 2
+        right = rect.right
+        if subtitle:
+            sub = self.text(
+                surface, subtitle, (right, y), size, "dim", max_width=rect.w // 3, align="right"
+            )
+            right = sub.x - max(8, rect.h // 3)
+        self.text(surface, title, (rect.x, y), size, "alert", max_width=right - rect.x)
+        surface.fill(self.tone("dim"), (rect.x, rect.bottom - rule, rect.w, rule))
+        return rect
+
+    def legend(
+        self, surface: pygame.Surface, rect: pygame.Rect, items: list[tuple[str, str, str]]
+    ) -> pygame.Rect:
+        """What each button does here, drawn as the cabinet's controls: `items` are
+        (control, what its cap says, what it does), the control "stick_v" or "stick_h" (the
+        stick, up and down or left and right) or "button". From the left; what does not fit
+        is left out. The rect it took."""
+        rect = pygame.Rect(rect)
+        cap = max(8, rect.h - 2)
+        size = self.shrink_to(max(10, rect.h * 3 // 5), rect.h)
+        gap = max(4, cap // 3)
+        x = rect.x
+        for control, label, text in items:
+            img = self.render(text, size, "dim")
+            width = cap + gap // 2 + img.get_width()
+            if x + width > rect.right:
+                break
+            self._control(
+                surface, pygame.Rect(x, rect.centery - cap // 2, cap, cap), control, label
+            )
+            surface.blit(img, (x + cap + gap // 2, rect.centery - img.get_height() // 2))
+            x += width + gap * 2
+        return pygame.Rect(rect.x, rect.y, max(0, x - gap * 2 - rect.x), rect.h)
+
+    def _control(self, surface, box: pygame.Rect, control: str, label: str) -> None:
+        glow, accent = self.theme.color("glow"), self.theme.color("accent")
+        r = box.w // 2
+        if control == "button":  # a round cap with a ring of light, and its number
+            pygame.draw.circle(surface, accent, box.center, r)
+            pygame.draw.circle(surface, glow, box.center, r, max(2, r // 4))
+            if label:
+                size = self.shrink_to(max(8, box.h * 3 // 5), box.h - 2 * max(2, r // 4), "digits")
+                img = self.render(label, size, "normal", "digits")
+                surface.blit(img, img.get_rect(center=box.center))
+            return
+        # The stick: a ball and two arrows, up and down or left and right.
+        cx, cy = box.center
+        pygame.draw.circle(surface, glow, box.center, max(2, r // 3))
+        a = max(2, r // 2)
+        if control == "stick_v":
+            arrows = [
+                [(cx, box.y), (cx - a, box.y + a), (cx + a, box.y + a)],
+                [(cx, box.bottom - 1), (cx - a, box.bottom - 1 - a), (cx + a, box.bottom - 1 - a)],
+            ]
+        else:
+            arrows = [
+                [(box.x, cy), (box.x + a, cy - a), (box.x + a, cy + a)],
+                [(box.right - 1, cy), (box.right - 1 - a, cy - a), (box.right - 1 - a, cy + a)],
+            ]
+        for arrow in arrows:
+            pygame.draw.polygon(surface, glow, arrow)
+
     def marquee(
         self, surface: pygame.Surface, rect: pygame.Rect, title: str, subtitle: str = ""
     ) -> pygame.Rect:

@@ -69,8 +69,14 @@ reciente de pygame hay que probarlo en la ISO.
   `cover.webp`, lo que busca el `albumart` de MPD) o, si no, la embebida en el archivo
   (`readpicture`). Se pide una vez por canción, en bloques de 1 MiB (`binarylimit`), y se ignora si
   pesa más de 8 MB. Los textos largos se cortan con «…».
+- **Leyenda**: abajo de la biblioteca y de «Reproduciendo», qué hace cada control ahí, dibujado como
+  los del gabinete: la palanca (↑↓, ←→) y cada botón como una tapa redonda con su número, el mismo
+  de [06](06-arcade-controls.md) y de «Probar controles» (sin número si ningún botón hace esa
+  acción). Lo que no entra se deja afuera; en la biblioteca, a la derecha va la página.
 - **Menú** (botón 3 o F10): salida de audio, información del sistema, probar controles, actualizar
-  la biblioteca, idioma y, desde el pendrive, instalar en disco.
+  la biblioteca, idioma y, desde el pendrive, instalar en disco. El menú y las pantallas que siguen
+  son el **panel del operador**: el mismo tema en versión sobria (fondo liso, la letra de texto, sin
+  arte ni efectos) y todo dentro del margen de la pantalla.
 - **Salida de audio**: elegir entre las salidas de PipeWire (analógica, HDMI, USB, Bluetooth) y
   emparejar un parlante Bluetooth.
 - **Información**: drivers de audio y video, resolución, modo de pantalla, equipo, IP y kernel.

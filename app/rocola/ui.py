@@ -37,12 +37,36 @@ class Scene:
     def draw(self, surface) -> list | None:
         """Draw the scene; the rects that changed, or None when the whole screen did."""
 
+
+class PanelScene(Scene):
+    """A screen of the operator panel (menu, audio, information, controls, Bluetooth): the same
+    theme in its sober version, with a plain background, the text font, no artwork and no
+    effects, and everything inside the display's safe area."""
+
+    @staticmethod
+    def _hint_size(surface) -> int:
+        return max(13, surface.get_height() // 26)
+
+    def _frame(self, surface, title: str, hint: bool = True) -> pygame.Rect:
+        """The background and the header; the rect left for the scene (above the hint line)."""
+        h = surface.get_height()
+        safe = self.skin.safe_rect(surface)
+        head = pygame.Rect(safe.x, safe.y, safe.w, max(28, h // 12))
+        self.skin.panel(surface)
+        self.skin.panel_header(surface, head, title, self.app.marquee_title())
+        top = head.bottom + max(4, h // 60)
+        bottom = safe.bottom
+        if hint:
+            bottom -= self.skin.line_height(self._hint_size(surface)) + max(4, h // 60)
+        return pygame.Rect(safe.x, top, safe.w, bottom - top)
+
     def _hint(self, surface, text: str) -> None:
-        """The line at the bottom that says what each button does here."""
-        w, h = surface.get_size()
-        size = max(13, h // 26)
-        y = h - self.skin.line_height(size) - 6
-        self.skin.text(surface, text, (16, y), size, "dim", max_width=w - 32)
+        """The line at the bottom that says what each key or button does here."""
+        safe = self.skin.safe_rect(surface)
+        size = self._hint_size(surface)
+        # By what the text measures drawn: some fonts draw taller than their line height.
+        y = safe.bottom - self.skin.render(text, size, "dim", max_width=safe.w).get_height()
+        self.skin.text(surface, text, (safe.x, y), size, "dim", max_width=safe.w)
 
 
 def _basename(path: str) -> str:
@@ -57,8 +81,13 @@ class JukeboxScene(Scene):
     # How long the lamps run when a song starts, by effects level (effects.py).
     CHASE_S = {"completo": 4.0, "suave": 2.0, "apagado": 0.0}
 
+    # What the legend at the bottom shows here: (control, action, text) — the action's
+    # button number goes on the cap.
+    LEGEND: list[tuple[str, str, str]] = []
+
     def _layout(self, surface) -> tuple[pygame.Rect, pygame.Rect, pygame.Rect]:
-        """Where the marquee, its lamps and the rest of the screen go."""
+        """Where the marquee, its lamps and the rest of the screen go (the rest ends above
+        the legend, which is `_legend_rect`)."""
         h = surface.get_height()
         safe = self.skin.safe_rect(surface)
         total = max(40, h // 7)
@@ -66,7 +95,19 @@ class JukeboxScene(Scene):
         marquee = pygame.Rect(safe.x, safe.y, safe.w, total - lamps_h)
         lamps = pygame.Rect(safe.x, marquee.bottom, safe.w, lamps_h)
         top = lamps.bottom + max(4, h // 60)
-        return marquee, lamps, pygame.Rect(safe.x, top, safe.w, safe.bottom - top)
+        bottom = self._legend_rect(surface).y - max(4, h // 60)
+        return marquee, lamps, pygame.Rect(safe.x, top, safe.w, bottom - top)
+
+    def _legend_rect(self, surface) -> pygame.Rect:
+        safe = self.skin.safe_rect(surface)
+        height = max(14, surface.get_height() // 22)
+        return pygame.Rect(safe.x, safe.bottom - height, safe.w, height)
+
+    def _legend_items(self) -> list[tuple[str, str, str]]:
+        return [
+            (control, self.app.button_label(action) if control == "button" else "", t(key))
+            for control, action, key in self.LEGEND
+        ]
 
     def _chase_step(self) -> int | None:
         """The step the running lamps are on, or None when they rest (all lit)."""
@@ -93,7 +134,11 @@ class JukeboxScene(Scene):
         self.skin.backdrop(surface)
         self.skin.marquee(surface, marquee, self.app.marquee_title(), subtitle)
         self.skin.lamps(surface, lamps, self._lamps())
+        self._draw_legend(surface, self._legend_rect(surface))
         return rest
+
+    def _draw_legend(self, surface, rect: pygame.Rect) -> pygame.Rect:
+        return self.skin.legend(surface, rect, self._legend_items())
 
     def _motion(self, surface) -> list:
         """A frame where only the lamps moved: they alone are drawn and sent to the screen."""
@@ -107,6 +152,14 @@ class LibraryScene(JukeboxScene):
     in two columns, a page at a time, each with its code (A1, A2…). ↑↓ move one card, ←→ a
     whole page; selecting a song plays it. Back goes up one level, and from the top to the
     now playing screen."""
+
+    LEGEND = [
+        ("stick_v", actions.UP, "legend.move"),
+        ("stick_h", actions.LEFT, "legend.page"),
+        ("button", actions.SELECT, "legend.choose"),
+        ("button", actions.BACK, "legend.back"),
+        ("button", actions.MENU, "legend.menu"),
+    ]
 
     def __init__(self, app):
         super().__init__(app)
@@ -205,11 +258,9 @@ class LibraryScene(JukeboxScene):
         view = self.view
         columns, rows = skin.grid()
         per_page = columns * rows
-        small = max(13, h // 26)
-        foot_h = skin.line_height(small) + 4
         gap = max(4, h // 60)
         card_w = (area.w - gap * (columns - 1)) // columns
-        card_h = (area.h - foot_h - gap * (rows - 1)) // rows
+        card_h = (area.h - gap * (rows - 1)) // rows
 
         page = view.index // per_page
         view.top = page * per_page
@@ -224,12 +275,19 @@ class LibraryScene(JukeboxScene):
             code = library.code(i, per_page)
             skin.card(surface, rect, code, title, subtitle, i == view.index, kind)
 
-        pages = -(-len(view.rows) // per_page)
-        if pages > 1:
-            text = t("library.page", page=page + 1, pages=pages)
-            pos = (area.right, area.bottom - foot_h + 2)
-            skin.text(surface, text, pos, small, "dim", align="right")
         return None
+
+    def _draw_legend(self, surface, rect: pygame.Rect) -> pygame.Rect:
+        """The legend, with the page at the right when there is more than one."""
+        per_page = self._per_page()
+        pages = -(-len(self.view.rows) // per_page) if self.songs and not self.error else 0
+        if pages > 1:
+            text = t("library.page", page=self.view.index // per_page + 1, pages=pages)
+            size = self.skin.shrink_to(max(10, rect.h * 3 // 5), rect.h)
+            y = rect.centery - self.skin.line_height(size) // 2
+            drawn = self.skin.text(surface, text, (rect.right, y), size, "dim", align="right")
+            rect = pygame.Rect(rect.x, rect.y, drawn.x - rect.x - rect.h, rect.h)
+        return super()._draw_legend(surface, rect)
 
 
 def _load_cover(data: bytes, side: int):
@@ -275,6 +333,14 @@ class NowPlayingScene(JukeboxScene):
     the effects off), the title, the artist and the album, lamps for how far the song has gone
     and for the volume, and the song that comes next."""
 
+    LEGEND = [
+        ("button", actions.PLAYPAUSE, "legend.pause"),
+        ("button", actions.NEXT, "legend.next"),
+        ("button", actions.VOLUP, "legend.volume"),
+        ("button", actions.BACK, "legend.library"),
+        ("button", actions.MENU, "legend.menu"),
+    ]
+
     def __init__(self, app):
         super().__init__(app)
         self._cover_src: bytes | None = None  # the bytes the record's label came from
@@ -300,6 +366,12 @@ class NowPlayingScene(JukeboxScene):
             self.app.mpd_safe(lambda c: c.change_volume(-5))
         elif action == actions.MENU:
             self.app.open_menu()
+
+    def _legend_items(self) -> list[tuple[str, str, str]]:
+        items = super()._legend_items()
+        if self.app.state.get("status", {}).get("state") != "play":  # the button plays again
+            items[0] = (items[0][0], items[0][1], t("legend.play"))
+        return items
 
     def _turning(self) -> bool:
         playing = self.app.state.get("status", {}).get("state") == "play"
@@ -416,7 +488,7 @@ class NowPlayingScene(JukeboxScene):
 _STATES = {"play": "status.play", "pause": "status.pause", "stop": "status.stop"}
 
 
-class MenuScene(Scene):
+class MenuScene(PanelScene):
     # Each option's label is the catalog's "menu.<option>".
     OPTIONS = ["audio", "info", "inputtest", "update", "language", "install", "back"]
 
@@ -467,32 +539,32 @@ class MenuScene(Scene):
             self.app.set_scene("library")
 
     def draw(self, surface) -> None:
-        w, h = surface.get_size()
+        h = surface.get_height()
         skin = self.skin
-        skin.panel(surface)
-        self.app.draw_header(surface, t("header.menu"))
+        area = self._frame(surface, t("header.menu"), hint=False)
         size, small = max(18, h // 16), max(14, h // 26)
-        top = self.app.header_h + 8
         notice_h = skin.line_height(small) + 10 if self.notice else 0
         # On a short screen (320×240 at 15 kHz) the gaps shrink, then the letters, so the
         # last option and the notice are never left below the bottom edge.
-        pitch = min(skin.line_height(size) + 14, (h - top - notice_h - 4) // len(self.options))
+        pitch = min(skin.line_height(size) + 14, (area.h - notice_h) // len(self.options))
         size = skin.shrink_to(size, pitch)
-        slack = h - top - notice_h - pitch * len(self.options)
-        y = top + max(0, min(h // 6 - 8, slack // 2))
+        slack = area.h - notice_h - pitch * len(self.options)
+        y = area.y + max(0, min(h // 6 - 8, slack // 2))
         for i, key in enumerate(self.options):
             selected = i == self.index
             tone = "alert" if selected else "normal"
             prefix = "> " if selected else "  "
-            skin.text(surface, prefix + t(f"menu.{key}"), (w // 2, y), size, tone, align="center")
+            label = prefix + t(f"menu.{key}")
+            skin.text(
+                surface, label, (area.centerx, y), size, tone, max_width=area.w, align="center"
+            )
             y += pitch
         if self.notice:
-            skin.text(
-                surface, self.notice, (w // 2, y + 10), small, "alert", "body", w - 32, "center"
-            )
+            pos = (area.centerx, y + 10)
+            skin.text(surface, self.notice, pos, small, "alert", "body", area.w, "center")
 
 
-class AudioScene(Scene):
+class AudioScene(PanelScene):
     """Selector de salida de audio: lista los *sinks* de PipeWire y permite elegir uno
     (lo prueba con un tono). Incluye un acceso para emparejar un dispositivo Bluetooth.
     """
@@ -550,19 +622,17 @@ class AudioScene(Scene):
             self.refresh()
 
     def draw(self, surface) -> None:
-        w, h = surface.get_size()
+        h = surface.get_height()
         skin = self.skin
-        skin.panel(surface)
-        self.app.draw_header(surface, t("header.audio"))
+        area = self._frame(surface, t("header.audio"))
 
         size = max(16, h // 18)
         line_h = skin.line_height(size) + 8
-        top_y = self.app.header_h + 8
-        rows = max(1, (h - top_y - 2 * line_h) // line_h)  # reservar 1 línea para el hint
+        rows = max(1, area.h // line_h)
 
         if not self.available:
             text = t("audio.unavailable")
-            skin.text(surface, text, (16, top_y), size, "alert", max_width=w - 32)
+            skin.text(surface, text, area.topleft, size, "alert", max_width=area.w)
             return
 
         if self.index < self.top:
@@ -572,10 +642,10 @@ class AudioScene(Scene):
 
         total = self._count()
         for i in range(self.top, min(self.top + rows, total)):
-            y = top_y + (i - self.top) * line_h
+            y = area.y + (i - self.top) * line_h
             selected = i == self.index
             if selected:
-                skin.cursor_bar(surface, pygame.Rect(8, y - 2, w - 16, line_h))
+                skin.cursor_bar(surface, pygame.Rect(area.x, y - 2, area.w, line_h))
             tone = "selected" if selected else "normal"
             if self._is_pair_row(i):
                 text = t("audio.pair")
@@ -585,12 +655,12 @@ class AudioScene(Scene):
                 # fuente con glifos no-ASCII (●/○ tofu con la fuente de fallback).
                 marker = "* " if s.is_default else "  "
                 text = f"{marker}[{s.kind}] {s.description}"
-            skin.text(surface, text, (16, y), size, tone, max_width=w - 32)
+            skin.text(surface, text, (area.x + 8, y), size, tone, max_width=area.w - 16)
 
         self._hint(surface, t("audio.hint"))
 
 
-class InfoScene(Scene):
+class InfoScene(PanelScene):
     """Información / diagnóstico del sistema (sólo lectura)."""
 
     def __init__(self, app):
@@ -605,19 +675,20 @@ class InfoScene(Scene):
             self.app.set_scene("menu")
 
     def draw(self, surface) -> None:
-        w, h = surface.get_size()
+        h = surface.get_height()
         skin = self.skin
-        skin.panel(surface)
-        self.app.draw_header(surface, t("header.info"))
+        area = self._frame(surface, t("header.info"))
 
         size = max(15, h // 22)
         line_h = skin.line_height(size) + 10
-        col = max(180, w // 3)
-        x = 16
-        y = self.app.header_h + 12
+        line_h = min(line_h, max(skin.line_height(size), area.h // max(1, len(self.rows))))
+        col = max(area.w // 3, min(180, area.w // 2))
+        y = area.y
         for label, value in self.rows:
-            skin.text(surface, f"{label}:", (x, y), size, "alert", max_width=col - 8)
-            skin.text(surface, str(value), (x + col, y), size, max_width=w - x - col - 16)
+            if y + skin.line_height(size) > area.bottom:
+                break  # a short screen shows the first ones
+            skin.text(surface, f"{label}:", (area.x, y), size, "alert", max_width=col - 8)
+            skin.text(surface, str(value), (area.x + col, y), size, max_width=area.w - col)
             y += line_h
 
         self._hint(surface, t("info.hint"))
@@ -638,7 +709,7 @@ def describe_event(event) -> str | None:
     return None
 
 
-class InputTestScene(Scene):
+class InputTestScene(PanelScene):
     """Muestra qué manda cada tecla o botón y qué acción le toca, para armar [keys]/[buttons].
 
     Recibe TODOS los eventos de input por record() (la app no le pasa acciones), así se
@@ -675,26 +746,24 @@ class InputTestScene(Scene):
         if time.monotonic() - self.last_input > self.IDLE_EXIT_S:
             self.app.set_scene("menu")
             return
-        w, h = surface.get_size()
+        h = surface.get_height()
         skin = self.skin
-        skin.panel(surface)
-        self.app.draw_header(surface, t("header.inputtest"))
+        area = self._frame(surface, t("header.inputtest"))
 
         size = max(15, h // 22)
         line_h = skin.line_height(size) + 8
-        y = self.app.header_h + 12
-        skin.text(surface, t("input.intro"), (16, y), size, "dim", max_width=w - 32)
+        y = area.y
+        skin.text(surface, t("input.intro"), (area.x, y), size, "dim", max_width=area.w)
         y += line_h + 6
-        hint_top = h - skin.line_height(max(13, h // 26)) - 6
-        fits = max(1, (hint_top - y) // line_h)  # the newest ones, as many as fit
-        for line in (self.lines or [t("input.waiting")])[-fits:]:
-            skin.text(surface, line, (16, y), size, max_width=w - 32)
+        fits = max(0, (area.bottom - y - skin.line_height(size)) // line_h + 1)
+        for line in (self.lines or [t("input.waiting")])[-fits:] if fits else []:
+            skin.text(surface, line, (area.x, y), size, max_width=area.w)
             y += line_h
 
         self._hint(surface, t("input.hint", seconds=round(self.IDLE_EXIT_S)))
 
 
-class BtPairScene(Scene):
+class BtPairScene(PanelScene):
     """Emparejamiento Bluetooth con los controles de arcade (flechas + Enter).
 
     Escanea con `bluetoothctl` (vía bt.py), lista los dispositivos y empareja/conecta
@@ -718,6 +787,7 @@ class BtPairScene(Scene):
         self.pair_result = None  # resultado de bt.pair_connect (lo setea el thread)
         self.pair_start = 0.0
         self.result_msg = ""
+        self._area = pygame.Rect(0, 0, 0, 0)  # where the scene draws, set by draw()
 
     def on_enter(self) -> None:
         self.devices = []
@@ -770,8 +840,7 @@ class BtPairScene(Scene):
         return self.state in ("scanning", "pairing")
 
     def draw(self, surface) -> None:
-        self.skin.panel(surface)
-        self.app.draw_header(surface, t("header.bluetooth"))
+        self._area = self._frame(surface, t("header.bluetooth"), self.state in ("scanning", "list"))
         now = time.time()
 
         if self.state == "scanning":
@@ -817,14 +886,14 @@ class BtPairScene(Scene):
             self._draw_message(surface, self.result_msg)
 
     def _draw_list(self, surface, status: str) -> None:
-        w, h = surface.get_size()
+        h = surface.get_height()
         skin = self.skin
+        area = self._area
         size = max(16, h // 18)
         line_h = skin.line_height(size) + 8
-        top_y = self.app.header_h + 8
-        skin.text(surface, status, (16, top_y), size, "dim", max_width=w - 32)
-        list_y = top_y + line_h
-        rows = max(1, (h - list_y - 2 * line_h) // line_h)
+        skin.text(surface, status, area.topleft, size, "dim", max_width=area.w)
+        list_y = area.y + line_h
+        rows = max(1, (area.bottom - list_y) // line_h)
 
         if self.index < self.top:
             self.top = self.index
@@ -835,18 +904,20 @@ class BtPairScene(Scene):
             y = list_y + (i - self.top) * line_h
             selected = i == self.index
             if selected:
-                skin.cursor_bar(surface, pygame.Rect(8, y - 2, w - 16, line_h))
+                skin.cursor_bar(surface, pygame.Rect(area.x, y - 2, area.w, line_h))
             tone = "selected" if selected else "normal"
-            skin.text(surface, self.devices[i][1], (16, y), size, tone, max_width=w - 32)
+            name = self.devices[i][1]
+            skin.text(surface, name, (area.x + 8, y), size, tone, max_width=area.w - 16)
 
         self._hint(surface, t("bt.hint"))
 
     def _draw_message(self, surface, text: str) -> None:
-        w, h = surface.get_size()
+        h = surface.get_height()
+        area = self._area
         size = max(18, h // 16)
-        y = self.app.header_h + h // 6
+        y = area.y + area.h // 6
         for line in text.split("\n"):
             drawn = self.skin.text(
-                surface, line, (w // 2, y), size, max_width=w - 32, align="center"
+                surface, line, (area.centerx, y), size, max_width=area.w, align="center"
             )
             y += drawn.height + 8

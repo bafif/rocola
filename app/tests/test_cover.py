@@ -131,7 +131,6 @@ def test_cover_is_fetched_once_per_song(polled_app):
 
 
 class FakeApp:
-    header_h = 48
     motion_only = False
     song_started = None
 
@@ -144,11 +143,11 @@ class FakeApp:
         self.state = state
         self.effects = EffectsGovernor()
 
-    def draw_header(self, surface, subtitle=""):
-        pass
-
     def marquee_title(self):
         return "ROCOLA"
+
+    def button_label(self, action):
+        return ""
 
 
 @pytest.fixture

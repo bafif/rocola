@@ -31,7 +31,6 @@ def make_app(size, display):
     app.theme = Theme.load(Config().theme_dir, display)
     app.skin = Skin(app.theme)
     app.effects = EffectsGovernor()
-    app.header_h = max(40, size[1] // 10)
     app.state = {  # paused, with a next song: the most lines "Now playing" can show
         "song": SONGS[0],
         "status": {"state": "pause", "volume": "100", "elapsed": "61", "duration": "245"},
@@ -74,9 +73,9 @@ def test_no_scene_cuts_text(size, display, monkeypatch):
     pygame.init()
     screen = pygame.display.set_mode(size)
     app = make_app(size, display)
-    bounds = screen.get_rect()
+    bounds = app.theme.safe_rect(size)  # inside the margin of the display, not just the screen
     cut = []
-    real = app.skin.text
+    real, real_legend = app.skin.text, app.skin.legend
 
     def recorded(surface, text, *args, **kwargs):
         rect = real(surface, text, *args, **kwargs)
@@ -84,7 +83,14 @@ def test_no_scene_cuts_text(size, display, monkeypatch):
             cut.append(f"{name}: {text[:30]!r} at {tuple(rect)}")
         return rect
 
+    def legend(surface, rect, items):
+        drawn = real_legend(surface, rect, items)
+        if not bounds.contains(drawn) or len(items) and not drawn.w:
+            cut.append(f"{name}: legend at {tuple(drawn)}")
+        return drawn
+
     app.skin.text = recorded
+    app.skin.legend = legend
     for name, scene in scenes(app, monkeypatch).items():
         if name in ("audio", "info", "btpair"):
             scene.on_enter()

@@ -77,7 +77,7 @@ SCREEN_TEXT_ARG = {
     "text": 1,
     "card": 3,
     "marquee": 2,
-    "draw_header": 1,
+    "panel_header": 2,
     "_draw_message": 1,
     "_draw_list": 1,
     "_hint": 1,
