@@ -31,8 +31,8 @@ que sigue."></p>
   vez, y «Probar controles» muestra qué manda cada botón.
 - **También monitores de tubo.** Monitores VGA y pantallas de arcade o TV de 15 kHz, con modelines fijos; el tipo de
   monitor se elige una vez, al instalar. Los 15 kHz dependen de la placa de video y su driver.
-- **La música queda.** Precargada en la imagen, o copiada desde un segundo pendrive apenas lo enchufás, a una
-  partición `/music` que sobrevive a las reinstalaciones.
+- **La música queda.** Precargada en la imagen, o copiada desde un segundo pendrive apenas lo enchufás. En la rocola
+  instalada vive en una partición `/music` que sobrevive a las reinstalaciones.
 
 ## Instalar
 

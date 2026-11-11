@@ -30,8 +30,8 @@ the title, the artist, the album, lamps for the progress and the volume, and the
   and «Test controls» shows what each button sends.
 - **CRTs too.** VGA monitors and 15 kHz arcade or TV screens, with fixed modelines; the monitor type is chosen
   once, when installing. 15 kHz depends on the video card and its driver.
-- **Music that stays.** Preloaded in the image, or copied from a second USB stick as soon as you plug it in, into a
-  `/music` partition that survives reinstalls.
+- **Music that stays.** Preloaded in the image, or copied from a second USB stick as soon as you plug it in. Once
+  installed, it lives in a `/music` partition that survives reinstalls.
 
 ## Install
 
