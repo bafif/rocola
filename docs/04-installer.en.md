@@ -38,7 +38,7 @@ doesn't send keys to a text console. Installing is a one-time thing; plugging in
 6. Cloning               → rsync of the live system (/) → ROOT (excludes /proc,/sys,/dev,/music…)
                            The preloaded music (and whatever was imported in the live session) goes
                            to the /music partition, if it has no music; it doesn't take up ROOT.
-7. Monitor type          → modern/VGA | 15 kHz  → it's persisted (see doc 05)
+7. Monitor type          → automatic | VGA | 15 kHz → saved in /etc/rocola/display.conf (doc 05)
 8. Bootloader            → GRUB BIOS (i386-pc, embedded in BIOSBOOT) + GRUB-EFI amd64
                            (BOOTX64.EFI on the ESP, --removable); /etc/fstab by UUID.
                            If the USB stick booted with the default entry (nomodeset)
@@ -68,8 +68,8 @@ doesn't send keys to a text console. Installing is a one-time thing; plugging in
 With `/music` on its own partition you can update the OS without losing the music. And the GPT layout with the BIOS
 Boot Partition plus the ESP lets the same disk boot via BIOS and via UEFI x64.
 
-In QEMU I tested the full unattended install (partitioning, cloning, GRUB) and the resulting disk boots to the UI via
-BIOS and via UEFI; the details are in [12 · Verification](12-verificacion.en.md).
+The full install (partitioning, cloning, GRUB) is tested in QEMU, and the resulting disk boots to the UI via BIOS
+and via UEFI (see [12 · Verification](12-verificacion.en.md)).
 
 ## Reinstalling / updating
 

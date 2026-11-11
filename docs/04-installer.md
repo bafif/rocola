@@ -40,7 +40,7 @@ con enchufar un teclado para eso.
 6. Clonado               → rsync del sistema vivo (/) → ROOT (excluye /proc,/sys,/dev,/music…)
                            La música precargada (y la importada en la sesión en vivo) va a
                            la partición /music, si no tiene música; no ocupa ROOT.
-7. Tipo de monitor       → moderno/VGA | 15 kHz  → se persiste (ver doc 05)
+7. Tipo de monitor       → automático | VGA | 15 kHz → se guarda en /etc/rocola/display.conf (doc 05)
 8. Bootloader            → GRUB BIOS (i386-pc, embebido en BIOSBOOT) + GRUB-EFI amd64
                            (BOOTX64.EFI en la ESP, --removable); /etc/fstab por UUID.
                            Si el pendrive arrancó con la entrada por defecto (nomodeset)
@@ -70,8 +70,8 @@ con enchufar un teclado para eso.
 Con `/music` aparte se puede actualizar el SO sin perder la música. Y el esquema GPT con la BIOS
 Boot Partition más la ESP hace que el mismo disco arranque por BIOS y por UEFI x64.
 
-En QEMU probé la instalación desatendida completa (particionar, clonar, GRUB) y el disco que queda
-arranca a la UI por BIOS y por UEFI; el detalle está en [12 · Verificación](12-verificacion.md).
+La instalación completa (particionar, clonar, GRUB) está probada en QEMU, y el disco que queda arranca
+a la UI por BIOS y por UEFI (ver [12 · Verificación](12-verificacion.md)).
 
 ## Reinstalar / actualizar
 
