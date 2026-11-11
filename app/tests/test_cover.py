@@ -134,7 +134,10 @@ class FakeApp:
     header_h = 48
 
     def __init__(self, theme, state):
+        from rocola.skin import Skin
+
         self.theme = theme
+        self.skin = Skin(theme)
         self.state = state
 
     def draw_header(self, surface, subtitle=""):
@@ -179,10 +182,13 @@ def test_now_playing_without_a_readable_cover(screen):
     assert scene._cover_img is None
 
 
-def test_now_playing_with_nothing_playing_shows_a_dash(screen, monkeypatch):
+def test_now_playing_with_nothing_playing_shows_a_dash(screen):
     texts = []
-    real = ui._fit
-    monkeypatch.setattr(ui, "_fit", lambda font, text, w: texts.append(text) or real(font, text, w))
-    scene = ui.NowPlayingScene(FakeApp(theme(), {"song": {}, "status": {}, "cover": None}))
+    app = FakeApp(theme(), {"song": {}, "status": {}, "cover": None})
+    real = app.skin.text
+    app.skin.text = lambda surface, text, *a, **k: (
+        texts.append(text) or real(surface, text, *a, **k)
+    )
+    scene = ui.NowPlayingScene(app)
     scene.draw(screen)
     assert texts[0] == "—"  # not "(desconocido)", the name of a file without one

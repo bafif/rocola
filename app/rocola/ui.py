@@ -1,8 +1,8 @@
-"""Escenas de la UI: biblioteca, now-playing y menú.
+"""Escenas de la UI: biblioteca, now-playing, menú y las pantallas del operador.
 
-Render simple (pensado para 320x240 / 640x480 en CRT y resoluciones mayores en
-VGA/moderno). Cada escena maneja acciones (ver input.py) y se dibuja sobre la
-superficie principal.
+Cada escena maneja acciones (ver input.py) y se dibuja con skin.py: dice qué va
+(una tarjeta, una línea de texto «dim», el cursor) y el tema decide cómo se ve.
+Ninguna escena nombra un color, una fuente ni una imagen.
 """
 
 from __future__ import annotations
@@ -19,33 +19,33 @@ from .i18n import t
 
 
 class Scene:
+    # True while something on it moves: the app then draws every frame instead of resting.
+    animating = False
+
     def __init__(self, app):
         self.app = app
-        self.theme = app.theme
+
+    @property
+    def skin(self):
+        return self.app.skin
 
     def on_enter(self) -> None: ...
 
     def handle(self, action: str) -> None: ...
 
-    def draw(self, surface) -> None: ...
+    def draw(self, surface) -> list | None:
+        """Draw the scene; the rects that changed, or None when the whole screen did."""
+
+    def _hint(self, surface, text: str) -> None:
+        """The line at the bottom that says what each button does here."""
+        w, h = surface.get_size()
+        size = max(13, h // 26)
+        y = h - self.skin.line_height(size) - 6
+        self.skin.text(surface, text, (16, y), size, "dim", max_width=w - 32)
 
 
 def _basename(path: str) -> str:
     return path.rsplit("/", 1)[-1] if path else t("library.unknown_song")
-
-
-def _fit(font, text: str, max_w: int) -> str:
-    """`text`, cut with "…" so it is at most `max_w` pixels wide in `font`."""
-    if font.size(text)[0] <= max_w:
-        return text
-    lo, hi = 0, len(text)  # longest prefix that fits, by bisection: few size() calls
-    while lo < hi:
-        mid = (lo + hi + 1) // 2
-        if font.size(text[:mid].rstrip() + "…")[0] <= max_w:
-            lo = mid
-        else:
-            hi = mid - 1
-    return text[:lo].rstrip() + "…"
 
 
 class LibraryScene(Scene):
@@ -57,7 +57,6 @@ class LibraryScene(Scene):
         self.songs: list[dict] = []
         self.stack: list[library.View] = [library.View("", [])]
         self.error: str | None = None
-        self._labels: dict = {}  # (text, width, color) -> fitted label, for draw()
 
     @property
     def view(self) -> library.View:
@@ -84,7 +83,6 @@ class LibraryScene(Scene):
         """Rebuild the views from the songs already loaded (after a language switch)."""
         if self.songs:
             self.stack = library.reopen(self.songs, self.stack)
-        self._labels.clear()
 
     def handle(self, action: str) -> None:
         view = self.view
@@ -127,42 +125,28 @@ class LibraryScene(Scene):
             self.app.mpd_safe(lambda c: c.play_uri(uri))
             self.app.set_scene("nowplaying")
 
-    def _label(self, font, text: str, max_w: int, color):
-        key = (text, max_w, color)
-        img = self._labels.get(key)
-        if img is None:
-            if len(self._labels) > 256:
-                self._labels.clear()
-            img = self._labels[key] = font.render(_fit(font, text, max_w), True, color)
-        return img
-
     def draw(self, surface) -> None:
         w, h = surface.get_size()
-        bg = self.theme.color("background")
-        surface.fill(bg)
+        skin = self.skin
+        skin.backdrop(surface)
         self.app.draw_header(surface, t("header.library"))
 
-        body = self.theme.font("body", max(16, h // 18))
-        line_h = body.get_height() + 6
+        size = max(16, h // 18)
+        line_h = skin.line_height(size) + 6
         top_y = self.app.header_h + 8
 
         if self.error:
-            msg = body.render(
-                t("library.mpd_error", error=self.error), True, self.theme.color("glow")
-            )
-            surface.blit(msg, (16, top_y))
+            text = t("library.mpd_error", error=self.error)
+            skin.text(surface, text, (16, top_y), size, "alert", max_width=w - 32)
             return
         if not self.songs:
-            msg = body.render(t("library.empty"), True, self.theme.color("on_dark_dim"))
-            surface.blit(msg, (16, top_y))
+            skin.text(surface, t("library.empty"), (16, top_y), size, "dim", max_width=w - 32)
             return
 
         view = self.view
         if len(self.stack) > 1:  # breadcrumb: where in the library we are
             path = " / ".join(v.title for v in self.stack[1:])
-            surface.blit(
-                self._label(body, path, w - 32, self.theme.color("on_dark_dim")), (16, top_y)
-            )
+            skin.text(surface, path, (16, top_y), size, "dim", max_width=w - 32)
             top_y += line_h
         rows = max(1, (h - top_y - 8) // line_h)
 
@@ -177,19 +161,16 @@ class LibraryScene(Scene):
             y = top_y + (i - view.top) * line_h
             selected = i == view.index
             if selected:
-                surface.fill(self.theme.color("glow"), (8, y - 2, w - 16, line_h))
-            color = bg if selected else self.theme.color("on_dark")
+                skin.cursor_bar(surface, pygame.Rect(8, y - 2, w - 16, line_h))
             text_w = w - 32
             if row.is_folder:  # how many songs it holds, at the right
-                count = self._label(
-                    body,
-                    str(len(row.songs)),
-                    w,
-                    bg if selected else self.theme.color("on_dark_dim"),
+                tone = "selected" if selected else "dim"
+                count = skin.text(
+                    surface, str(len(row.songs)), (w - 16, y), size, tone, align="right"
                 )
-                surface.blit(count, (w - 16 - count.get_width(), y))
-                text_w -= count.get_width() + 12
-            surface.blit(self._label(body, row.label, text_w, color), (16, y))
+                text_w -= count.width + 12
+            tone = "selected" if selected else "normal"
+            skin.text(surface, row.label, (16, y), size, tone, max_width=text_w)
 
 
 def _load_cover(data: bytes, side: int):
@@ -248,22 +229,19 @@ class NowPlayingScene(Scene):
 
     def draw(self, surface) -> None:
         w, h = surface.get_size()
-        surface.fill(self.theme.color("background"))
+        skin = self.skin
+        skin.backdrop(surface)
         self.app.draw_header(surface, t("header.nowplaying"))
 
         song = self.app.state.get("song", {})
         status = self.app.state.get("status", {})
-        big = self.theme.font("marquee", max(22, h // 12))
-        body = self.theme.font("body", max(16, h // 20))
+        big, body = max(22, h // 12), max(16, h // 20)
+        title = song.get("Title") or (_basename(song["file"]) if song.get("file") else "—")
         lines = [
-            (
-                song.get("Title") or (_basename(song["file"]) if song.get("file") else "—"),
-                big,
-                "on_dark",
-            ),
-            (song.get("Artist") or "", body, "on_dark_dim"),
-            (song.get("Album") or "", body, "on_dark_dim"),
-            (_status_line(status), body, "glow"),
+            (title, big, "normal", "marquee"),
+            (song.get("Artist") or "", body, "dim", "body"),
+            (song.get("Album") or "", body, "dim", "body"),
+            (_status_line(status), body, "alert", "body"),
         ]
         lines = [line for line in lines if line[0]]
 
@@ -281,17 +259,18 @@ class NowPlayingScene(Scene):
             surface.blit(cover, (m, area_top + (area_h - cover.get_height()) // 2))
             x = 2 * m + side
             text_w, centered = w - x - m, False
-            block = sum(font.get_height() + 10 for _t, font, _c in lines) - 10
+            block = sum(skin.line_height(size, role) + 10 for _t, size, _c, role in lines) - 10
             y = area_top + max(0, (area_h - block) // 2)
         else:  # cover on top, text below
             surface.blit(cover, ((w - cover.get_width()) // 2, area_top))
             x, text_w, centered = m, w - 2 * m, True
             y = area_top + cover.get_height() + m
 
-        for text, font, color in lines:
-            img = font.render(_fit(font, text, text_w), True, self.theme.color(color))
-            surface.blit(img, (x + (text_w - img.get_width()) // 2 if centered else x, y))
-            y += img.get_height() + 10
+        align = "center" if centered else "left"
+        for text, size, tone, role in lines:
+            pos = (x + text_w // 2 if centered else x, y)
+            drawn = skin.text(surface, text, pos, size, tone, role, text_w, align)
+            y += drawn.height + 10
 
 
 _STATES = {"play": "status.play", "pause": "status.pause", "stop": "status.stop"}
@@ -359,21 +338,24 @@ class MenuScene(Scene):
 
     def draw(self, surface) -> None:
         w, h = surface.get_size()
-        surface.fill(self.theme.color("background"))
+        skin = self.skin
+        skin.panel(surface)
         self.app.draw_header(surface, t("header.menu"))
-        font = self.theme.font("body", max(18, h // 16))
+        size = max(18, h // 16)
         y = self.app.header_h + h // 6
         for i, key in enumerate(self.options):
             selected = i == self.index
-            color = self.theme.color("glow") if selected else self.theme.color("on_dark")
+            tone = "alert" if selected else "normal"
             prefix = "> " if selected else "  "
-            img = font.render(prefix + t(f"menu.{key}"), True, color)
-            surface.blit(img, (w // 2 - img.get_width() // 2, y))
-            y += img.get_height() + 14
+            drawn = skin.text(
+                surface, prefix + t(f"menu.{key}"), (w // 2, y), size, tone, align="center"
+            )
+            y += drawn.height + 14
         if self.notice:
-            small = self.theme.font("body", max(14, h // 26))
-            img = small.render(_fit(small, self.notice, w - 32), True, self.theme.color("glow"))
-            surface.blit(img, (w // 2 - img.get_width() // 2, y + 10))
+            small = max(14, h // 26)
+            skin.text(
+                surface, self.notice, (w // 2, y + 10), small, "alert", "body", w - 32, "center"
+            )
 
 
 class AudioScene(Scene):
@@ -435,18 +417,18 @@ class AudioScene(Scene):
 
     def draw(self, surface) -> None:
         w, h = surface.get_size()
-        surface.fill(self.theme.color("background"))
+        skin = self.skin
+        skin.panel(surface)
         self.app.draw_header(surface, t("header.audio"))
 
-        body = self.theme.font("body", max(16, h // 18))
-        line_h = body.get_height() + 8
+        size = max(16, h // 18)
+        line_h = skin.line_height(size) + 8
         top_y = self.app.header_h + 8
         rows = max(1, (h - top_y - 2 * line_h) // line_h)  # reservar 1 línea para el hint
 
         if not self.available:
             text = t("audio.unavailable")
-            msg = body.render(_fit(body, text, w - 32), True, self.theme.color("glow"))
-            surface.blit(msg, (16, top_y))
+            skin.text(surface, text, (16, top_y), size, "alert", max_width=w - 32)
             return
 
         if self.index < self.top:
@@ -459,8 +441,8 @@ class AudioScene(Scene):
             y = top_y + (i - self.top) * line_h
             selected = i == self.index
             if selected:
-                surface.fill(self.theme.color("glow"), (8, y - 2, w - 16, line_h))
-            color = self.theme.color("background") if selected else self.theme.color("on_dark")
+                skin.cursor_bar(surface, pygame.Rect(8, y - 2, w - 16, line_h))
+            tone = "selected" if selected else "normal"
             if self._is_pair_row(i):
                 text = t("audio.pair")
             else:
@@ -469,15 +451,9 @@ class AudioScene(Scene):
                 # fuente con glifos no-ASCII (●/○ tofu con la fuente de fallback).
                 marker = "* " if s.is_default else "  "
                 text = f"{marker}[{s.kind}] {s.description}"
-            surface.blit(body.render(_fit(body, text, w - 32), True, color), (16, y))
+            skin.text(surface, text, (16, y), size, tone, max_width=w - 32)
 
-        hint = self.theme.font("body", max(13, h // 26))
-        himg = hint.render(
-            _fit(hint, t("audio.hint"), w - 32),
-            True,
-            self.theme.color("on_dark_dim"),
-        )
-        surface.blit(himg, (16, h - himg.get_height() - 6))
+        self._hint(surface, t("audio.hint"))
 
 
 class InfoScene(Scene):
@@ -496,28 +472,21 @@ class InfoScene(Scene):
 
     def draw(self, surface) -> None:
         w, h = surface.get_size()
-        surface.fill(self.theme.color("background"))
+        skin = self.skin
+        skin.panel(surface)
         self.app.draw_header(surface, t("header.info"))
 
-        font = self.theme.font("body", max(15, h // 22))
-        line_h = font.get_height() + 10
+        size = max(15, h // 22)
+        line_h = skin.line_height(size) + 10
         col = max(180, w // 3)
         x = 16
         y = self.app.header_h + 12
         for label, value in self.rows:
-            label_img = font.render(
-                _fit(font, f"{label}:", col - 8), True, self.theme.color("glow")
-            )
-            surface.blit(label_img, (x, y))
-            value_img = font.render(
-                _fit(font, str(value), w - x - col - 16), True, self.theme.color("on_dark")
-            )
-            surface.blit(value_img, (x + col, y))
+            skin.text(surface, f"{label}:", (x, y), size, "alert", max_width=col - 8)
+            skin.text(surface, str(value), (x + col, y), size, max_width=w - x - col - 16)
             y += line_h
 
-        hint = self.theme.font("body", max(13, h // 26))
-        himg = hint.render(t("info.hint"), True, self.theme.color("on_dark_dim"))
-        surface.blit(himg, (16, h - himg.get_height() - 6))
+        self._hint(surface, t("info.hint"))
 
 
 def describe_event(event) -> str | None:
@@ -573,22 +542,20 @@ class InputTestScene(Scene):
             self.app.set_scene("menu")
             return
         w, h = surface.get_size()
-        surface.fill(self.theme.color("background"))
+        skin = self.skin
+        skin.panel(surface)
         self.app.draw_header(surface, t("header.inputtest"))
 
-        font = self.theme.font("body", max(15, h // 22))
-        line_h = font.get_height() + 8
+        size = max(15, h // 22)
+        line_h = skin.line_height(size) + 8
         y = self.app.header_h + 12
-        surface.blit(font.render(t("input.intro"), True, self.theme.color("on_dark_dim")), (16, y))
+        skin.text(surface, t("input.intro"), (16, y), size, "dim", max_width=w - 32)
         y += line_h + 6
         for line in self.lines or [t("input.waiting")]:
-            surface.blit(font.render(line, True, self.theme.color("on_dark")), (16, y))
+            skin.text(surface, line, (16, y), size, max_width=w - 32)
             y += line_h
 
-        hint = self.theme.font("body", max(13, h // 26))
-        text = t("input.hint", seconds=round(self.IDLE_EXIT_S))
-        himg = hint.render(text, True, self.theme.color("on_dark_dim"))
-        surface.blit(himg, (16, h - himg.get_height() - 6))
+        self._hint(surface, t("input.hint", seconds=round(self.IDLE_EXIT_S)))
 
 
 class BtPairScene(Scene):
@@ -662,8 +629,12 @@ class BtPairScene(Scene):
             self.app.set_scene("audio")
         # en "pairing" ignoramos el input (está conectando / transicionando)
 
+    @property
+    def animating(self) -> bool:  # the countdown and the pairing advance in draw()
+        return self.state in ("scanning", "pairing")
+
     def draw(self, surface) -> None:
-        surface.fill(self.theme.color("background"))
+        self.skin.panel(surface)
         self.app.draw_header(surface, t("header.bluetooth"))
         now = time.time()
 
@@ -711,10 +682,11 @@ class BtPairScene(Scene):
 
     def _draw_list(self, surface, status: str) -> None:
         w, h = surface.get_size()
-        body = self.theme.font("body", max(16, h // 18))
-        line_h = body.get_height() + 8
+        skin = self.skin
+        size = max(16, h // 18)
+        line_h = skin.line_height(size) + 8
         top_y = self.app.header_h + 8
-        surface.blit(body.render(status, True, self.theme.color("on_dark_dim")), (16, top_y))
+        skin.text(surface, status, (16, top_y), size, "dim", max_width=w - 32)
         list_y = top_y + line_h
         rows = max(1, (h - list_y - 2 * line_h) // line_h)
 
@@ -727,19 +699,18 @@ class BtPairScene(Scene):
             y = list_y + (i - self.top) * line_h
             selected = i == self.index
             if selected:
-                surface.fill(self.theme.color("glow"), (8, y - 2, w - 16, line_h))
-            color = self.theme.color("background") if selected else self.theme.color("on_dark")
-            surface.blit(body.render(self.devices[i][1], True, color), (16, y))
+                skin.cursor_bar(surface, pygame.Rect(8, y - 2, w - 16, line_h))
+            tone = "selected" if selected else "normal"
+            skin.text(surface, self.devices[i][1], (16, y), size, tone, max_width=w - 32)
 
-        hint = self.theme.font("body", max(13, h // 26))
-        himg = hint.render(t("bt.hint"), True, self.theme.color("on_dark_dim"))
-        surface.blit(himg, (16, h - himg.get_height() - 6))
+        self._hint(surface, t("bt.hint"))
 
     def _draw_message(self, surface, text: str) -> None:
         w, h = surface.get_size()
-        font = self.theme.font("body", max(18, h // 16))
+        size = max(18, h // 16)
         y = self.app.header_h + h // 6
         for line in text.split("\n"):
-            img = font.render(line, True, self.theme.color("on_dark"))
-            surface.blit(img, (w // 2 - img.get_width() // 2, y))
-            y += img.get_height() + 8
+            drawn = self.skin.text(
+                surface, line, (w // 2, y), size, max_width=w - 32, align="center"
+            )
+            y += drawn.height + 8

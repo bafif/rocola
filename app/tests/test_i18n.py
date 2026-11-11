@@ -71,7 +71,17 @@ def test_every_key_the_code_asks_for_exists():
 
 
 # Calls that put text on screen, and which argument holds it.
-SCREEN_TEXT_ARG = {"render": 0, "draw_header": 1, "_draw_message": 1, "_draw_list": 1, "_fit": 1}
+SCREEN_TEXT_ARG = {
+    "render": 0,
+    "fit": 0,
+    "text": 1,
+    "card": 3,
+    "marquee": 2,
+    "draw_header": 1,
+    "_draw_message": 1,
+    "_draw_list": 1,
+    "_hint": 1,
+}
 
 
 def _has_words(node: ast.AST) -> bool:

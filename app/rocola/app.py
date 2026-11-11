@@ -13,19 +13,31 @@ from . import input as rin
 from .config import Config
 from .effects import EffectsGovernor
 from .mpdclient import MPDClient, MPDError
+from .skin import Skin
 from .theme import Theme
 
 # Root unit that runs the installer on its own console (os/rootfs-overlay).
 INSTALLER_UNIT = "rocola-installer.service"
 
+# Expose events: the window has to be drawn again although nothing in it changed.
+_EXPOSE = {getattr(pygame, n) for n in ("VIDEOEXPOSE", "WINDOWEXPOSED") if hasattr(pygame, n)}
+
 
 class RocolaApp:
+    # With nothing moving, the loop waits for input this long between turns (it wakes at
+    # once on a button) and draws again at least once a HEARTBEAT_S, for the scenes that
+    # count seconds (Bluetooth, the controls test).
+    IDLE_WAIT_MS = 250
+    HEARTBEAT_S = 1.0
+
     def __init__(self) -> None:
         self.config = Config.load()
         i18n.set_language(i18n.detect())
         self.mpd = MPDClient(self.config.mpd_host, self.config.mpd_port)
         self.input = rin.InputManager()
         self.theme: Theme | None = None
+        self.skin: Skin | None = None
+        self.dirty = True  # something changed since the last frame drawn
         self.effects = EffectsGovernor(self.config.effects)
         self.screen = None
         self.clock = None
@@ -57,6 +69,7 @@ class RocolaApp:
         self.clock = pygame.time.Clock()
 
         self.theme = Theme.load(self.config.theme_dir, self.config.display)
+        self.skin = Skin(self.theme)
         self.header_h = max(40, self.screen.get_height() // 10)
         # Los nombres de tecla de rocola.toml se resuelven con SDL: después de pygame.init().
         self.input.keymap = rin.build_keymap(self.config.keys)
@@ -86,21 +99,35 @@ class RocolaApp:
             return
 
         self.running = True
+        last_draw = 0.0
         while self.running:
-            self._handle_events()
+            animating = bool(self.scene and self.scene.animating)
+            self._handle_events(0 if animating or self.dirty else self.IDLE_WAIT_MS)
             # Dibujar PRIMERO: la UI aparece desde el primer frame, sin esperar a
             # MPD. Recién después sondeamos/(re)conectamos MPD, así un MPD lento o
             # caído no deja la pantalla en negro al arrancar (sólo la congela un
             # instante mientras reintenta, ya con la UI visible).
-            started = time.perf_counter()
-            if self.scene:
-                self.scene.draw(self.screen)
-            pygame.display.flip()
-            self.effects.frame((time.perf_counter() - started) * 1000)
+            now = time.monotonic()
+            if self.dirty or animating or now - last_draw >= self.HEARTBEAT_S:
+                self.dirty = False  # before draw(): a scene that switches sets it again
+                last_draw = now
+                started = time.perf_counter()
+                self._present(self.scene.draw(self.screen) if self.scene else None)
+                if animating:
+                    self.effects.frame((time.perf_counter() - started) * 1000)
             self._poll_state()
-            self.clock.tick(self.config.fps)
+            if animating:
+                self.clock.tick(self.config.fps)
 
         self._shutdown()
+
+    @staticmethod
+    def _present(rects: list | None) -> None:
+        """Send the frame to the screen: all of it, or only the rects a scene says changed."""
+        if rects is None:
+            pygame.display.flip()
+        elif rects:
+            pygame.display.update(rects)
 
     def _render_screenshot(self, path: str) -> None:
         """Dibuja la escena y guarda un PNG. Tolera que MPD no esté disponible."""
@@ -116,8 +143,12 @@ class RocolaApp:
         except (OSError, pygame.error) as exc:
             print(f"[rocola] no se pudo guardar screenshot: {exc}")
 
-    def _handle_events(self) -> None:
-        for event in pygame.event.get():
+    def _handle_events(self, wait_ms: int = 0) -> None:
+        events = pygame.event.get()
+        if not events and wait_ms > 0:  # resting: sleep until input or the timeout
+            first = pygame.event.wait(wait_ms)
+            events = ([first] if first.type != pygame.NOEVENT else []) + pygame.event.get()
+        for event in events:
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type in (
@@ -127,6 +158,7 @@ class RocolaApp:
                 pygame.JOYHATMOTION,
             ):
                 action = self.input.translate(event)
+                self.dirty = True
                 record = getattr(self.scene, "record", None)
                 if record is not None:
                     record(event, action)  # la prueba de controles recibe todo, crudo
@@ -134,6 +166,8 @@ class RocolaApp:
                     self.scene.handle(action)
             elif event.type in (pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED):
                 self.input.init_joysticks()
+            elif event.type in _EXPOSE:
+                self.dirty = True
 
     def _shutdown(self) -> None:
         try:
@@ -147,6 +181,7 @@ class RocolaApp:
         if scene is not None:
             self.scene = scene
             scene.on_enter()
+            self.dirty = True
 
     def open_menu(self) -> None:
         self.set_scene("menu")
@@ -180,8 +215,10 @@ class RocolaApp:
                 self.mpd.connect()
                 self._db_update = None
                 self._on_mpd_connected()  # recién conectado: poblar la biblioteca
-            self.state["status"] = self.mpd.status()
-            self.state["song"] = self.mpd.current_song()
+            status, song = self.mpd.status(), self.mpd.current_song()
+            if status != self.state["status"] or song != self.state["song"]:
+                self.dirty = True
+            self.state["status"], self.state["song"] = status, song
             self._update_cover()
             if now - self._last_stats >= 5.0:
                 self._last_stats = now
@@ -208,21 +245,12 @@ class RocolaApp:
         lib = self.scenes.get("library")
         if lib is not None:
             lib.refresh()
+            self.dirty = True
 
     # --- header (branding) -----------------------------------------------
     def draw_header(self, surface, subtitle: str = "") -> None:
-        w = surface.get_width()
-        surface.fill(self.theme.color("surface"), (0, 0, w, self.header_h))
-        x = 12
-        title_font = self.theme.font("marquee", self.header_h // 2)
-        title = self.theme.title_for(i18n.language())
-        timg = title_font.render(title, self.theme.antialias, self.theme.color("text"))
-        surface.blit(timg, (x, (self.header_h - timg.get_height()) // 2))
-        if subtitle:
-            sfont = self.theme.font("body", max(14, self.header_h // 3))
-            simg = sfont.render(subtitle, self.theme.antialias, self.theme.color("text_dim"))
-            sy = (self.header_h - simg.get_height()) // 2
-            surface.blit(simg, (w - simg.get_width() - 12, sy))
+        rect = pygame.Rect(0, 0, surface.get_width(), self.header_h)
+        self.skin.marquee(surface, rect, self.theme.title_for(i18n.language()), subtitle)
 
     # --- instalador -------------------------------------------------------
     def launch_installer(self) -> str | None:
@@ -255,6 +283,7 @@ class RocolaApp:
         """Switch every screen to `lang` and save it (language.conf) for the next start."""
         i18n.set_language(lang)
         i18n.save(lang)
+        self.dirty = True
         lib = self.scenes.get("library")
         if lib is not None:
             lib.relabel()  # its rows were labeled in the old language

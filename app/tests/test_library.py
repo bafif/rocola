@@ -220,15 +220,16 @@ def test_scene_keeps_the_place_when_mpd_fails():
 def test_long_labels_are_cut_to_the_width():
     import pygame
 
-    from rocola.ui import _fit
+    from rocola.skin import Skin
+    from rocola.theme import Theme
 
     pygame.font.init()
-    font = pygame.font.Font(None, 16)
+    skin = Skin(Theme())
     text = "We Will Rock You — remastered 2011 version with a very long title"
-    fitted = _fit(font, text, 120)
+    fitted = skin.fit(text, 120, 16)
     assert fitted.endswith("…")
-    assert font.size(fitted)[0] <= 120
-    assert _fit(font, "Jazz", 120) == "Jazz"
+    assert skin.font("body", 16).size(fitted)[0] <= 120
+    assert skin.fit("Jazz", 120, 16) == "Jazz"
 
 
 def test_scene_does_not_reload_the_library_on_every_visit():

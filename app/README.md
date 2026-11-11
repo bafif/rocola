@@ -17,6 +17,7 @@ rocola/
   library.py    vistas de la biblioteca por artista y álbum (sin pygame)
   theme.py      temas v2: colores, fuentes, piezas, efectos y variantes por pantalla
   effects.py    nivel de efectos y la baja automática en una PC lenta
+  skin.py       dibuja marquesina, tarjetas, cursor, lámparas, disco y panel con el tema
   config.py     ajustes (host MPD, resolución, tema…)
   audio.py      salidas de PipeWire (pactl)
   bt.py         emparejar Bluetooth (bluetoothctl)

@@ -17,6 +17,7 @@ rocola/
   library.py    library views by artist and album (no pygame)
   theme.py      themes v2: colors, fonts, pieces, effects and per-display variants
   effects.py    effects level, lowered by itself on a slow PC
+  skin.py       draws marquee, cards, cursor, lamps, record and panel from the theme
   config.py     settings (MPD host, resolution, theme…)
   audio.py      PipeWire outputs (pactl)
   bt.py         Bluetooth pairing (bluetoothctl)
