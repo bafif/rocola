@@ -18,7 +18,7 @@ Una placa de audio «por defecto» no alcanza:
   placa sea la correcta.
 - El Bluetooth no es una placa ALSA: necesita un servidor de audio que lo enrute.
 
-## Cómo lo resolví
+## Cómo funciona
 
 El audio pasa por **PipeWire** (con WirePlumber y `pipewire-pulse`), que corre en la sesión
 gráfica del usuario `rocola`. **MPD**, el motor de la rocola, corre en esa misma sesión y no como
@@ -57,8 +57,8 @@ sobrevive a un reinicio.
 En el menú (tecla **F10** o el botón de menú):
 
 - **Salida de audio** lista los sinks de PipeWire y marca el actual con `*`. Con las flechas te
-  movés, y Enter fija la salida y reproduce un tono de prueba para confirmarlo de oído. Al final
-  está «+ Emparejar Bluetooth…».
+  movés, y Enter fija la salida y reproduce un sonido de prueba (una voz corta de alsa-utils) para
+  confirmarlo de oído. Al final está «+ Emparejar Bluetooth…».
 - **Información del sistema** muestra la salida de audio activa, el driver de audio
   (`/proc/asound/modules`) y el de video, la resolución, la IP, el kernel y algunas cosas más.
   Sirve para diagnosticar y para saber a qué IP conectarse por SSH.
@@ -74,7 +74,7 @@ En el menú (tecla **F10** o el botón de menú):
   `connect`, cada uno con su propio `bluetoothctl`, que espera la respuesta de BlueZ antes de
   salir; el emparejamiento es «just works», sin PIN. Funciona como usuario `rocola`, sin root, gracias
   a la política de D-Bus del grupo `bluetooth`. Al volver, el sink Bluetooth aparece en el
-  selector: elegilo y probá el tono.
+  selector: elegilo y probá el sonido.
 - Por SSH o desde la consola está `rocola-bt-pair` (una TUI con whiptail), que hace el mismo
   emparejamiento sin la interfaz gráfica.
 - Ojo con el hardware: muchas PCs de escritorio viejas no traen Bluetooth y hace falta un dongle
@@ -93,7 +93,7 @@ $RUN pactl info                      # ¿PipeWire responde?
 $RUN pactl list short sinks          # sinks disponibles (nombres estables)
 $RUN pactl get-default-sink          # salida actual
 $RUN pactl set-default-sink NOMBRE   # cambiar salida a mano
-$RUN paplay --device=NOMBRE "/music/01 - Tono de prueba La (440 Hz).wav"
+$RUN paplay --device=NOMBRE /usr/share/sounds/alsa/Front_Center.wav   # sonido de prueba
 $RUN wpctl status                    # árbol de PipeWire/WirePlumber
 $RUN rocola-audio-default            # re-aplicar la heurística / audio.conf
 
@@ -105,10 +105,10 @@ mpc status; mpc outputs              # estado de MPD
 Si no se escucha nada, en este orden:
 
 1. ¿Responde `pactl info`? Si no, PipeWire no levantó en la sesión.
-2. ¿El sink por defecto es el correcto? (`get-default-sink`). Cambialo y probá el tono.
+2. ¿El sink por defecto es el correcto? (`get-default-sink`). Cambialo y probá el sonido.
 3. ¿El mixer de hardware está en mute? `amixer -c N` y después `sset Master/Speaker/Headphone
    unmute 80%` (la sesión ya lo intenta al arrancar, por las dudas).
 4. Si es Bluetooth, ¿hay adaptador? (`bluetoothctl list`). Sin dongle no hay Bluetooth.
 
 Siguiente: [01 · Visión general](01-overview.md) · Volver a la
-[documentación](../README.es.md#documentación).
+[documentación](../README.es.md#más-documentación).

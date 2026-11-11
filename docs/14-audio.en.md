@@ -17,7 +17,7 @@ A "default" sound card isn't enough:
   right card.
 - Bluetooth isn't an ALSA card: it needs a sound server to route it.
 
-## How I solved it
+## How it works
 
 Audio goes through **PipeWire** (with WirePlumber and `pipewire-pulse`), which runs in the `rocola`
 user's graphical session. **MPD**, the jukebox engine, runs in that same session rather than as a
@@ -55,8 +55,8 @@ reboot.
 In the menu (**F10** key or the menu button):
 
 - **Audio output** lists PipeWire's sinks and marks the current one with `*`. Move with the arrows;
-  Enter sets the output and plays a test tone so you can confirm it by ear. At the bottom there's
-  "+ Pair Bluetooth…".
+  Enter sets the output and plays a test sound (a short voice clip from alsa-utils) so you can
+  confirm it by ear. At the bottom there's "+ Pair Bluetooth…".
 - **System info** shows the active audio output, the audio driver (`/proc/asound/modules`)
   and the video driver, the resolution, the IP, the kernel and a few other things. It's useful for
   troubleshooting and for knowing which IP to SSH into.
@@ -71,7 +71,7 @@ In the menu (**F10** key or the menu button):
   Enter) that scans for devices, lists them and runs `pair`, `trust` and `connect`, each with its own
   `bluetoothctl`, which waits for BlueZ's reply before exiting; pairing is "just works", no PIN. It
   works as the `rocola` user, without root, thanks to the D-Bus policy for the `bluetooth` group. When
-  you go back, the Bluetooth sink shows up in the selector: pick it and try the tone.
+  you go back, the Bluetooth sink shows up in the selector: pick it and try the test sound.
 - Over SSH or from the console there's `rocola-bt-pair` (a whiptail TUI), which does the same pairing
   without the graphical interface.
 - Watch out for the hardware: many old desktop PCs don't have Bluetooth and you'll need a USB dongle
@@ -89,8 +89,8 @@ RUN="runuser -u rocola -- env XDG_RUNTIME_DIR=/run/user/$U"   # there's no sudo 
 $RUN pactl info                      # is PipeWire responding?
 $RUN pactl list short sinks          # available sinks (stable names)
 $RUN pactl get-default-sink          # current output
-$RUN pactl set-default-sink NOMBRE   # change the output by hand
-$RUN paplay --device=NOMBRE "/music/01 - Tono de prueba La (440 Hz).wav"
+$RUN pactl set-default-sink NAME     # change the output by hand
+$RUN paplay --device=NAME /usr/share/sounds/alsa/Front_Center.wav   # test sound
 $RUN wpctl status                    # PipeWire/WirePlumber tree
 $RUN rocola-audio-default            # re-apply the heuristic / audio.conf
 
@@ -102,10 +102,10 @@ mpc status; mpc outputs              # MPD status
 If you hear nothing, in this order:
 
 1. Does `pactl info` respond? If not, PipeWire didn't start in the session.
-2. Is the default sink the right one? (`get-default-sink`). Change it and try the tone.
+2. Is the default sink the right one? (`get-default-sink`). Change it and try the test sound.
 3. Is the hardware mixer muted? `amixer -c N` and then `sset Master/Speaker/Headphone
    unmute 80%` (the session already tries this at startup, just in case).
 4. If it's Bluetooth, is there an adapter? (`bluetoothctl list`). No dongle, no Bluetooth.
 
 Next: [01 · Overview](01-overview.en.md) · Back to the
-[documentation](../README.md#documentation).
+[documentation](../README.md#more-documentation).
