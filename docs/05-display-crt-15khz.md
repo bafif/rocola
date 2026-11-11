@@ -2,9 +2,8 @@
 
 *[English](05-display-crt-15khz.en.md) · Español*
 
-La rocola tiene que andar en **monitores modernos o VGA (31 kHz o más)** y en **CRT de arcade o TV
-(15 kHz)** sin configurar nada después de instalar. Es la parte más delicada del proyecto, y acá
-cuento cómo la encaré y hasta dónde llega.
+La rocola anda en **monitores modernos o VGA (31 kHz o más)** y en **CRT de arcade o TV (15 kHz)**
+sin configurar nada después de instalar: el tipo de monitor se elige una vez, en el instalador.
 
 ## El problema
 
@@ -35,6 +34,18 @@ arranque → rocola-display-setup
               ├─ auto / vga → config VGA segura; Xorg usa los modos del EDID
               └─ crt15      → modelines 15 kHz fijos (NTSC o PAL según TV_STANDARD)
 ```
+
+## Driver de video
+
+- La entrada por defecto del menú de arranque, «Rocola», arranca con `nomodeset`: Xorg usa `fbdev`
+  sobre el framebuffer del firmware, que anda sin el driver de la placa. La resolución es la que deja
+  GRUB (por ejemplo 800×600, con 32 o 16 bits de color).
+- «Rocola — GPU / CRT 15 kHz (KMS)» carga el driver de la placa y Xorg usa `modesetting`: toma la
+  resolución del monitor, y es la que hace falta para 15 kHz.
+- El disco instalado arranca con el mismo video que el pendrive en el momento de instalar; con 15 kHz,
+  siempre con KMS.
+- En algunas APU de AMD (Picasso, Raven2) el driver `amdgpu` no anda con el kernel i386: ahí va la
+  entrada por defecto.
 
 ## Componentes
 

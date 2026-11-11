@@ -2,9 +2,8 @@
 
 *English · [Español](05-display-crt-15khz.md)*
 
-The jukebox has to work on **modern or VGA monitors (31 kHz or higher)** and on **arcade CRTs or TVs
-(15 kHz)** with no configuration after install. This is the trickiest part of the project, and here
-I explain how I approached it and where its limits are.
+The jukebox works on **modern or VGA monitors (31 kHz or higher)** and on **arcade CRTs or TVs
+(15 kHz)** with no configuration after install: the monitor type is chosen once, in the installer.
 
 ## The problem
 
@@ -36,6 +35,18 @@ boot → rocola-display-setup
           ├─ auto / vga → safe VGA config; Xorg uses the EDID modes
           └─ crt15      → fixed 15 kHz modelines (NTSC or PAL per TV_STANDARD)
 ```
+
+## Video driver
+
+- The boot menu's default entry, "Rocola", boots with `nomodeset`: Xorg uses `fbdev` on the firmware's
+  framebuffer, which works without the video card's driver. The resolution is the one GRUB leaves (for
+  example 800×600, at 32 or 16 bits of color).
+- "Rocola — GPU / CRT 15 kHz (KMS)" loads the video card's driver and Xorg uses `modesetting`: it takes
+  the monitor's resolution, and it's the one 15 kHz needs.
+- The installed disk boots with the same video as the stick had when installing; with 15 kHz, always
+  with KMS.
+- On some AMD APUs (Picasso, Raven2) the `amdgpu` driver doesn't work with the i386 kernel: use the
+  default entry there.
 
 ## Components
 
