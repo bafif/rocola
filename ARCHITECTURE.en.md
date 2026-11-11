@@ -2,7 +2,8 @@
 
 *English · [Español](ARCHITECTURE.md)*
 
-This document describes the system design: how the image is built, how it boots, how it gets installed, and how the subsystems fit together. For the details of each part, see [`docs/`](docs/).
+This document describes the system design: how the image is built, how it boots, how it gets installed,
+and how the subsystems fit together. For the details of each part, see [`docs/`](docs/).
 
 ## 1. Goal and constraints
 
@@ -85,7 +86,7 @@ rocola-install (whiptail, as root on tty8; keyboard-driven)
   4. Partitions the target (GPT):
         BIOSBOOT (ef02, BIOS) · ESP (FAT32, UEFI) · ROOT (ext4) · DATOS /music (ext4, persistent)
   5. Clones the OS:  rsync of the live system (/)  →  ROOT; the preloaded music → /music
-  6. Asks for the monitor type (modern/VGA | 15 kHz) → persists the choice
+  6. Asks for the monitor type (auto | VGA | 15 kHz) → persists the choice
   7. Installs GRUB on the target (BIOS + UEFI x64), generates fstab; same video mode as the live system
   8. Reboot → the PC boots the jukebox on its own from disk
 ```
@@ -153,5 +154,14 @@ Details: [docs/08-music-management.en.md](docs/08-music-management.en.md).
 
 ## 9. Repository layout
 
-See [README.es.md](README.md#layout). Each top-level folder maps to a
-subsystem of this architecture and has its matching doc in [`docs/`](docs/).
+```
+os/         the OS: Containerfile (FROM i386/debian:bookworm) + files overlaid on the root filesystem
+image/      packaging: rootfs -> bootable hybrid ISO (squashfs + GRUB BIOS/UEFI)
+app/        the jukebox UI (Python + pygame/SDL2), MPD client, input, themes, tests
+installer/  guided installer (whiptail TUI) that clones the system to disk
+display/    15 kHz modelines and the VGA/CRT video setup
+docs/       one document per subsystem
+```
+
+Each top-level folder maps to a subsystem of this architecture and has its matching document in
+[`docs/`](docs/).

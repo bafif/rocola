@@ -86,7 +86,7 @@ rocola-install (whiptail, como root en tty8; se maneja con teclado)
   4. Particiona destino (GPT):
         BIOSBOOT (ef02, BIOS) · ESP (FAT32, UEFI) · ROOT (ext4) · DATOS /music (ext4, persistente)
   5. Clona el SO:  rsync del sistema vivo (/)  →  ROOT; la música precargada → /music
-  6. Pregunta tipo de monitor (moderno/VGA | 15 kHz) → persiste la elección
+  6. Pregunta el tipo de monitor (auto | VGA | 15 kHz) → persiste la elección
   7. Instala GRUB en el destino (BIOS + UEFI x64), genera fstab; mismo modo de video que el live
   8. Reboot → la PC arranca la rocola sola desde el disco
 ```
@@ -153,5 +153,14 @@ Detalle: [docs/08-music-management.md](docs/08-music-management.md).
 
 ## 9. Estructura del repositorio
 
-Ver [README.es.md](README.es.md#cómo-está-organizado). Cada carpeta de nivel superior mapea a un
-subsistema de esta arquitectura y tiene su doc correspondiente en [`docs/`](docs/).
+```
+os/         el SO: Containerfile (FROM i386/debian:bookworm) + archivos que se superponen a la raíz
+image/      empaquetado: rootfs -> ISO híbrida booteable (squashfs + GRUB BIOS/UEFI)
+app/        la UI de la rocola (Python + pygame/SDL2), cliente MPD, entrada, temas, tests
+installer/  instalador guiado (TUI con whiptail) que clona el sistema al disco
+display/    modelines de 15 kHz y la configuración de video VGA/CRT
+docs/       un documento por subsistema
+```
+
+Cada carpeta de nivel superior corresponde a un subsistema de esta arquitectura y tiene su documento en
+[`docs/`](docs/).

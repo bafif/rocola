@@ -1,189 +1,105 @@
+<div align="center">
+
 # Rocola
 
-*English · [Español](README.es.md)*
+**Turn an old desktop PC into a jukebox with a single USB stick.**<br>
+[Español](README.es.md) · [Download](https://github.com/bafif/rocola/releases/latest) · [Install](#install) ·
+[How to use it](#how-to-use-it)
 
-> Turn any old desktop PC into a dedicated **jukebox** with a single USB stick.
+</div>
 
-**Rocola** is a minimal operating system based on **Debian i386** that ships as a **bootable USB
-image**. Boot an old PC from the stick and a jukebox comes up, ready to play. When you decide to,
-a guided installer **clones** the system to the internal disk, so the machine becomes a permanent
-jukebox that **starts on power-on**, is driven with **arcade controls**, and works on **modern
-monitors and CRTs**, including 15 kHz arcade/TV screens.
+Boot an old PC from the stick and a full-screen jukebox comes up, ready to play. When you decide to, a guided
+installer copies it to the internal disk: from then on the PC starts straight into the jukebox, driven with arcade
+controls, on a modern monitor or a CRT. It plays through analog, HDMI, USB or Bluetooth speakers and speaks English
+and Spanish.
 
-| Library | Now playing |
-|---|---|
-| ![Library by artist](docs/screenshots/ui-library.png) | ![Now playing screen with the album cover](docs/screenshots/ui-nowplaying.png) |
-| **Menu** | **Controls test** |
-| ![Menu screen](docs/screenshots/ui-menu.png) | ![Controls test screen](docs/screenshots/ui-inputtest.png) |
+<p align="center"><img src="docs/screenshots/ui-library.png" width="400" alt="The library: the artists as paper
+cards in two columns, with codes A1 to A8, under the ROCOLA marquee and a row of lamps."> <img
+src="docs/screenshots/ui-nowplaying.png" width="400" alt="Now playing: a 45 record on the left, and on the right
+the title, the artist, the album, lamps for the progress and the volume, and the next song."></p>
 
-The screenshots use an invented demo library.
+## Why Rocola
 
-## Features
-
-- **All-in-one USB stick**: runs a live jukebox without touching the PC's disk (the live system
-  runs from RAM).
-- **Guided, manual installer**: clones the system to the internal disk only when you ask, with an
-  explicit confirmation. It never formats a disk on its own, and reinstalling can keep the music
-  partition.
-- **Old hardware first**: 32-bit (i386) CPUs and around 2 GB of RAM. Boots with **BIOS** (32- and
-  64-bit PCs) and **UEFI x64**.
-- **CRT support**: VGA (31 kHz) and 15 kHz arcade/TV monitors through fixed modelines,
-  with VGA as the safe default. The monitor type is chosen once, at install time.
-- **Arcade controls**: USB encoders that show up as a keyboard or as a joystick both work, at the
-  same time, with no setup.
-- **Its own UI**: a full-screen jukebox interface written with **SDL2** (Python + pygame) on top
-  of **MPD**. Browse the library by artist and album, with album covers on the now playing
-  screen. Logo, fonts and colors come from a replaceable theme.
-- **Audio outputs**: analog, HDMI, USB and **Bluetooth** speakers through PipeWire, selectable
-  from the UI; on an installed system the choice survives reboots.
-- **English and Spanish**: one image with both languages. The UI and the installer follow the boot
-  entry or the system's language, and the menu switches them; an installed jukebox remembers the
-  choice.
-- **Your music**: preloaded in the image, plus import from a second USB stick into a persistent
+- **Try it without touching the disk.** The live system runs in RAM on top of the stick's read-only image: nothing
+  is written to the PC until you install.
+- **It never wipes a disk on its own.** The installer opens only from the menu, and only from the stick; you pick
+  the disk and type a confirmation word. Reinstalling can keep the music.
+- **Made for old PCs.** Debian i386 with a PAE kernel and a non-PAE fallback, about 2 GB of RAM, and boot over BIOS
+  (32- and 64-bit PCs) or UEFI x64.
+- **Arcade controls with no setup.** Encoders that show up as a keyboard or as a joystick work at the same time,
+  and «Test controls» shows what each button sends.
+- **CRTs too.** VGA monitors and 15 kHz arcade or TV screens, with fixed modelines; the monitor type is chosen
+  once, when installing. 15 kHz depends on the video card and its driver.
+- **Music that stays.** Preloaded in the image, or copied from a second USB stick as soon as you plug it in, into a
   `/music` partition that survives reinstalls.
+
+## Install
+
+You need a USB stick of 1 GB or more (**it gets erased**).
+
+1. Download `rocola-i386-<version>.iso` (about 671 MiB) and its `SHA256SUMS.txt` from the
+   [latest release](https://github.com/bafif/rocola/releases/latest).
+2. Write it to the stick:
+
+   | Tool | How |
+   |---|---|
+   | Rufus (Windows) | «Write in DD Image mode» ([step by step](docs/13-rufus-windows.en.md)) |
+   | Ventoy | install Ventoy on the stick once, then copy the `.iso` onto it |
+   | balenaEtcher | «Flash from file», the `.iso`, the stick, «Flash» |
+   | `dd` (Linux) | `sudo dd if=rocola-i386-<version>.iso of=/dev/sdX bs=4M conv=fsync` |
+
+On a UEFI PC, turn Secure Boot off: the boot loader isn't signed. Checking the download and the stick, and trying
+it in QEMU: [Flashing the USB stick](docs/10-flashing-usb.en.md).
+
+### Building the image
+
+With Podman (rootless is enough) and `make`; everything else runs in containers:
+
+```sh
+git clone https://github.com/bafif/rocola && cd rocola
+make rootfs                # the OS as a container image (FROM i386/debian:bookworm)
+make image                 # out/rocola-i386.img: a hybrid ISO for BIOS and UEFI x64
+make flash DEV=/dev/sdX    # writes it to the stick (erases it)
+```
+
+Details in [Build pipeline](docs/02-build-pipeline.en.md).
+
+## How to use it
+
+1. **Boot the old PC from the stick**, from its boot menu or by changing the boot order. «Rocola — English» starts
+   it in English; «Rocola», in Spanish.
+2. **Play music.** Plug in a second stick with songs: they are copied and show up in the library. The arrows and
+   Enter move and pick, F10 opens the menu, and the arcade buttons are in
+   [Arcade controls](docs/06-arcade-controls.en.md).
+3. **Install it.** Plug in a keyboard, open the menu and choose «Install to disk». Pick the language and the disk
+   (14 GB or more), type the confirmation word and pick the monitor type. Remove the stick and reboot: from then on
+   the PC starts straight into the jukebox.
 
 ## Status
 
-Beta. Verified end to end in QEMU/KVM: the ISO boots to the full-screen UI with MPD connected, over
-**BIOS and UEFI x64**, and the installer clones to an empty disk that then boots on its own, also
-over BIOS and UEFI. Songs on a USB stick plugged in while it runs show up in the library on their
-own. The live system was also booted on real hardware from Ventoy. Not yet validated
-on physical hardware: 15 kHz video on a real CRT, a real arcade encoder, and music import from a
-second USB stick. Details and the bugs found along the way:
-[docs/12-verificacion.en.md](docs/12-verificacion.en.md).
+- **Beta.** In QEMU/KVM it works end to end: it boots to the jukebox over BIOS and UEFI x64, the installer clones
+  it to an empty disk that then boots on its own, songs from a second stick show up in the library, and
+  reinstalling keeps the music.
+- **On real hardware** the live system boots from a Ventoy stick. Not tried there yet: 15 kHz on a CRT, an arcade
+  encoder, importing from a second stick and reinstalling while keeping the music.
 
-## Download and flash (no build needed)
+## More documentation
 
-1. Download `rocola-i386-<version>.iso` (about 671 MiB) from
-   [Releases](https://github.com/bafif/rocola/releases).
-2. Optionally, check it against the release's `SHA256SUMS.txt`:
-   - Linux / macOS: `sha256sum -c SHA256SUMS.txt`
-   - Windows (PowerShell): `Get-FileHash rocola-i386-*.iso -Algorithm SHA256`
-3. Write it to a USB stick of 1 GB or more (**the stick is erased**):
-
-   | Tool | How |
-   |------|-----|
-   | **Rufus** (Windows) | Select the stick and the `.iso`, then choose **"Write in DD Image mode"**. Step-by-step guide: [docs/13](docs/13-rufus-windows.en.md). |
-   | **Ventoy** (Windows/Linux) | Install Ventoy on the stick once, then just **copy** the `.iso` to it. |
-   | **balenaEtcher** | *Flash from file*, pick the `.iso` and the stick, *Flash*. |
-   | **dd** (Linux) | `make flash DEV=/dev/sdX` from a clone of this repo, or `dd` by hand. |
-
-The file is a hybrid ISO 9660 image (isohybrid): the same `.iso` boots over BIOS and UEFI x64 and
-can be written with any of the tools above.
-
-## Use
-
-1. Plug the stick into the old PC and boot from it (change the boot order if needed). For the
-   jukebox in English, pick **Rocola — English** in the boot menu; the plain **Rocola** entry
-   starts it in Spanish.
-2. The live jukebox starts: music can play right away. The menu's **Language / Idioma** option
-   switches between English and Spanish at any time.
-3. To install it, plug in a keyboard (the installer asks you to type a confirmation word), open the
-   menu (**F10** or arcade button 3), choose **Install to disk**, pick the language, the
-   target disk (**14 GB or more**: about 13 GB for the system, the rest for music), confirm, pick the
-   monitor type (modern/VGA or 15 kHz) and reboot.
-4. Remove the stick: from now on the PC boots straight into the jukebox.
-
-Default controls (keyboard / arcade):
-
-| Action | Keyboard | Joystick (SDL button index) |
-|--------|----------|-----------------------------|
-| Move | arrow keys | stick / D-pad |
-| Select / play | Enter | 0 |
-| Back | Esc / Backspace | 1 |
-| Play / pause | Space | 2 |
-| Menu | F10 | 3 |
-| Previous / next | P / N | 4 / 5 |
-| Volume − / + | − / + | 6 / 7 |
-
-More in [docs/06-arcade-controls.en.md](docs/06-arcade-controls.en.md).
-
-## Adding music
-
-- **Preloaded**: put folders in `os/rootfs-overlay/opt/rocola/music/` before `make rootfs`.
-- **From USB**: plug in a stick with songs; the jukebox detects it and imports them into the data
-  partition (`/music`). See [docs/08-music-management.en.md](docs/08-music-management.en.md).
-
-## Build from source
-
-Requirements: **Podman** (rootless is enough) and `make`. Everything else runs inside containers;
-no `debootstrap`, loop devices or `--privileged` are needed, so it also works in WSL2 and CI, and no
-container mounts the repository: the rootfs and the image go in and out with `podman cp`. On x86-64
-hosts the i386 containers run natively; on other hosts, register binfmt once (see
-[docs/02-build-pipeline.en.md](docs/02-build-pipeline.en.md)).
-
-```bash
-make rootfs                        # build the OS as a container image (FROM i386/debian:bookworm)
-make image                         # out/rocola-i386.img: hybrid ISO, BIOS + UEFI x64
-make release VERSION=v0.1.2-beta   # out/release/rocola-i386-<version>.iso + SHA256SUMS.txt
-make flash DEV=/dev/sdX            # DESTRUCTIVE: writes the image to the stick
-```
-
-`make image` reuses the OS image if it already exists; run `make rootfs` again after changing
-anything under `os/`, `app/`, `installer/` or `display/`.
-
-To try it without a stick:
-
-```bash
-qemu-system-i386 -enable-kvm -m 2048 -cdrom out/rocola-i386.img
-```
-
-## Developing the UI
-
-The app lives in [`app/`](app/) and uses [uv](https://docs.astral.sh/uv/) with Python 3.11
-(Debian bookworm's version).
-
-```bash
-make app-deps   # uv sync: pygame-ce, pytest, ruff
-make app-test   # tests, headless (SDL dummy driver and a fake MPD server)
-make os-test    # tests of the OS scripts that run without root (music import)
-make app-lint   # ruff
-make app-run    # the UI in a window; needs a local MPD on 127.0.0.1:6600
-```
-
-Settings come from `/etc/rocola/rocola.toml` and `ROCOLA_*` environment variables
-(`ROCOLA_RES=640x480` simulates a CRT). `ROCOLA_SCREENSHOT=out.png` renders one scene to a PNG and
-exits. Reference: [docs/07-rocola-app.en.md](docs/07-rocola-app.en.md).
-
-## Layout
-
-```
-os/         the OS: Containerfile (FROM i386/debian:bookworm) + files overlaid on the root filesystem
-image/      packaging: rootfs -> bootable hybrid ISO (squashfs + GRUB BIOS/UEFI)
-app/        the jukebox UI (Python + pygame/SDL2), MPD client, input, themes, tests
-installer/  guided installer (whiptail TUI) that clones the system to disk
-display/    15 kHz modelines and the VGA/CRT video setup
-docs/       one document per subsystem
-```
-
-Design overview: [ARCHITECTURE.en.md](ARCHITECTURE.en.md).
-
-## Documentation
-
-Every document is also in Spanish: the link at the top of each one switches language.
-
-| Doc | Topic |
-|-----|-------|
-| [01](docs/01-overview.en.md) | Overview and goals |
-| [02](docs/02-build-pipeline.en.md) | Build pipeline (container to image) |
-| [03](docs/03-boot-and-live.en.md) | Boot, live system, autologin, autostart |
-| [04](docs/04-installer.en.md) | Guided installer and partitioning |
-| [05](docs/05-display-crt-15khz.en.md) | Video: VGA and 15 kHz CRT |
-| [06](docs/06-arcade-controls.en.md) | Arcade controls |
-| [07](docs/07-rocola-app.en.md) | The app (SDL2 UI + MPD) |
-| [08](docs/08-music-management.en.md) | Music management |
-| [09](docs/09-branding-theming.en.md) | Branding and themes |
-| [10](docs/10-flashing-usb.en.md) | Flashing the USB stick |
-| [11](docs/11-troubleshooting.en.md) | Troubleshooting |
-| [12](docs/12-verificacion.en.md) | What is tested and what is not |
-| [13](docs/13-rufus-windows.en.md) | Flashing with Rufus on Windows |
-| [14](docs/14-audio.en.md) | Audio output (PipeWire), Bluetooth and output selection |
-
-## Caveats
-
-- 15 kHz output depends on a GPU and driver that accept low-frequency modelines; where they do
-  not, the system falls back to a safe VGA mode.
-- `make flash` **erases** the target device: check `DEV` twice.
+- [Architecture](ARCHITECTURE.en.md): how the pieces fit together, the main decisions and the repository layout.
+- [Overview](docs/01-overview.en.md): goals, non-goals and glossary.
+- [Build pipeline](docs/02-build-pipeline.en.md): from the container to the image, and the release files.
+- [Boot and live mode](docs/03-boot-and-live.en.md): the boot chain, the boot menu and recovery.
+- [Installer](docs/04-installer.en.md): its steps, the partitions and the unattended mode.
+- [Video](docs/05-display-crt-15khz.en.md): VGA, 15 kHz CRTs and the video driver.
+- [Arcade controls](docs/06-arcade-controls.en.md): the buttons, remapping them and testing them.
+- [The app](docs/07-rocola-app.en.md): the screens, the language, the settings and local development.
+- [Music](docs/08-music-management.en.md): preloading it, importing it from a stick and organizing it.
+- [Themes](docs/09-branding-theming.en.md): the theme format, kinds of display, effects and tools.
+- [Flashing the USB stick](docs/10-flashing-usb.en.md): every tool, checking the stick and trying it in QEMU.
+- [Troubleshooting](docs/11-troubleshooting.en.md): build, boot, video, audio, controls and SSH for debugging.
+- [Verification](docs/12-verificacion.en.md): the tests, and what is tested in QEMU and on real hardware.
+- [Rufus on Windows](docs/13-rufus-windows.en.md): DD mode and what each option means.
+- [Audio](docs/14-audio.en.md): PipeWire, choosing the output and Bluetooth.
 
 ## License
 
