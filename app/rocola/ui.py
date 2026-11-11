@@ -16,6 +16,7 @@ import pygame
 from . import audio, bt, i18n, library, sysinfo
 from . import input as actions
 from .i18n import t
+from .skin import chase
 
 
 class Scene:
@@ -48,9 +49,64 @@ def _basename(path: str) -> str:
     return path.rsplit("/", 1)[-1] if path else t("library.unknown_song")
 
 
-class LibraryScene(Scene):
-    """The library by artist and album (library.py builds the views); selecting a song
-    plays it. Back goes up one level, and from the top to the now playing screen."""
+class JukeboxScene(Scene):
+    """A screen of the jukebox itself (the selector, now playing), not of the operator panel:
+    the cabinet, and on top the marquee with a row of lamps that run for a moment when a song
+    starts. Everything sits inside the display's safe area."""
+
+    # How long the lamps run when a song starts, by effects level (effects.py).
+    CHASE_S = {"completo": 4.0, "suave": 2.0, "apagado": 0.0}
+
+    def _layout(self, surface) -> tuple[pygame.Rect, pygame.Rect, pygame.Rect]:
+        """Where the marquee, its lamps and the rest of the screen go."""
+        h = surface.get_height()
+        safe = self.skin.safe_rect(surface)
+        total = max(40, h // 7)
+        lamps_h = max(8, total // 5)
+        marquee = pygame.Rect(safe.x, safe.y, safe.w, total - lamps_h)
+        lamps = pygame.Rect(safe.x, marquee.bottom, safe.w, lamps_h)
+        top = lamps.bottom + max(4, h // 60)
+        return marquee, lamps, pygame.Rect(safe.x, top, safe.w, safe.bottom - top)
+
+    def _chase_step(self) -> int | None:
+        """The step the running lamps are on, or None when they rest (all lit)."""
+        started = self.app.song_started
+        if started is None:
+            return None
+        elapsed = time.monotonic() - started
+        if not 0 <= elapsed < self.CHASE_S.get(self.app.effects.level, 0.0):
+            return None
+        return int(elapsed * 1000) // self.skin.chaser()[1]
+
+    @property
+    def animating(self) -> bool:
+        return self._chase_step() is not None
+
+    def _lamps(self) -> list[bool]:
+        count = self.skin.chaser()[0]
+        step = self._chase_step()
+        return [True] * count if step is None else chase(count, step)
+
+    def _frame(self, surface, subtitle: str) -> pygame.Rect:
+        """The cabinet, the marquee and its lamps; the rect left for the scene."""
+        marquee, lamps, rest = self._layout(surface)
+        self.skin.backdrop(surface)
+        self.skin.marquee(surface, marquee, self.app.marquee_title(), subtitle)
+        self.skin.lamps(surface, lamps, self._lamps())
+        return rest
+
+    def _motion(self, surface) -> list:
+        """A frame where only the lamps moved: they alone are drawn and sent to the screen."""
+        lamps = self._layout(surface)[1]
+        self.skin.restore(surface, lamps)
+        return [self.skin.lamps(surface, lamps, self._lamps())]
+
+
+class LibraryScene(JukeboxScene):
+    """The selector: the library by artist and album (library.py builds the views) as cards
+    in two columns, a page at a time, each with its code (A1, A2…). ↑↓ move one card, ←→ a
+    whole page; selecting a song plays it. Back goes up one level, and from the top to the
+    now playing screen."""
 
     def __init__(self, app):
         super().__init__(app)
@@ -92,10 +148,9 @@ class LibraryScene(Scene):
                 view.index = (view.index - 1) % count
             elif action == actions.DOWN:
                 view.index = (view.index + 1) % count
-            elif action == actions.LEFT:
-                view.index = max(0, view.index - 10)
             else:
-                view.index = min(count - 1, view.index + 10)
+                delta = -1 if action == actions.LEFT else 1
+                view.index = library.flip_page(view.index, count, self._per_page(), delta)
         elif action == actions.SELECT and count:
             self._select(view.rows[view.index])
         elif action == actions.PLAYPAUSE:
@@ -125,52 +180,56 @@ class LibraryScene(Scene):
             self.app.mpd_safe(lambda c: c.play_uri(uri))
             self.app.set_scene("nowplaying")
 
-    def draw(self, surface) -> None:
-        w, h = surface.get_size()
+    def _per_page(self) -> int:
+        columns, rows = self.skin.grid()
+        return columns * rows
+
+    def draw(self, surface) -> list | None:
+        if self.app.motion_only:
+            return self._motion(surface)
+        h = surface.get_height()
         skin = self.skin
-        skin.backdrop(surface)
-        self.app.draw_header(surface, t("header.library"))
+        # The marquee says where in the library we are.
+        where = " / ".join(v.title for v in self.stack[1:]) or t("header.library")
+        area = self._frame(surface, where)
 
-        size = max(16, h // 18)
-        line_h = skin.line_height(size) + 6
-        top_y = self.app.header_h + 8
-
-        if self.error:
-            text = t("library.mpd_error", error=self.error)
-            skin.text(surface, text, (16, top_y), size, "alert", max_width=w - 32)
-            return
-        if not self.songs:
-            skin.text(surface, t("library.empty"), (16, top_y), size, "dim", max_width=w - 32)
-            return
+        if self.error or not self.songs:
+            size = max(16, h // 18)
+            if self.error:
+                text, tone = t("library.mpd_error", error=self.error), "alert"
+            else:
+                text, tone = t("library.empty"), "dim"
+            skin.text(surface, text, area.topleft, size, tone, max_width=area.w)
+            return None
 
         view = self.view
-        if len(self.stack) > 1:  # breadcrumb: where in the library we are
-            path = " / ".join(v.title for v in self.stack[1:])
-            skin.text(surface, path, (16, top_y), size, "dim", max_width=w - 32)
-            top_y += line_h
-        rows = max(1, (h - top_y - 8) // line_h)
+        columns, rows = skin.grid()
+        per_page = columns * rows
+        small = max(13, h // 26)
+        foot_h = skin.line_height(small) + 4
+        gap = max(4, h // 60)
+        card_w = (area.w - gap * (columns - 1)) // columns
+        card_h = (area.h - foot_h - gap * (rows - 1)) // rows
 
-        # Ventana de scroll que sigue a la selección.
-        if view.index < view.top:
-            view.top = view.index
-        elif view.index >= view.top + rows:
-            view.top = view.index - rows + 1
-
-        for i in range(view.top, min(view.top + rows, len(view.rows))):
+        page = view.index // per_page
+        view.top = page * per_page
+        for i in range(view.top, min(view.top + per_page, len(view.rows))):
+            column, place = divmod(i - view.top, rows)  # down the left column, then the right
+            rect = pygame.Rect(
+                area.x + column * (card_w + gap), area.y + place * (card_h + gap), card_w, card_h
+            )
             row = view.rows[i]
-            y = top_y + (i - view.top) * line_h
-            selected = i == view.index
-            if selected:
-                skin.cursor_bar(surface, pygame.Rect(8, y - 2, w - 16, line_h))
-            text_w = w - 32
-            if row.is_folder:  # how many songs it holds, at the right
-                tone = "selected" if selected else "dim"
-                count = skin.text(
-                    surface, str(len(row.songs)), (w - 16, y), size, tone, align="right"
-                )
-                text_w -= count.width + 12
-            tone = "selected" if selected else "normal"
-            skin.text(surface, row.label, (16, y), size, tone, max_width=text_w)
+            title, subtitle = library.card_text(row)
+            kind = "index" if row.is_folder else "strip"
+            code = library.code(i, per_page)
+            skin.card(surface, rect, code, title, subtitle, i == view.index, kind)
+
+        pages = -(-len(view.rows) // per_page)
+        if pages > 1:
+            text = t("library.page", page=page + 1, pages=pages)
+            pos = (area.right, area.bottom - foot_h + 2)
+            skin.text(surface, text, pos, small, "dim", align="right")
+        return None
 
 
 def _load_cover(data: bytes, side: int):
@@ -192,7 +251,7 @@ def _load_cover(data: bytes, side: int):
         return pygame.transform.scale(img, size)
 
 
-class NowPlayingScene(Scene):
+class NowPlayingScene(JukeboxScene):
     """What is playing: the cover (if the song has one), title, artist, album, state."""
 
     MARGIN = 16
@@ -227,11 +286,12 @@ class NowPlayingScene(Scene):
             self._cover_img = _load_cover(data, side) if data else None
         return self._cover_img
 
-    def draw(self, surface) -> None:
-        w, h = surface.get_size()
+    def draw(self, surface) -> list | None:
+        if self.app.motion_only:
+            return self._motion(surface)
+        h = surface.get_height()
         skin = self.skin
-        skin.backdrop(surface)
-        self.app.draw_header(surface, t("header.nowplaying"))
+        area = self._frame(surface, t("header.nowplaying"))
 
         song = self.app.state.get("song", {})
         status = self.app.state.get("status", {})
@@ -246,31 +306,30 @@ class NowPlayingScene(Scene):
         lines = [line for line in lines if line[0]]
 
         m = self.MARGIN
-        area_top = self.app.header_h + m
-        area_h = h - area_top - m
-        landscape = w >= h
-        side = min(area_h, (w - 3 * m) * 2 // 5) if landscape else min(w - 2 * m, area_h // 2)
+        landscape = area.w >= area.h
+        side = min(area.h, (area.w - m) * 2 // 5) if landscape else min(area.w, area.h // 2)
         cover = self._cover(side) if song.get("file") else None
 
         if cover is None:  # no cover: the text block, centered
-            x, text_w, centered = m, w - 2 * m, True
-            y = self.app.header_h + h // 6
+            x, text_w, centered = area.x, area.w, True
+            y = area.y + area.h // 8
         elif landscape:  # cover on the left, text on the right, centered vertically
-            surface.blit(cover, (m, area_top + (area_h - cover.get_height()) // 2))
-            x = 2 * m + side
-            text_w, centered = w - x - m, False
+            surface.blit(cover, (area.x, area.y + (area.h - cover.get_height()) // 2))
+            x = area.x + side + m
+            text_w, centered = area.right - x, False
             block = sum(skin.line_height(size, role) + 10 for _t, size, _c, role in lines) - 10
-            y = area_top + max(0, (area_h - block) // 2)
+            y = area.y + max(0, (area.h - block) // 2)
         else:  # cover on top, text below
-            surface.blit(cover, ((w - cover.get_width()) // 2, area_top))
-            x, text_w, centered = m, w - 2 * m, True
-            y = area_top + cover.get_height() + m
+            surface.blit(cover, (area.centerx - cover.get_width() // 2, area.y))
+            x, text_w, centered = area.x, area.w, True
+            y = area.y + cover.get_height() + m
 
         align = "center" if centered else "left"
         for text, size, tone, role in lines:
             pos = (x + text_w // 2 if centered else x, y)
             drawn = skin.text(surface, text, pos, size, tone, role, text_w, align)
             y += drawn.height + 10
+        return None
 
 
 _STATES = {"play": "status.play", "pause": "status.pause", "stop": "status.stop"}

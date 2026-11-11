@@ -52,8 +52,12 @@ reciente de pygame hay que probarlo en la ISO.
   `Date`; si tiene un solo álbum, se abre ese álbum directamente. Un álbum lista sus temas por
   disco y número de pista. Se agrupa por `AlbumArtist` si está (así un compilado queda junto) y
   si no por `Artist`. Con un solo artista (o ninguno con tags) queda la lista plana de canciones.
-  ↑/↓ de a una, ←/→ de a diez; Atrás sube un nivel y, desde arriba, va a «Reproduciendo». Al
-  recargarse la biblioteca (pendrive, «Actualizar biblioteca») se vuelve al mismo lugar.
+  Se ve como tarjetas en dos columnas, una página por vez (10 en una pantalla plana, 8 en un monitor
+  de tubo, 6 a 15 kHz y en el TV), cada una con su código (A1, A2…) y la marquesina arriba, que dice
+  dónde se está. Los artistas y los álbumes son tarjetas de índice, con cuántas canciones tienen; las
+  canciones, tarjetas con el título y el artista. ↑/↓ de a una, ←/→ una página entera (de la última
+  vuelve a la primera); Atrás sube un nivel y, desde arriba, va a «Reproduciendo». Al recargarse la
+  biblioteca (pendrive, «Actualizar biblioteca») se vuelve al mismo lugar.
   Seleccionar una canción → si no suena nada (o está en pausa) la reproduce; si ya suena otra, la
   suma al final de la cola. Todo sale del `listallinfo` que ya se carga: navegar no le pide nada
   más a MPD.

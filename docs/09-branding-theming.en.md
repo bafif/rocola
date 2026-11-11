@@ -62,8 +62,12 @@ title = { es = "MI ROCOLA", en = "MY JUKEBOX" }
 - **Fonts**: `marquee` (the marquee), `strip` (the cards), `body` (the text) and `digits` (numbers
   and codes). A missing one uses another (marquee → cards → text; numbers → text) and, last, SDL's
   own. `antialias = false` is for pixel fonts.
-- **Pieces**: PNG images. A missing one is drawn with the colors.
-- **Effects**: the parameters each screen reads.
+- **Pieces**: PNG images. A missing one is drawn with the colors. The ones in use: `cabinet` (the
+  cabinet, behind everything), `marquee` (the marquee), `strip` (a song's card), `index` (an
+  artist's or an album's; without it, `strip`), `cursor` (the light around the chosen card) and
+  `lamp_on` and `lamp_off` (the lamps).
+- **Effects**: the parameters each screen reads. `chaser = { lamps = 16, step_ms = 120 }` are the
+  lamps under the marquee: how many, and how long each step lasts when they run.
 - **Variants**: `[variant.lcd]`, `[variant.crt]`, `[variant.crt15]` and `[variant.tv]` are laid over
   the base according to the kind of display. A table is merged key by key (`fonts.body` changes only
   that font); a piece or an effect is replaced whole.
@@ -87,11 +91,19 @@ The kind comes from `display` in `/etc/rocola/rocola.toml` (see [07](07-rocola-a
 not there, from `/etc/rocola/display.conf` (`MODE=crt15` is `crt15`), and otherwise it is `lcd`. The
 jukebox detecting the display by itself comes in a later version.
 
+The cards go in two columns, the left one first, top to bottom. Their code is the page and the place
+on it: with 10 a page, the eleventh card is B1 (the letters skip I and O, and after Z come AA,
+AB…). It is not saved anywhere: it comes from the order of the list and changes with the kind of
+display.
+
 ## Effects
 
 `effects` in `/etc/rocola/rocola.toml` is `completo`, `suave` or `apagado` (also `full`, `soft`,
 `off`). If frames take more than 20 ms on average, the jukebox lowers it one step by itself and does
 not raise it again until it restarts.
+
+When a song starts, the marquee's lamps run for 4 seconds (2 with `suave`, never with `apagado`) and
+then stay lit. While they run, the jukebox draws and sends to the screen only that row.
 
 ## Tools
 
@@ -102,7 +114,8 @@ not raise it again until it restarts.
 - `make theme-assets`: turns each theme's `src/<path>.svg` into `<path>.png`, in a Podman
   container. The PNGs are committed.
 - `make theme-shots THEME=ambar`: a screenshot of every screen on every kind of display, in
-  `out/shots/<theme>/`.
+  `out/shots/<theme>/`, with made-up music (`app/tools/fake-mpd.py`): the library with many
+  artists and, in `<kind>-songs.png`, with only one, to see the song cards.
 
 ## Changing the theme
 

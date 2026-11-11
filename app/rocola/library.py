@@ -166,6 +166,47 @@ def open_row(row: Row) -> View:
     return View(row.label, _track_rows(row.songs), row.key)  # album: tracks already in order
 
 
+# The letters of the codes: no I and no O, which read as 1 and 0 on a title card.
+CODE_LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ"
+
+
+def code(index: int, per_page: int) -> str:
+    """The code on the card at `index` of a list shown `per_page` cards at a time.
+
+    The letter is the page (A, B… Z, then AA, AB…) and the number the place on it, from 1:
+    with 10 a page the eleventh card is B1. It comes from the order of the list and is not
+    saved anywhere, so it changes with the kind of display (10, 8 or 6 cards a page).
+    """
+    page, place = divmod(index, max(1, per_page))
+    letters = ""
+    page += 1
+    while page:  # bijective base 24: A…Z, AA, AB…
+        page, rest = divmod(page - 1, len(CODE_LETTERS))
+        letters = CODE_LETTERS[rest] + letters
+    return f"{letters}{place + 1}"
+
+
+def flip_page(index: int, count: int, per_page: int, delta: int) -> int:
+    """The index `delta` pages away, at the same place on the page; it wraps around the list
+    and lands on the last card when the page it reaches is shorter."""
+    if count <= 0:
+        return 0
+    per_page = max(1, per_page)
+    pages = -(-count // per_page)
+    page, place = divmod(index, per_page)
+    page = (page + delta) % pages
+    return min(page * per_page + place, count - 1)
+
+
+def card_text(row: Row) -> tuple[str, str]:
+    """What a card says: a song's title and artist, or a folder's name and how many songs."""
+    if row.is_folder:
+        n = len(row.songs)
+        return row.label, t("library.one_song") if n == 1 else t("library.songs", n=n)
+    song = row.song or {}
+    return _title(song), (song.get("Artist") or "").strip()
+
+
 def reopen(songs: list[Song], path: list[View]) -> list[View]:
     """Rebuild a stack of views over a reloaded library, keeping the user's place.
 

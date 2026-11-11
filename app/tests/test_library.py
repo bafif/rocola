@@ -264,3 +264,49 @@ def test_scene_retries_on_enter_after_a_failed_load():
     scene.on_enter()
     assert scene.error is None
     assert scene.view.rows
+
+
+def test_codes_follow_the_list_page_by_page():
+    assert [library.code(i, 10) for i in (0, 9, 10, 25)] == ["A1", "A10", "B1", "C6"]
+    assert library.code(8 * 6, 6) == "J1"  # no I: it reads as a 1
+    assert library.code(13 * 6, 6) == "P1"  # no O: it reads as a 0
+    assert library.code(24 * 6, 6) == "AA1"  # after Z, two letters
+    assert library.code(25 * 6 + 5, 6) == "AB6"
+
+
+def test_left_and_right_flip_a_whole_page_and_wrap():
+    assert library.flip_page(3, 25, 10, 1) == 13
+    assert library.flip_page(13, 25, 10, 1) == 23
+    assert library.flip_page(23, 25, 10, 1) == 3  # from the last page to the first
+    assert library.flip_page(3, 25, 10, -1) == 23
+    assert library.flip_page(9, 25, 10, 2) == 24  # the last page is shorter: its last card
+    assert library.flip_page(0, 0, 10, 1) == 0
+
+
+def test_cards_say_title_and_artist_or_how_many_songs():
+    root = library.root_view(LIBRARY)
+    queen = row(root, "Queen")
+    assert library.card_text(queen) == ("Queen", "3 canciones")
+    assert library.card_text(row(root, "Soda Stereo")) == ("Soda Stereo", "1 canción")
+    album = library.open_row(row(library.open_row(queen), "Jazz"))
+    assert library.card_text(album.rows[0]) == ("Mustapha", "Queen")
+    assert library.card_text(Row("x", song=UNTAGGED[0])) == ("tema01.mp3", "")
+
+
+def test_scene_flips_pages_by_the_cards_the_display_shows():
+    from rocola.skin import Skin
+    from rocola.theme import Theme
+    from rocola.ui import LibraryScene
+
+    songs = [song(f"m/{i:02d}.mp3", f"Artista {i:02d}", "Disco", f"Tema {i}") for i in range(25)]
+    app = FakeApp(songs)
+    app.skin = Skin(Theme(display="tv"))  # 6 cards a page
+    scene = LibraryScene(app)
+    scene.on_enter()
+    scene.handle(actions.DOWN)
+    scene.handle(actions.RIGHT)
+    assert scene.view.index == 7
+    scene.handle(actions.LEFT)
+    scene.handle(actions.LEFT)  # from the first page to the last one (26 cards: A1 to E2)
+    assert scene.view.index == 25
+    assert library.code(scene.view.index, 6) == "E2"

@@ -27,6 +27,13 @@ TONES = {
 }
 
 
+def _int(value: object, default: int, low: int, high: int) -> int:
+    """A whole number from the theme, kept between `low` and `high`; `default` if it is not one."""
+    if not isinstance(value, int) or isinstance(value, bool):
+        return default
+    return max(low, min(high, value))
+
+
 def _layer(size: tuple[int, int], alpha: bool = False) -> pygame.Surface:
     """A surface in the screen's own format (16 bpp included), so blitting it costs little."""
     size = (max(1, size[0]), max(1, size[1]))
@@ -64,6 +71,21 @@ class Skin:
     # --- color ----------------------------------------------------------------
     def tone(self, tone: str) -> Color:
         return self.theme.color(TONES.get(tone, "on_dark"))
+
+    # --- what the display asks for --------------------------------------------
+    def safe_rect(self, surface: pygame.Surface) -> pygame.Rect:
+        """Where nothing gets cut by the bezel or the tube (the display's margin)."""
+        return self.theme.safe_rect(surface.get_size())
+
+    def grid(self) -> tuple[int, int]:
+        """Cards a page, as (columns, rows): 10 on an LCD, 8 on a PC tube, 6 at 15 kHz and TV."""
+        return self.theme.profile.cards
+
+    def chaser(self) -> tuple[int, int]:
+        """The marquee's lamps: how many, and how long each step of the chase lasts in ms."""
+        spec = self.theme.effect("chaser")
+        spec = spec if isinstance(spec, dict) else {}
+        return _int(spec.get("lamps"), 16, 4, 64), _int(spec.get("step_ms"), 120, 40, 1000)
 
     # --- text -----------------------------------------------------------------
     def font(self, role: str, size: int) -> pygame.font.Font:
@@ -127,10 +149,7 @@ class Skin:
         return surface.blit(img, (x, y))
 
     # --- layers ---------------------------------------------------------------
-    def backdrop(self, surface: pygame.Surface) -> None:
-        """The cabinet behind everything: the background color and the theme's cabinet."""
-        size = surface.get_size()
-
+    def _backdrop(self, size: tuple[int, int]) -> pygame.Surface:
         def make() -> pygame.Surface:
             layer = _layer(size)
             layer.fill(self.theme.color("background"))
@@ -139,7 +158,17 @@ class Skin:
                 layer.blit(cabinet.render(*size), (0, 0))
             return layer
 
-        surface.blit(self._layers.get_or(("backdrop", size), make), (0, 0))
+        return self._layers.get_or(("backdrop", size), make)
+
+    def backdrop(self, surface: pygame.Surface) -> None:
+        """The cabinet behind everything: the background color and the theme's cabinet."""
+        surface.blit(self._backdrop(surface.get_size()), (0, 0))
+
+    def restore(self, surface: pygame.Surface, rect: pygame.Rect) -> pygame.Rect:
+        """Put the cabinet back under `rect`, before drawing again what moves there."""
+        rect = pygame.Rect(rect).clip(surface.get_rect())
+        surface.blit(self._backdrop(surface.get_size()), rect.topleft, rect)
+        return rect
 
     def panel(self, surface: pygame.Surface) -> None:
         """The operator panel's backdrop: the same theme, sober, with no artwork."""
@@ -199,43 +228,55 @@ class Skin:
         title: str,
         subtitle: str = "",
         selected: bool = False,
+        kind: str = "strip",
     ) -> pygame.Rect:
-        """A title card: code at the left, title and a second line (artist, songs…)."""
+        """A card: code at the left, title and a second line (artist, songs…).
+
+        `kind` is "strip" for a song (a title strip, with its stripe across the paper) or
+        "index" for an artist or an album (an index card, framed)."""
         rect = pygame.Rect(rect)
-        key = (rect.size, code, title, subtitle)
+        key = (rect.size, code, title, subtitle, kind)
         surface.blit(
-            self._cards.get_or(key, lambda: self._card(rect.size, code, title, subtitle)),
+            self._cards.get_or(key, lambda: self._card(rect.size, code, title, subtitle, kind)),
             rect.topleft,
         )
         if selected:
             self.cursor(surface, rect.inflate(4, 4))
         return rect.inflate(4, 4)
 
-    def _card(self, size: tuple[int, int], code: str, title: str, subtitle: str):
+    def _card(self, size: tuple[int, int], code: str, title: str, subtitle: str, kind: str):
         w, h = size
         layer = _layer(size)
         layer.fill(self.theme.color("background"))
-        strip = self.theme.piece("strip")
-        if strip is not None:
-            layer.blit(strip.render(w, h), (0, 0))
+        piece = self.theme.piece(kind) or self.theme.piece("strip")
+        frame = max(2, h // 20) if kind == "index" else 0
+        if piece is not None:
+            layer.blit(piece.render(w, h), (0, 0))
         else:
             layer.fill(self.theme.color("surface"))
-            band = max(2, h // 10)  # the stripe across the paper
-            layer.fill(self.theme.color("accent"), (0, h // 2 - band // 2, w, band))
-        pad = max(3, h // 10)
-        code_size = max(10, h * 2 // 5)
+            if frame:  # an index card: the paper in a frame of the accent
+                pygame.draw.rect(layer, self.theme.color("accent"), layer.get_rect(), frame)
+        pad = max(3, h // 10) + frame
+        inner = h - 2 * pad  # the letters shrink to fit (down to the display's minimum)
+        code_size = self.shrink_to(max(10, h * 2 // 5), inner, "digits")
         cimg = self.render(code, code_size, "code", "digits")
         layer.blit(cimg, (pad, (h - cimg.get_height()) // 2))
         x = pad * 2 + max(cimg.get_width(), self.font("digits", code_size).size("M00")[0])
         text_w = w - x - pad
+        band = max(2, h // 10)
+        if piece is None and not frame:  # a title strip: the stripe, clear of the code
+            layer.fill(self.theme.color("accent"), (x - pad // 2, h // 2 - band // 2, w, band))
         line = max(10, h * 3 // 10)
         if subtitle:
+            line = self.shrink_to(line, inner * 11 // 20, "strip")
+            small = self.shrink_to(max(10, h // 4), inner - self.line_height(line, "strip"))
             top = self.render(title, line, "ink", "strip", text_w)
-            bottom = self.render(subtitle, max(10, h // 4), "ink_dim", "body", text_w)
-            layer.blit(top, (x, h // 2 - top.get_height()))
-            layer.blit(bottom, (x, h // 2 + 1))
+            bottom = self.render(subtitle, small, "ink_dim", "body", text_w)
+            gap = band // 2 + 1 if not frame else 1  # above and below the stripe
+            layer.blit(top, (x, h // 2 - gap - top.get_height()))
+            layer.blit(bottom, (x, h // 2 + gap))
         else:
-            top = self.render(title, line, "ink", "strip", text_w)
+            top = self.render(title, self.shrink_to(line, inner, "strip"), "ink", "strip", text_w)
             layer.blit(top, (x, (h - top.get_height()) // 2))
         return layer
 
@@ -317,6 +358,11 @@ class Record:
         surface.blit(label, label.get_rect(center=center))
         surface.blit(self.shine, rect)
         return rect
+
+
+def chase(n: int, step: int, every: int = 3) -> list[bool]:
+    """One lamp in every `every` lit, the pattern moved `step` places along: lights that run."""
+    return [(i - step) % every == 0 for i in range(n)]
 
 
 def ring(n: int, start: int, length: int) -> list[bool]:

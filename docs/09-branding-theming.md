@@ -62,8 +62,12 @@ title = { es = "MI ROCOLA", en = "MY JUKEBOX" }
 - **Fuentes**: `marquee` (la marquesina), `strip` (las tarjetas), `body` (el texto) y `digits`
   (números y códigos). La que falta usa otra (marquesina → tarjetas → texto; números → texto) y, al
   final, la de SDL. `antialias = false` es para fuentes de píxeles.
-- **Piezas**: imágenes PNG. La que falta se dibuja con los colores.
-- **Efectos**: los parámetros que lee cada pantalla.
+- **Piezas**: imágenes PNG. La que falta se dibuja con los colores. Las que se usan: `cabinet` (el
+  gabinete, detrás de todo), `marquee` (la marquesina), `strip` (la tarjeta de una canción),
+  `index` (la de un artista o un álbum; sin ella, `strip`), `cursor` (la luz alrededor de la
+  tarjeta elegida) y `lamp_on` y `lamp_off` (las lámparas).
+- **Efectos**: los parámetros que lee cada pantalla. `chaser = { lamps = 16, step_ms = 120 }` son
+  las lámparas bajo la marquesina: cuántas y cuánto dura cada paso cuando corren.
 - **Variantes**: `[variant.lcd]`, `[variant.crt]`, `[variant.crt15]` y `[variant.tv]` se superponen
   a la base según el tipo de pantalla. Una tabla se mezcla clave por clave (`fonts.body` cambia sólo
   esa fuente); una pieza o un efecto se reemplaza entero.
@@ -87,11 +91,20 @@ El tipo sale de `display` en `/etc/rocola/rocola.toml` (ver [07](07-rocola-app.m
 `/etc/rocola/display.conf` (`MODE=crt15` es `crt15`) y, si no, es `lcd`. Que la rocola detecte la
 pantalla sola llega en una versión siguiente.
 
+Las tarjetas van en dos columnas, primero la de la izquierda de arriba abajo. Su código es la página
+y el lugar en ella: con 10 por página, la undécima es B1 (las letras saltean la I y la O, y después
+de la Z siguen AA, AB…). No se guarda en ningún lado: sale del orden de la lista y cambia con el
+tipo de pantalla.
+
 ## Efectos
 
 `effects` en `/etc/rocola/rocola.toml` es `completo`, `suave` o `apagado` (también `full`, `soft`,
 `off`). Si los cuadros tardan en promedio más de 20 ms, la rocola baja un nivel sola y no vuelve a
 subir hasta que se reinicia.
+
+Cuando arranca un tema, las lámparas de la marquesina corren 4 segundos (2 en `suave`, nunca en
+`apagado`) y después quedan prendidas. Mientras corren, la rocola dibuja y manda a la pantalla sólo
+esa fila.
 
 ## Herramientas
 
@@ -102,7 +115,8 @@ subir hasta que se reinicia.
 - `make theme-assets`: pasa cada `src/<ruta>.svg` de cada tema a `<ruta>.png`, en un contenedor de
   Podman. Los PNG se commitean.
 - `make theme-shots THEME=ambar`: una captura de cada pantalla en cada tipo de pantalla, en
-  `out/shots/<tema>/`.
+  `out/shots/<tema>/`, con música de mentira (`app/tools/fake-mpd.py`): la biblioteca con varios
+  artistas y, en `<tipo>-songs.png`, con uno solo, para ver las tarjetas de canción.
 
 ## Cambiar de tema
 

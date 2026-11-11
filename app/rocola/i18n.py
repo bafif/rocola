@@ -43,6 +43,9 @@ CATALOG: dict[str, dict[str, str]] = {
     "library.unknown_artist": {"es": "(sin artista)", "en": "(no artist)"},
     "library.unknown_album": {"es": "(sin álbum)", "en": "(no album)"},
     "library.unknown_song": {"es": "(desconocido)", "en": "(unknown)"},
+    "library.one_song": {"es": "1 canción", "en": "1 song"},
+    "library.songs": {"es": "{n} canciones", "en": "{n} songs"},
+    "library.page": {"es": "Página {page} de {pages}", "en": "Page {page} of {pages}"},
     # Now playing
     "status.play": {"es": "Reproduciendo", "en": "Playing"},
     "status.pause": {"es": "En pausa", "en": "Paused"},

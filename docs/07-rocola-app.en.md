@@ -52,9 +52,12 @@ pygame function has to be tested on the ISO.
   they have a single album, that album opens directly. An album lists its tracks by disc and
   track number. Grouping is by `AlbumArtist` if present (so a compilation stays together) and
   otherwise by `Artist`. With a single artist (or none with tags) you get the flat song list.
-  ↑/↓ move one at a time, ←/→ ten at a time; Back goes up one level and, from the top, goes to
-  “Now playing”. When the library reloads (USB stick, “Update library”) you return to the same
-  spot. Selecting a song → if nothing is playing (or it's paused) it plays it; if something else
+  It shows as cards in two columns, a page at a time (10 on a flat screen, 8 on a tube monitor, 6 at
+  15 kHz and on a TV), each with its code (A1, A2…), under the marquee, which says where you are.
+  Artists and albums are index cards, with how many songs they hold; songs are cards with the title
+  and the artist. ↑/↓ move one at a time, ←/→ a whole page (from the last one back to the first);
+  Back goes up one level and, from the top, goes to “Now playing”. When the library reloads (USB
+  stick, “Update library”) you return to the same spot. Selecting a song → if nothing is playing (or it's paused) it plays it; if something else
   is already playing, it's added to the end of the queue. Everything comes from the `listallinfo`
   that's already loaded: browsing doesn't ask MPD for anything else.
 - **Now playing**: title, artist, album, status and volume of what's playing, with the **cover

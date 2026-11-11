@@ -30,6 +30,13 @@ class RocolaApp:
     IDLE_WAIT_MS = 250
     HEARTBEAT_S = 1.0
 
+    # When the song playing now started (time.monotonic()): the marquee's lamps run for a
+    # moment after it. None until a song starts.
+    song_started: float | None = None
+    # True while a frame is drawn only because something moves (no input, nothing new from
+    # MPD): a scene may then draw again just what moves and send only that to the screen.
+    motion_only = False
+
     def __init__(self) -> None:
         self.config = Config.load()
         i18n.set_language(i18n.detect())
@@ -100,8 +107,12 @@ class RocolaApp:
 
         self.running = True
         last_draw = 0.0
+        was_animating = False
         while self.running:
             animating = bool(self.scene and self.scene.animating)
+            if was_animating and not animating:
+                self.dirty = True  # the last moving frame is on screen: draw the still one
+            was_animating = animating
             self._handle_events(0 if animating or self.dirty else self.IDLE_WAIT_MS)
             # Dibujar PRIMERO: la UI aparece desde el primer frame, sin esperar a
             # MPD. Recién después sondeamos/(re)conectamos MPD, así un MPD lento o
@@ -109,6 +120,7 @@ class RocolaApp:
             # instante mientras reintenta, ya con la UI visible).
             now = time.monotonic()
             if self.dirty or animating or now - last_draw >= self.HEARTBEAT_S:
+                self.motion_only = animating and not self.dirty
                 self.dirty = False  # before draw(): a scene that switches sets it again
                 last_draw = now
                 started = time.perf_counter()
@@ -218,6 +230,9 @@ class RocolaApp:
             status, song = self.mpd.status(), self.mpd.current_song()
             if status != self.state["status"] or song != self.state["song"]:
                 self.dirty = True
+            started = song.get("file") != self.state["song"].get("file")
+            if started and song.get("file") and status.get("state") == "play":
+                self.song_started = time.monotonic()
             self.state["status"], self.state["song"] = status, song
             self._update_cover()
             if now - self._last_stats >= 5.0:
@@ -248,9 +263,13 @@ class RocolaApp:
             self.dirty = True
 
     # --- header (branding) -----------------------------------------------
+    def marquee_title(self) -> str:
+        return self.theme.title_for(i18n.language())
+
     def draw_header(self, surface, subtitle: str = "") -> None:
+        """The operator panel's header (the jukebox's own screens draw their marquee)."""
         rect = pygame.Rect(0, 0, surface.get_width(), self.header_h)
-        self.skin.marquee(surface, rect, self.theme.title_for(i18n.language()), subtitle)
+        self.skin.marquee(surface, rect, self.marquee_title(), subtitle)
 
     # --- instalador -------------------------------------------------------
     def launch_installer(self) -> str | None:

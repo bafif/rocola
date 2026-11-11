@@ -132,6 +132,8 @@ def test_cover_is_fetched_once_per_song(polled_app):
 
 class FakeApp:
     header_h = 48
+    motion_only = False
+    song_started = None
 
     def __init__(self, theme, state):
         from rocola.skin import Skin
@@ -142,6 +144,9 @@ class FakeApp:
 
     def draw_header(self, surface, subtitle=""):
         pass
+
+    def marquee_title(self):
+        return "ROCOLA"
 
 
 @pytest.fixture
@@ -167,9 +172,11 @@ def test_now_playing_draws_the_cover_on_the_left(screen, tmp_path):
     }
     scene = ui.NowPlayingScene(FakeApp(theme(), state))
     scene.draw(screen)
-    # Fitted in a square of side min(480-48-32, (640-48)*2//5) = 236: 236x118, centered.
-    assert scene._cover_img.get_size() == (236, 118)
-    assert tuple(screen.get_at((16 + 100, 48 + 16 + 200)))[:3] == (200, 30, 30)
+    # Fitted in a square at the left of what the marquee leaves, centered on its height.
+    area = scene._layout(screen)[2]
+    side = min(area.h, (area.w - scene.MARGIN) * 2 // 5)
+    assert scene._cover_img.get_size() == (side, side // 2)
+    assert tuple(screen.get_at((area.x + side // 2, area.centery)))[:3] == (200, 30, 30)
     cached = scene._cover_img
     scene.draw(screen)
     assert scene._cover_img is cached  # decoded once, not every frame

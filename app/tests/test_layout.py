@@ -88,3 +88,33 @@ def test_no_scene_cuts_text(size, display, monkeypatch):
         scene.draw(screen)
     pygame.quit()
     assert not cut
+
+
+@pytest.mark.parametrize(("size", "display"), SCREENS, ids=[d for _s, d in SCREENS])
+def test_the_selector_shows_a_page_of_cards_inside_the_safe_area(size, display, monkeypatch):
+    pygame.init()
+    screen = pygame.display.set_mode(size)
+    app = make_app(size, display)
+    safe = app.theme.safe_rect(size)
+    cards = []
+    real = app.skin.card
+
+    def recorded(surface, rect, code, *args, **kwargs):
+        cards.append((code, pygame.Rect(rect)))
+        return real(surface, rect, code, *args, **kwargs)
+
+    app.skin.card = recorded
+    lib = scenes(app, monkeypatch)["library"]
+    lib.stack = lib.stack[:1]  # the artists: "All songs" and three of them
+    lib.songs = SONGS * 3  # and on an album, more songs than fit on a page
+    lib.stack = library.reopen(lib.songs, lib.stack)
+    lib.stack.append(library.open_row(lib.view.rows[0]))
+    lib.draw(screen)
+    pygame.quit()
+    columns, rows = app.theme.profile.cards
+    assert [code for code, _r in cards] == [f"A{i}" for i in range(1, columns * rows + 1)]
+    rects = [r for _c, r in cards]
+    assert all(safe.contains(r) for r in rects)
+    assert not any(a.colliderect(b) for i, a in enumerate(rects) for b in rects[i + 1 :])
+    assert len({r.x for r in rects}) == columns  # two columns, A1 at the top of the left one
+    assert rects[1].y > rects[0].y and rects[rows].x > rects[0].x
