@@ -72,6 +72,8 @@ En QEMU/KVM, con la ISO armada desde el repo:
   una canción con la cola terminada (suena la elegida), un mapeo de `[keys]` en `rocola.toml` y
   «Probar controles».
 
+Las capturas de estas pruebas muestran la interfaz anterior al tema Ámbar.
+
 ## En hardware real
 
 El sistema en vivo arranca en una PC real desde un pendrive con Ventoy. Falta probar:

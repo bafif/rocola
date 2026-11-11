@@ -72,6 +72,8 @@ In QEMU/KVM, with the ISO built from the repository:
   with the queue finished (the chosen one plays), a `[keys]` mapping in `rocola.toml` and
   "Test controls".
 
+The screenshots from these tests show the interface from before the Ámbar theme.
+
 ## On real hardware
 
 The live system boots on a real PC from a Ventoy stick. Still to be tried:
