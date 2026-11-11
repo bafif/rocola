@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="268" height="32" viewBox="0 0 268 32">
+  <!-- Ámbar at 15 kHz: the marquee on the 240p grid, flat amber glass in a brass rim; lines of 2 px or more. Original artwork of the Rocola project (MIT). -->
+  <rect x="0" y="0" width="268" height="32" rx="16" fill="#9a6a2c"/>
+  <rect x="2" y="2" width="264" height="28" rx="14" fill="#3a220e"/>
+  <rect x="4" y="4" width="260" height="24" rx="12" fill="#ffbf5a"/>
+  <rect x="16" y="6" width="236" height="4" fill="#ffe2a8"/>
+</svg>

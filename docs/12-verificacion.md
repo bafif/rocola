@@ -22,7 +22,7 @@ armé y lo probé en una PC x86-64 con contenedores (que corren i386 nativo) y Q
    fija hoy `os/Containerfile`; en mayo `mpd` y `rocola` eran servicios del sistema, y el próximo
    build lo vuelve a comprobar en la imagen.
 3. **Render de la UI** sin pantalla (`SDL_VIDEODRIVER=dummy`). Las escenas de biblioteca, now-playing
-   y menú se dibujan con el branding (logo SVG y colores del tema). Se ven en
+   y menú se dibujan con el tema (hoy Ámbar: arte, fuentes y colores). Se ven en
    [screenshots/ui-menu.png](screenshots/ui-menu.png) y [ui-nowplaying.png](screenshots/ui-nowplaying.png).
 4. **Imagen booteable** (`make image`). `grub-mkrescue` produce `out/rocola-i386.img`, una ISO
    híbrida con catálogo El Torito doble (una entrada BIOS con GRUB i386-pc y una UEFI con `efi.img`)

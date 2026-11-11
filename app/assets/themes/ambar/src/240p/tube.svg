@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="8" height="140" viewBox="0 0 8 140" shape-rendering="crispEdges">
+  <!-- Ámbar at 15 kHz: a bubble tube on the 240p grid, flat amber liquid with brass caps. Original artwork of the Rocola project (MIT). -->
+  <rect x="1" y="4" width="6" height="132" fill="#e08a2a"/>
+  <rect x="3" y="6" width="2" height="128" fill="#ffc66a"/>
+  <rect x="0" y="0" width="8" height="4" fill="#c9974a"/>
+  <rect x="0" y="136" width="8" height="4" fill="#c9974a"/>
+</svg>

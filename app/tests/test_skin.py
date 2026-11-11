@@ -152,3 +152,17 @@ def test_the_stripe_never_crosses_the_code_also_over_a_piece(screen, tmp_path):
     skin.card(screen, rect, "A1", "Signos", "Soda Stereo")
     assert rgb(screen, (2, 20)) == (0xF0, 0xE0, 0xC0)  # left of the code: paper, no stripe
     assert rgb(screen, (190, 20)) == (0x80, 0x00, 0x00)  # the stripe, after the text starts
+
+
+def test_a_flat_glow_draws_plain_lamps_over_their_pieces(screen, tmp_path):
+    bulb = pygame.Surface((8, 8))
+    bulb.fill((1, 200, 3))
+    pygame.image.save(bulb, str(tmp_path / "on.png"))
+    pieces = '[pieces]\nlamp_on = "on.png"\n'
+    lamp = pygame.Rect(0, 100, 40, 20)
+    skin = make_skin(tmp_path, pieces)
+    skin.lamps(screen, lamp, [True])
+    assert rgb(screen, lamp.center) == (1, 200, 3)  # the piece
+    skin = make_skin(tmp_path, pieces + '[effects]\nglow = "plano"\n')
+    skin.lamps(screen, lamp, [True])
+    assert rgb(screen, lamp.center) == (0xFF, 0xC0, 0x00)  # a flat lamp in the glow color

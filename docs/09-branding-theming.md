@@ -109,6 +109,11 @@ Cuando arranca un tema, las lámparas de la marquesina corren 4 segundos (2 en `
 la rocola dibuja y manda a la pantalla sólo esa fila, un cuadro por paso. Al prender, la marquesina
 se enciende en un segundo (en `apagado`, ya prendida).
 
+`glow = "plano"` dibuja las lámparas como círculos lisos, sin el brillo desenfocado de sus piezas:
+Ámbar lo usa en el TV y a 15 kHz, donde el fósforo hace el halo. A 15 kHz, además, Ámbar trae su
+propio arte dibujado en la grilla de 240p (`src/240p/`): sin la veta de la madera, en colores planos
+y con líneas de 2 px o más.
+
 `bubbles = { tubes = 2, per_tube = 7 }` pone un tubo a cada lado de las pantallas de la rocola
 (`tubes = 0` los saca) con esas burbujas, que suben por reloj: 15 cuadros por segundo en `completo`,
 8 en `suave` y quietas en `apagado`. En esos cuadros se mandan a la pantalla sólo los tubos y la

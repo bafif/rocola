@@ -519,7 +519,7 @@ class NowPlayingScene(JukeboxScene):
         song = self.app.state.get("song", {})
         status = self.app.state.get("status", {})
         upcoming = self.app.state.get("next") or {}
-        big, body = max(22, h // 12), max(16, h // 20)
+        big, body = skin.fit_size(max(22, h // 12), box.w, "marquee"), max(16, h // 20)
         line = skin.line_height(body)
         gap = max(3, h // 80)
         title = song.get("Title") or (_basename(song["file"]) if song.get("file") else "—")
@@ -564,9 +564,11 @@ class NowPlayingScene(JukeboxScene):
 
     def _lamp_row(self, surface, left: int, right: int, y: int, height: int, fraction: float):
         width = right - left
+        lamp = max(6, height * 3 // 5)  # smaller than the letters beside them
         if width >= 24:
-            count = max(4, min(20, width // max(8, height)))
-            self.skin.lamps(surface, pygame.Rect(left, y, width, height), progress(count, fraction))
+            count = max(4, min(20, width // lamp))
+            row = pygame.Rect(left, y + (height - lamp) // 2, width, lamp)
+            self.skin.lamps(surface, row, progress(count, fraction))
 
 
 _STATES = {"play": "status.play", "pause": "status.pause", "stop": "status.stop"}

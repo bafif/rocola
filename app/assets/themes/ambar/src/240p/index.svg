@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="44" viewBox="0 0 120 44" shape-rendering="crispEdges">
+  <!-- Ámbar at 15 kHz: the index card of an artist or an album on the 240p grid, flat paper in a bordó frame. Original artwork of the Rocola project (MIT). -->
+  <rect width="120" height="44" fill="#f1e4c6"/>
+  <rect x="2" y="2" width="116" height="40" fill="none" stroke="#8c1c2c" stroke-width="2"/>
+</svg>

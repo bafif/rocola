@@ -22,7 +22,7 @@ document was built and tested on an x86-64 PC with containers (which run i386 na
    its own. That is what `os/Containerfile` sets today; in May `mpd` and `rocola` were system
    services, and the next build checks it again on the image.
 3. **Headless UI rendering** (`SDL_VIDEODRIVER=dummy`). The library, now-playing and menu scenes
-   render with the branding (SVG logo and theme colors). You can see them in
+   render with the theme (today Ámbar: its artwork, fonts and colors). You can see them in
    [screenshots/ui-menu.png](screenshots/ui-menu.png) and [ui-nowplaying.png](screenshots/ui-nowplaying.png).
 4. **Bootable image** (`make image`). `grub-mkrescue` produces `out/rocola-i386.img`, a hybrid ISO
    with a dual El Torito catalog (a BIOS entry with GRUB i386-pc and a UEFI entry with `efi.img`)

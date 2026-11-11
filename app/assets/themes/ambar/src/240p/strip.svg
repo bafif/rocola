@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="44" viewBox="0 0 120 44" shape-rendering="crispEdges">
+  <!-- Ámbar at 15 kHz: a song's title strip on the 240p grid, flat paper (the stripe is drawn by the jukebox). Original artwork of the Rocola project (MIT). -->
+  <rect width="120" height="44" fill="#f1e4c6"/>
+  <rect x="1" y="1" width="118" height="42" fill="none" stroke="#c9b48a" stroke-width="2"/>
+</svg>

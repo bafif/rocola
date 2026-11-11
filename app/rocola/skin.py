@@ -116,6 +116,16 @@ class Skin:
             size -= 1
         return size
 
+    def fit_size(self, size: int, width: int, role: str = "body", letters: int = 14) -> int:
+        """`size`, or smaller until about `letters` letters fit in `width` (never under the
+        display's minimum): long titles in a narrow place still say something."""
+        sample = "abcdefghijklmnopqrstuvwxyz"[:letters]
+        while self.font(role, size).size(sample)[0] > width:
+            if self.font(role, size - 1) is self.font(role, size):
+                break
+            size -= 1
+        return size
+
     def fit(self, text: str, max_width: int, size: int, role: str = "body") -> str:
         """`text` cut with "…" so it is at most `max_width` pixels wide."""
         font = self.font(role, size)
@@ -379,11 +389,7 @@ class Skin:
                 self.theme.color("accent"),
                 (start, h // 2 - band // 2, w - right // 2 - start, band),
             )
-        line = max(10, h * 3 // 10)
-        while self.font("strip", line).size("abcdefghijklmn")[0] > text_w:  # ~14 letters fit
-            if self.font("strip", line - 1) is self.font("strip", line):
-                break  # never under the display's minimum
-            line -= 1
+        line = self.fit_size(max(10, h * 3 // 10), text_w, "strip")
         if subtitle:
             line = self.shrink_to(line, inner * 11 // 20, "strip")
             small = self.shrink_to(max(10, h // 4), inner - self.line_height(line, "strip"))
@@ -405,6 +411,8 @@ class Skin:
         if not lit:
             return rect
         on, off = self.theme.piece("lamp_on"), self.theme.piece("lamp_off")
+        if self.theme.effect("glow") == "plano":  # a tube or a TV: flat lamps, no blurred glow
+            on = off = None
         step = rect.width / len(lit)
         radius = max(2, min(int(step) // 2 - 1, rect.height // 2))
         dim = mix(self.theme.color("glow"), self.theme.color("background"), 0.25)

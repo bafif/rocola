@@ -40,6 +40,14 @@ fonts.strip        = "fonts/VT323-Regular.ttf"
 fonts.body         = "fonts/VT323-Regular.ttf"
 fonts.digits       = "fonts/VT323-Regular.ttf"
 fonts.antialias    = false
+# El arte de 240p se dibuja en su grilla (src/240p/), no se achica del de 480p: sin la veta de
+# la madera, colores planos y líneas de 2 px o más.
+pieces.cabinet     = "240p/cabinet.png"
+pieces.marquee     = { file = "240p/marquee.png", slice = [16, 6, 16, 6] }
+pieces.strip       = { file = "240p/strip.png",   slice = [3, 3, 3, 3] }
+pieces.index       = { file = "240p/index.png",   slice = [5, 5, 5, 5] }
+pieces.tube        = { file = "240p/tube.png",    slice = [0, 5, 0, 5] }
+effects.glow       = "plano"   # el fósforo hace el halo: lámparas de color liso
 colors.text_dim    = "#5a3418"   # 7:1 sobre el papel
 colors.on_dark_dim = "#c8b9a0"   # 7:1 sobre la madera
 effects.bubbles    = { tubes = 2, per_tube = 3 }

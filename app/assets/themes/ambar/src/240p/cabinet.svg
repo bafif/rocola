@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240" shape-rendering="crispEdges">
+  <!-- Ámbar at 15 kHz: the cabinet on the 240p grid, walnut with no grain (flat colors: the tube's phosphor does the rest). Original artwork of the Rocola project (MIT). -->
+  <rect width="320" height="240" fill="#24140c"/>
+  <rect x="4" y="4" width="312" height="232" fill="none" stroke="#170c06" stroke-width="2"/>
+</svg>

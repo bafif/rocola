@@ -109,6 +109,10 @@ then stay lit; in the attraction mode they run all the time. While they run, the
 sends to the screen only that row, one frame per step. On starting, the marquee lights up over a
 second (with `apagado`, already lit).
 
+`glow = "plano"` draws the lamps as flat circles, without their pieces' blurred glow: Ámbar uses it
+on a TV and at 15 kHz, where the phosphor makes the halo. At 15 kHz Ámbar also brings its own artwork
+drawn on the 240p grid (`src/240p/`): no wood grain, flat colors and lines of 2 px or more.
+
 `bubbles = { tubes = 2, per_tube = 7 }` puts a tube at each side of the jukebox's screens
 (`tubes = 0` takes them out) with that many bubbles, which rise by the clock: 15 frames a second
 with `completo`, 8 with `suave`, and still with `apagado`. Those frames send to the screen only the
