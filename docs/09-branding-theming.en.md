@@ -63,8 +63,9 @@ title = { es = "MI ROCOLA", en = "MY JUKEBOX" }
   and codes). A missing one uses another (marquee → cards → text; numbers → text) and, last, SDL's
   own. `antialias = false` is for pixel fonts.
 - **Pieces**: PNG images. A missing one is drawn with the colors. The ones in use: `cabinet` (the
-  cabinet, behind everything), `marquee` (the marquee), `strip` (a song's card), `index` (an
-  artist's or an album's; without it, `strip`), `cursor` (the light around the chosen card) and
+  cabinet, behind everything), `marquee` (the marquee; the text keeps off its side cuts), `strip`
+  (the paper of a song's card: the jukebox draws the stripe, after the code), `index` (an artist's
+  or an album's; without it, `strip` in a frame), `cursor` (the light around the chosen card) and
   `lamp_on` and `lamp_off` (the lamps).
 - **Effects**: the parameters each screen reads. `chaser = { lamps = 16, step_ms = 120 }` are the
   lamps under the marquee: how many, and how long each step lasts when they run.

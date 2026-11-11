@@ -140,3 +140,15 @@ def test_tones_name_real_roles():
     from rocola.theme import ROLES
 
     assert set(rskin.TONES.values()) <= set(ROLES)
+
+
+def test_the_stripe_never_crosses_the_code_also_over_a_piece(screen, tmp_path):
+    paper = pygame.Surface((20, 20))
+    paper.fill((0xF0, 0xE0, 0xC0))
+    pygame.image.save(paper, str(tmp_path / "strip.png"))
+    skin = make_skin(tmp_path, '[pieces]\nstrip = { file = "strip.png", slice = [2, 2, 2, 2] }\n')
+    screen.fill((0, 0, 0))
+    rect = pygame.Rect(0, 0, 200, 40)
+    skin.card(screen, rect, "A1", "Signos", "Soda Stereo")
+    assert rgb(screen, (2, 20)) == (0xF0, 0xE0, 0xC0)  # left of the code: paper, no stripe
+    assert rgb(screen, (190, 20)) == (0x80, 0x00, 0x00)  # the stripe, after the text starts

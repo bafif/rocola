@@ -63,9 +63,10 @@ title = { es = "MI ROCOLA", en = "MY JUKEBOX" }
   (números y códigos). La que falta usa otra (marquesina → tarjetas → texto; números → texto) y, al
   final, la de SDL. `antialias = false` es para fuentes de píxeles.
 - **Piezas**: imágenes PNG. La que falta se dibuja con los colores. Las que se usan: `cabinet` (el
-  gabinete, detrás de todo), `marquee` (la marquesina), `strip` (la tarjeta de una canción),
-  `index` (la de un artista o un álbum; sin ella, `strip`), `cursor` (la luz alrededor de la
-  tarjeta elegida) y `lamp_on` y `lamp_off` (las lámparas).
+  gabinete, detrás de todo), `marquee` (la marquesina; el texto no pisa sus cortes de los
+  costados), `strip` (el papel de la tarjeta de una canción: la franja la dibuja la rocola, después
+  del código), `index` (la de un artista o un álbum; sin ella, `strip` con un marco), `cursor` (la
+  luz alrededor de la tarjeta elegida) y `lamp_on` y `lamp_off` (las lámparas).
 - **Efectos**: los parámetros que lee cada pantalla. `chaser = { lamps = 16, step_ms = 120 }` son
   las lámparas bajo la marquesina: cuántas y cuánto dura cada paso cuando corren.
 - **Variantes**: `[variant.lcd]`, `[variant.crt]`, `[variant.crt15]` y `[variant.tv]` se superponen

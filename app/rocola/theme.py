@@ -147,7 +147,10 @@ class Piece:
         if (iw, ih) == size:
             out = img
         elif self.slice is None or not self._fits(size):
-            out = pygame.transform.scale(img, size)
+            try:  # smooth, so a grain or a glow does not come out in steps
+                out = pygame.transform.smoothscale(img, size)
+            except ValueError:  # smoothscale only takes 24/32-bit surfaces
+                out = pygame.transform.scale(img, size)
         else:
             out = self._nine_slice(size)
         self._sizes[size] = out

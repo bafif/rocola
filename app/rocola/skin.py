@@ -267,28 +267,33 @@ class Skin:
     ) -> pygame.Rect:
         """The marquee across the top: the theme's piece, or a band of card paper."""
         rect = pygame.Rect(rect)
-        key = ("marquee", rect.size, title, subtitle)
+        screen = surface.get_size()
+        key = ("marquee", screen, tuple(rect), title, subtitle)
 
         def make() -> pygame.Surface:
             w, h = rect.size
             layer = _layer((w, h))
             piece = self.theme.piece("marquee")
-            if piece is not None:
-                layer.fill(self.theme.color("background"))
+            pad = max(8, w // 50)
+            if piece is not None:  # over the bit of cabinet behind it, for its round corners
+                layer.blit(self._backdrop(screen), (0, 0), rect)
                 layer.blit(piece.render(w, h), (0, 0))
+                cuts = piece.slice or (0, 0, 0, 0)  # the text keeps off the rim at the sides
+                left, right = max(pad, cuts[0]), max(pad, cuts[2])
             else:
                 layer.fill(self.theme.color("surface"))
                 rule = max(2, h // 16)
                 layer.fill(self.theme.color("accent"), (0, h - rule, w, rule))
-            pad = max(8, w // 50)
+                left = right = pad
+            room = w - left - right
             big = max(10, h // 2)
-            timg = self.render(title, big, "ink", "marquee", w - 2 * pad)
+            timg = self.render(title, big, "ink", "marquee", room)
             if subtitle:
                 small = max(10, h // 3)
-                simg = self.render(subtitle, small, "ink_dim", "body", w // 2)
-                layer.blit(simg, (w - pad - simg.get_width(), (h - simg.get_height()) // 2))
-                timg = self.render(title, big, "ink", "marquee", w - 3 * pad - simg.get_width())
-            layer.blit(timg, (pad, (h - timg.get_height()) // 2))
+                simg = self.render(subtitle, small, "ink_dim", "body", room // 2)
+                layer.blit(simg, (w - right - simg.get_width(), (h - simg.get_height()) // 2))
+                timg = self.render(title, big, "ink", "marquee", room - pad - simg.get_width())
+            layer.blit(timg, (left, (h - timg.get_height()) // 2))
             return layer
 
         return surface.blit(self._layers.get_or(key, make), rect.topleft)
@@ -336,31 +341,40 @@ class Skin:
         w, h = size
         layer = _layer(size)
         layer.fill(self.theme.color("background"))
-        piece = self.theme.piece(kind) or self.theme.piece("strip")
-        frame = max(2, h // 20) if kind == "index" else 0
+        piece = self.theme.piece(kind)
+        # An index card without its own piece: the strip's paper (or the surface) in a frame.
+        frame = max(2, h // 20) if kind == "index" and piece is None else 0
+        piece = piece or self.theme.piece("strip")
         if piece is not None:
             layer.blit(piece.render(w, h), (0, 0))
         else:
             layer.fill(self.theme.color("surface"))
-            if frame:  # an index card: the paper in a frame of the accent
-                pygame.draw.rect(layer, self.theme.color("accent"), layer.get_rect(), frame)
+        if frame:
+            pygame.draw.rect(layer, self.theme.color("accent"), layer.get_rect(), frame)
         pad = max(3, h // 10) + frame
+        # With a piece, the text keeps off its edges (its nine-slice cuts at the sides).
+        cuts = piece.slice if piece is not None and piece.slice else (0, 0, 0, 0)
+        left, right = max(pad, cuts[0]), max(pad, cuts[2])
         inner = h - 2 * pad  # the letters shrink to fit (down to the display's minimum)
         code_size = self.shrink_to(max(10, h * 2 // 5), inner, "digits")
         cimg = self.render(code, code_size, "code", "digits")
-        layer.blit(cimg, (pad, (h - cimg.get_height()) // 2))
-        x = pad * 2 + max(cimg.get_width(), self.font("digits", code_size).size("M00")[0])
-        text_w = w - x - pad
+        layer.blit(cimg, (left, (h - cimg.get_height()) // 2))
+        x = left + pad + max(cimg.get_width(), self.font("digits", code_size).size("M00")[0])
+        text_w = w - x - right
         band = max(2, h // 10)
-        if piece is None and not frame:  # a title strip: the stripe, clear of the code
-            layer.fill(self.theme.color("accent"), (x - pad // 2, h // 2 - band // 2, w, band))
+        if kind == "strip":  # a title strip: the stripe across, clear of the code
+            start = x - pad // 2
+            layer.fill(
+                self.theme.color("accent"),
+                (start, h // 2 - band // 2, w - right // 2 - start, band),
+            )
         line = max(10, h * 3 // 10)
         if subtitle:
             line = self.shrink_to(line, inner * 11 // 20, "strip")
             small = self.shrink_to(max(10, h // 4), inner - self.line_height(line, "strip"))
             top = self.render(title, line, "ink", "strip", text_w)
             bottom = self.render(subtitle, small, "ink_dim", "body", text_w)
-            gap = band // 2 + 1 if not frame else 1  # above and below the stripe
+            gap = band // 2 + 1 if kind == "strip" else 1  # above and below the stripe
             layer.blit(top, (x, h // 2 - gap - top.get_height()))
             layer.blit(bottom, (x, h // 2 + gap))
         else:

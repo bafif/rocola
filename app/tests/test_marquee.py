@@ -82,7 +82,8 @@ def test_a_frame_where_only_the_lamps_move_sends_only_them(screen):
     app.motion_only = True
     assert scene.draw(screen) == [lamps]
     assert tuple(screen.get_at(rest.center))[:3] == (255, 0, 255)
-    assert tuple(screen.get_at((lamps.x + 1, lamps.y + 1)))[:3] == app.theme.color("background")
+    corner = (lamps.x + 1, lamps.y + 1)  # between two lamps: the cabinet, put back
+    assert screen.get_at(corner) == app.skin._backdrop(screen.get_size()).get_at(corner)
 
 
 class FakeMPD:

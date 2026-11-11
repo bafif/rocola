@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Ámbar: a lamp of the marquee, off. Original artwork of the Rocola project (MIT). -->
+  <defs>
+    <radialGradient id="bulb" cx="45%" cy="40%">
+      <stop offset="0" stop-color="#7a5326"/>
+      <stop offset="1" stop-color="#3d2510"/>
+    </radialGradient>
+  </defs>
+  <circle cx="16.0" cy="16.0" r="8.8" fill="url(#bulb)" stroke="#1a0e07" stroke-width="1"/>
+  <circle cx="13.1" cy="12.8" r="1.9" fill="#d9b98a" fill-opacity="0.35"/>
+</svg>

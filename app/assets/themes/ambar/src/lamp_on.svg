@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Ámbar: a lamp of the marquee, lit, its glow blurred beforehand. Original artwork of the Rocola project (MIT). -->
+  <defs>
+    <radialGradient id="halo">
+      <stop offset="0.3" stop-color="#ffcf7a" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bulb" cx="45%" cy="40%">
+      <stop offset="0" stop-color="#fffbe8"/>
+      <stop offset="0.6" stop-color="#ffe0a0"/>
+      <stop offset="1" stop-color="#f2a640"/>
+    </radialGradient>
+  </defs>
+  <circle cx="16.0" cy="16.0" r="16.0" fill="url(#halo)"/>
+  <circle cx="16.0" cy="16.0" r="8.8" fill="url(#bulb)"/>
+  <circle cx="13.1" cy="12.8" r="2.2" fill="#fffdf4" fill-opacity="0.9"/>
+</svg>

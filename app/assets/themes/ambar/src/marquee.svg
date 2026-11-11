@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="64" viewBox="0 0 480 64">
+  <!-- Ámbar: the marquee, amber glass lit from behind in a brass rim. Original artwork of the Rocola project (MIT). -->
+  <defs>
+    <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9c27a"/>
+      <stop offset="0.45" stop-color="#9a6a2c"/>
+      <stop offset="1" stop-color="#5e3a14"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe7b4"/>
+      <stop offset="0.35" stop-color="#ffc66a"/>
+      <stop offset="0.8" stop-color="#f4a443"/>
+      <stop offset="1" stop-color="#d9832b"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff8e6" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#fff8e6" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="478" height="62" rx="31" fill="url(#brass)"/>
+  <rect x="5" y="5" width="470" height="54" rx="27" fill="#3a220e"/>
+  <rect x="7" y="7" width="466" height="50" rx="25" fill="url(#glass)"/>
+  <rect x="30" y="9" width="420" height="14" rx="4" fill="url(#shine)"/>
+  <rect x="7" y="7" width="466" height="50" rx="25" fill="none" stroke="#fff1d0" stroke-opacity="0.6" stroke-width="1.5"/>
+</svg>
