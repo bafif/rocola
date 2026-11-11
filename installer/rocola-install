@@ -104,8 +104,8 @@ check_size() {
     too_small "$1" || return 0
     size="$(lsblk -dno SIZE "$1" | tr -d ' ')"
     die "$(txt \
-        "$1 tiene $size: la rocola necesita un disco de al menos 14 GB (12 GB de sistema y el resto para la música)" \
-        "$1 is $size: the jukebox needs a disk of at least 14 GB (12 GB for the system, the rest for music)")"
+        "$1 tiene $size: la rocola necesita un disco de al menos 14 GB (unos 13 GB de sistema y el resto para la música)" \
+        "$1 is $size: the jukebox needs a disk of at least 14 GB (about 13 GB for the system, the rest for music)")"
 }
 
 # --- Selección de destino y opciones -----------------------------------------
@@ -266,7 +266,7 @@ case "$rsync_rc" in
     *) die "$(txt "rsync falló (código $rsync_rc)" "rsync failed (code $rsync_rc)")";;
 esac
 
-# Música precargada: va a la partición de música, no a ROOT (12 GB fijos). En el
+# Música precargada: va a la partición de música, no a ROOT (12 GiB fijos). En el
 # pendrive /music es esa misma carpeta (ver rocola-music-import), así que también viaja
 # lo importado desde un USB durante la sesión en vivo. Solo si la partición no tiene
 # música, como al conservar una: nunca se mezcla con la de otra instalación. Un fallo

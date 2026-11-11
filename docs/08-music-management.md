@@ -27,7 +27,7 @@ os/rootfs-overlay/opt/rocola/music/
 `rocola-music-import` monta esa carpeta encima de `/music` en vez de copiarla: el sistema en vivo
 corre en RAM y una copia ocupaba la biblioteca dos veces en memoria. Al instalar, el instalador la
 copia a la partición `/music` del disco (con lo que se haya importado en la sesión en vivo) si esa
-partición no tiene música, así no ocupa los 12 GB del sistema. MPD la escanea al arrancar. Útil
+partición no tiene música, así no ocupa los 12 GiB del sistema. MPD la escanea al arrancar. Útil
 para entregar el pendrive "con música puesta".
 
 ## Vía 2 — Import desde un 2º USB

@@ -11,7 +11,8 @@ and can be written with `dd`, Rufus or balenaEtcher, or copied to Ventoy. `make 
 
 ## Requirements
 
-- A USB drive of **≥ 4 GB** (8 GB+ recommended).
+- A USB drive of **1 GB or more**: the image takes about 671 MiB and the live system does not
+  write to the stick (music comes in from another stick, see [08](08-music-management.en.md)).
 - The image: a freshly built `out/rocola-i386.img` (see [02](02-build-pipeline.en.md)) **or** the
   `.iso` downloaded from [Releases](https://github.com/bafif/rocola/releases/latest).
 

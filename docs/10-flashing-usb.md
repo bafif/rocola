@@ -11,7 +11,8 @@ extensión `.iso` para que Windows/Rufus/Ventoy la reconozcan sin dudar).
 
 ## Requisitos
 
-- Un pendrive de **≥ 4 GB** (recomendado 8 GB+).
+- Un pendrive de **1 GB o más**: la imagen ocupa unos 671 MiB y el sistema en vivo no escribe en
+  el pendrive (la música entra desde otro pendrive, ver [08](08-music-management.md)).
 - La imagen: `out/rocola-i386.img` recién construida (ver [02](02-build-pipeline.md)) **o** el
   `.iso` descargado desde [Releases](https://github.com/bafif/rocola/releases/latest).
 

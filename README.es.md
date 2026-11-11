@@ -55,7 +55,7 @@ están en [docs/12-verificacion.md](docs/12-verificacion.md).
 
 ## Descargar y grabar (sin compilar)
 
-1. Bajá `rocola-i386-<versión>.iso` (unos 405 MB) de
+1. Bajá `rocola-i386-<versión>.iso` (unos 671 MiB) de
    [Releases](https://github.com/bafif/rocola/releases).
 2. Si querés, comprobalo contra el `SHA256SUMS.txt` del release:
    - Linux o macOS: `sha256sum -c SHA256SUMS.txt`
@@ -81,7 +81,7 @@ x64 y se puede grabar con cualquiera de las herramientas de arriba.
    de español a inglés y al revés cuando quieras.
 3. Para instalarla, enchufá un teclado (el instalador pide tipear una palabra de confirmación),
    abrí el menú (**F10** o el botón 3 de arcade), elegí **Instalar en disco**, el idioma,
-   el disco de destino (**14 GB o más**: 12 GB para el sistema y el resto para la música), confirmá,
+   el disco de destino (**14 GB o más**: unos 13 GB para el sistema y el resto para la música), confirmá,
    elegí el tipo de monitor (moderno/VGA o 15 kHz) y reiniciá.
 4. Sacá el pendrive: desde ese momento la PC arranca directo en la rocola.
 

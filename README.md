@@ -54,7 +54,7 @@ second USB stick. Details and the bugs found along the way:
 
 ## Download and flash (no build needed)
 
-1. Download `rocola-i386-<version>.iso` (about 405 MB) from
+1. Download `rocola-i386-<version>.iso` (about 671 MiB) from
    [Releases](https://github.com/bafif/rocola/releases).
 2. Optionally, check it against the release's `SHA256SUMS.txt`:
    - Linux / macOS: `sha256sum -c SHA256SUMS.txt`
@@ -80,7 +80,7 @@ can be written with any of the tools above.
    switches between English and Spanish at any time.
 3. To install it, plug in a keyboard (the installer asks you to type a confirmation word), open the
    menu (**F10** or arcade button 3), choose **Install to disk**, pick the language, the
-   target disk (**14 GB or more**: 12 GB for the system, the rest for music), confirm, pick the
+   target disk (**14 GB or more**: about 13 GB for the system, the rest for music), confirm, pick the
    monitor type (modern/VGA or 15 kHz) and reboot.
 4. Remove the stick: from now on the PC boots straight into the jukebox.
 

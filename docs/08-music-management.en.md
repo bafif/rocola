@@ -27,7 +27,7 @@ os/rootfs-overlay/opt/rocola/music/
 `rocola-music-import` mounts that folder on top of `/music` instead of copying it: the live system runs in RAM,
 and a copy took up the library twice in memory. When installing, the installer copies it to the disk's `/music`
 partition (along with whatever was imported during the live session) if that partition has no music, so it
-doesn't eat into the system's 12 GB. MPD scans it at boot. Handy for handing over the USB stick "with music
+doesn't eat into the system's 12 GiB. MPD scans it at boot. Handy for handing over the USB stick "with music
 already on it".
 
 ## Option 2 — Import from a 2nd USB drive
