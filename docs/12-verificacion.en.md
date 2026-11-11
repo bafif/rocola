@@ -94,7 +94,7 @@ down because more than one could come back if the build or the installer changes
 |----------|---------|---------|
 | Builder with loop devices | `make image` failed on WSL2 | switch to `grub-mkrescue`, which doesn't need privileges |
 | `grub-mkrescue` arguments | xorriso rejected `-quiet` and `--volid=` | `-- -volid ROCOLA` (mkisofs syntax) |
-| rocola.service didn't start | tty1 stayed at the text login, with no UI | mask `getty@tty1` and make the service a getty replacement (without `Conflicts`, which made systemd discard it) |
+| The UI didn't start | tty1 stayed at the text login, with no UI | the dedicated service that opened it was replaced by autologin of `rocola` on tty1 and `exec startx` from `~/.bash_profile`, with `console-getty` masked |
 | squashfs without `/boot` | the installed system ended up with no kernel | include `/boot` in the squashfs |
 | Xorg without root | `Cannot open virtual console` | `Xwrapper.config` with `needs_root_rights=yes` |
 | The installer wiped `/music` | `--zap-all` destroyed the partition that was supposed to be kept | when keeping the music, don't repartition; only reformat ESP and ROOT |
