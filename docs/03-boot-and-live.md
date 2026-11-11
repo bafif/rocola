@@ -53,14 +53,24 @@ usr/local/bin/rocola-session     (audio + MPD + app, dentro de X)
 Si la UI se cierra 5 veces en 2 minutos, el autologin deja de relanzarla: tty1 queda en la consola
 con el motivo y la forma de reintentar, en vez de un bucle que tapa la pantalla.
 
-## Idioma
+## Menú de arranque
 
-El menú de GRUB del pendrive tiene dos entradas para el arranque normal: **«Rocola»**, que muestra
-la rocola en el idioma del sistema (español en la imagen), y **«Rocola — English»**, la misma con
-`rocola.lang=en`, que la muestra en inglés. Como el modo live no guarda nada entre arranques, en el
-pendrive el idioma se elige ahí; después se cambia en el menú de la app (**«Idioma / Language»**) y,
-al instalar, queda guardado en `/etc/rocola/language.conf`. Las demás entradas tienen el nombre en
-los dos idiomas.
+| Entrada de GRUB | Qué hace |
+|-----------------|----------|
+| «Rocola» (por defecto) | la rocola en el idioma del sistema (español), con el video genérico del firmware |
+| «Rocola — English» | lo mismo, en inglés (`rocola.lang=en`) |
+| «Rocola — GPU / CRT 15 kHz (KMS)» | carga el driver de la placa de video; hace falta para 15 kHz (ver [05](05-display-crt-15khz.md)) |
+| «Rocola — consola de recuperación · recovery console» | `rocola.noui`: tty1 queda en la consola, sin X |
+| «Rocola — SSH por red · SSH troubleshooting» | la UI más `sshd` (ver [11](11-troubleshooting.md)) |
+| «Rocola — CPU sin PAE · without PAE (kernel 686)» | el kernel sin PAE, para algunos Pentium M, VIA C3 y AMD Geode |
+
+Como el modo live no guarda nada entre arranques, en el pendrive el idioma se elige acá; después se
+cambia en el menú de la app (**«Idioma / Language»**) y, al instalar, queda guardado en
+`/etc/rocola/language.conf`.
+
+En el disco instalado, «Rocola — consola de recuperación · recovery console» hace lo mismo que en el
+pendrive y el kernel sin PAE queda en el submenú «Advanced options». Las «recovery mode» de Debian
+están apagadas: piden la clave de root, y root está bloqueado.
 
 ## BIOS y UEFI x64
 
@@ -68,19 +78,19 @@ los dos idiomas.
 - **UEFI x64**: GRUB-EFI amd64 desde la ESP, que carga el **kernel i386**. (UEFI de 32 bits puro no
   está soportado.)
 
-## Recuperación / depuración
+## Servicios
 
-- Entrada de GRUB **«Rocola — consola de recuperación · recovery console»**: pasa `rocola.noui`, el
-  autologin queda en la consola de tty1 y no se lanza X.
-- Entrada **«Rocola — SSH por red · SSH troubleshooting»**: la UI normal más `sshd` (ver
-  [11](11-troubleshooting.md)).
-- En el sistema instalado, la entrada con el mismo nombre, **«Rocola — consola de recuperación ·
-  recovery console»**, hace lo mismo que la del pendrive. Las «recovery mode» de Debian están apagadas: piden la clave
-  de root, y root está bloqueado.
-- Para CPUs sin PAE (algunos Pentium M, VIA C3, AMD Geode), la entrada **«Rocola — CPU sin PAE ·
-  without PAE (kernel 686)»**. En el disco instalado ese kernel queda en el submenú «Advanced options» de GRUB.
-- Para ver por qué no arrancó la UI: `journalctl -b | grep -iE 'startx|xinit|Xorg|rocola-session'`
-  y `/var/log/Xorg.0.log`. `rocola` está en el grupo `systemd-journal`, así que desde la consola
-  `journalctl` muestra los logs de todo el sistema sin root.
+Arrancan solos `rocola-hostname` (escribe `/etc/hostname` y `/etc/hosts`), `rocola-display-setup`,
+`rocola-music-import` (deja la música precargada en `/music`), `systemd-networkd` y `bluetooth`.
+`rocola-ssh` y `rocola-selftest` también corren en cada arranque, pero salen enseguida salvo que la
+línea del kernel tenga `rocola.ssh` o `rocola.selftest`. `mpd.service` y `mpd.socket` están
+enmascarados: a MPD lo lanza `rocola-session`. `rocola-installer.service` lo arranca el menú y
+`rocola-usb-music@.service`, udev al enchufar un pendrive.
+
+## Depuración
+
+Para ver por qué no arrancó la UI: `journalctl -b | grep -iE 'startx|xinit|Xorg|rocola-session'` y
+`/var/log/Xorg.0.log`. `rocola` está en el grupo `systemd-journal`, así que desde la consola
+`journalctl` muestra los logs de todo el sistema sin root. Más en [11](11-troubleshooting.md).
 
 Siguiente: [04 · Instalador](04-installer.md).

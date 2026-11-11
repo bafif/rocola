@@ -53,14 +53,24 @@ usr/local/bin/rocola-session     (audio + MPD + app, inside X)
 If the UI exits 5 times within 2 minutes, autologin stops relaunching it: tty1 stays on the console
 showing the reason and how to retry, instead of a loop that takes over the screen.
 
-## Language
+## Boot menu
 
-The USB stick's GRUB menu has two entries for a normal boot: **"Rocola"**, which shows the jukebox
-in the system's language (Spanish in the image), and **"Rocola — English"**, the same entry with
-`rocola.lang=en`, which shows it in English. Since the live system keeps nothing between boots,
-that's where you pick the language on the stick; later you can switch it from the app's menu
-(**"Language / Idioma"**), and installing saves it in `/etc/rocola/language.conf`. The other
-entries are named in both languages.
+| GRUB entry | What it does |
+|------------|--------------|
+| "Rocola" (default) | the jukebox in the system's language (Spanish), with the firmware's generic video |
+| "Rocola — English" | the same, in English (`rocola.lang=en`) |
+| "Rocola — GPU / CRT 15 kHz (KMS)" | loads the video card's driver; needed for 15 kHz (see [05](05-display-crt-15khz.en.md)) |
+| "Rocola — consola de recuperación · recovery console" | `rocola.noui`: tty1 stays at the console, no X |
+| "Rocola — SSH por red · SSH troubleshooting" | the UI plus `sshd` (see [11](11-troubleshooting.en.md)) |
+| "Rocola — CPU sin PAE · without PAE (kernel 686)" | the non-PAE kernel, for some Pentium M, VIA C3 and AMD Geode |
+
+Since the live system keeps nothing between boots, this is where you pick the language on the stick;
+later you can switch it from the app's menu (**"Language / Idioma"**), and installing saves it in
+`/etc/rocola/language.conf`.
+
+On the installed disk, "Rocola — consola de recuperación · recovery console" does the same as on the
+stick, and the non-PAE kernel lives in GRUB's "Advanced options" submenu. Debian's "recovery mode"
+entries are turned off: they ask for the root password, and root is locked.
 
 ## BIOS and UEFI x64
 
@@ -68,20 +78,19 @@ entries are named in both languages.
 - **UEFI x64**: GRUB-EFI amd64 from the ESP, which loads the **i386 kernel**. (Pure 32-bit UEFI isn't
   supported.)
 
-## Recovery / debugging
+## Services
 
-- GRUB entry **"Rocola — consola de recuperación · recovery console"**: passes `rocola.noui`,
-  autologin stays on the tty1 console and X isn't launched.
-- Entry **"Rocola — SSH por red · SSH troubleshooting"**: the normal UI plus `sshd` (see
-  [11](11-troubleshooting.en.md)).
-- On the installed system, the entry with the same name, **"Rocola — consola de recuperación ·
-  recovery console"**, does the same as the one on the USB stick. Debian's "recovery mode" entries are turned off: they ask for the
-  root password, and root is locked.
-- For CPUs without PAE (some Pentium M, VIA C3, AMD Geode), there's the **"Rocola — CPU sin PAE ·
-  without PAE (kernel 686)"** entry. On the installed disk, that kernel lives in GRUB's "Advanced options"
-  submenu.
-- To see why the UI didn't start: `journalctl -b | grep -iE 'startx|xinit|Xorg|rocola-session'`
-  and `/var/log/Xorg.0.log`. `rocola` is in the `systemd-journal` group, so from the console
-  `journalctl` shows logs for the whole system without root.
+`rocola-hostname` (writes `/etc/hostname` and `/etc/hosts`), `rocola-display-setup`,
+`rocola-music-import` (puts the preloaded music in `/music`), `systemd-networkd` and `bluetooth` start
+on their own. `rocola-ssh` and `rocola-selftest` also run on every boot, but exit right away unless the
+kernel command line has `rocola.ssh` or `rocola.selftest`. `mpd.service` and `mpd.socket` are masked:
+MPD is launched by `rocola-session`. `rocola-installer.service` is started by the menu, and
+`rocola-usb-music@.service` by udev when a USB stick is plugged in.
+
+## Debugging
+
+To see why the UI didn't start: `journalctl -b | grep -iE 'startx|xinit|Xorg|rocola-session'` and
+`/var/log/Xorg.0.log`. `rocola` is in the `systemd-journal` group, so from the console `journalctl`
+shows logs for the whole system without root. More in [11](11-troubleshooting.en.md).
 
 Next: [04 · Installer](04-installer.en.md).
