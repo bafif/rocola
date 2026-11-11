@@ -13,6 +13,8 @@ ENV_VARS = (
     "ROCOLA_RES",
     "ROCOLA_SCREENSHOT",
     "ROCOLA_SCREENSHOT_SCENE",
+    "ROCOLA_DISPLAY",
+    "ROCOLA_EFFECTS",
 )
 
 
@@ -21,6 +23,7 @@ def clean_env(monkeypatch, tmp_path):
     for var in ENV_VARS:
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setattr(config, "USER_CONFIG", tmp_path / "missing.toml")
+    monkeypatch.setattr(config, "DISPLAY_CONF", tmp_path / "missing-display.conf")
     return monkeypatch
 
 
@@ -130,3 +133,30 @@ def test_toml_control_maps_wrong_type(clean_env, tmp_path):
     cfg = Config.load()
     assert cfg.keys == {}
     assert cfg.buttons == {}
+
+
+def test_display_from_display_conf(clean_env, tmp_path):
+    conf = tmp_path / "display.conf"
+    conf.write_text('# set by the installer\nMODE="crt15"\nTV_STANDARD=pal\n', encoding="utf-8")
+    clean_env.setattr(config, "DISPLAY_CONF", conf)
+    assert Config.load().display == "crt15"
+    conf.write_text("MODE=vga\n", encoding="utf-8")
+    assert Config.load().display == "lcd"
+
+
+def test_display_and_effects_from_toml_and_env(clean_env, tmp_path):
+    write_toml(clean_env, tmp_path, 'display = "TV"\neffects = "soft"\n')
+    cfg = Config.load()
+    assert (cfg.display, cfg.effects) == ("tv", "suave")
+    clean_env.setenv("ROCOLA_DISPLAY", "crt")
+    clean_env.setenv("ROCOLA_EFFECTS", "apagado")
+    cfg = Config.load()
+    assert (cfg.display, cfg.effects) == ("crt", "apagado")
+
+
+def test_bad_display_and_effects_fall_back(clean_env, tmp_path):
+    write_toml(clean_env, tmp_path, 'display = "plasma"\neffects = 2\n')
+    clean_env.setenv("ROCOLA_DISPLAY", "oled")
+    clean_env.setenv("ROCOLA_EFFECTS", "turbo")
+    cfg = Config.load()
+    assert (cfg.display, cfg.effects) == ("lcd", "completo")

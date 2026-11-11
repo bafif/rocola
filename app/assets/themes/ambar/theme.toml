@@ -1,0 +1,27 @@
+# Ámbar: rocola de fines de los 40. Gabinete de madera, arco de vidrio ámbar iluminado,
+# tubos con burbujas y tarjetas de papel con franja bordó. Formato en docs/09.
+# El arte (pieces) y las fuentes llegan con la fase 4; hasta entonces se dibuja con los colores.
+version = 2
+name    = "Ámbar"
+
+[colors]
+background = "#24140c"   # madera del gabinete
+surface    = "#f1e4c6"   # papel de las tarjetas
+text       = "#2a160b"   # tinta sobre el papel
+text_dim   = "#7a4a2a"
+on_dark    = "#f1e4c6"   # texto sobre la madera
+accent     = "#8c1c2c"   # franjas y códigos
+glow       = "#ffcf7a"   # cursor y lámparas
+
+[effects]
+bubbles = { tubes = 2, per_tube = 7 }
+record  = { rpm = 45 }
+chaser  = { lamps = 16, step_ms = 120 }
+
+[variant.crt15]   # CRT por RGB a 15 kHz: 320×240 o 384×288
+effects.bubbles = { tubes = 2, per_tube = 3 }
+
+[variant.tv]      # TV por compuesto, S-Video o conversor
+safe_area       = 0.10
+colors.text_dim = "#5a3418"   # más contraste de luminancia
+effects.glow    = "plano"

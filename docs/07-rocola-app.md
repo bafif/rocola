@@ -105,7 +105,9 @@ configuración.
 |------------------------|---------------------|---------|
 | `mpd_host` | `ROCOLA_MPD_HOST` | `127.0.0.1` |
 | `mpd_port` | `ROCOLA_MPD_PORT` | `6600` |
-| `theme` | `ROCOLA_THEME` | `default` |
+| `theme` | `ROCOLA_THEME` | `ambar` |
+| `display` (`lcd`, `crt`, `crt15`, `tv`; ver [09](09-branding-theming.md)) | `ROCOLA_DISPLAY` | `crt15` si `display.conf` dice `MODE=crt15`; si no, `lcd` |
+| `effects` (`completo`, `suave`, `apagado`) | `ROCOLA_EFFECTS` | `completo` |
 | `resolution` (`"640x480"` o `[640, 480]`) | `ROCOLA_RES` | resolución nativa |
 | `windowed` | `ROCOLA_WINDOWED=1` | `false` |
 | `fps` | — | `30` |

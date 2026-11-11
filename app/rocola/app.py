@@ -11,6 +11,7 @@ import pygame
 from . import i18n, ui
 from . import input as rin
 from .config import Config
+from .effects import EffectsGovernor
 from .mpdclient import MPDClient, MPDError
 from .theme import Theme
 
@@ -25,6 +26,7 @@ class RocolaApp:
         self.mpd = MPDClient(self.config.mpd_host, self.config.mpd_port)
         self.input = rin.InputManager()
         self.theme: Theme | None = None
+        self.effects = EffectsGovernor(self.config.effects)
         self.screen = None
         self.clock = None
         self.scenes: dict = {}
@@ -54,7 +56,7 @@ class RocolaApp:
         pygame.mouse.set_visible(False)
         self.clock = pygame.time.Clock()
 
-        self.theme = Theme.load(self.config.theme_dir)
+        self.theme = Theme.load(self.config.theme_dir, self.config.display)
         self.header_h = max(40, self.screen.get_height() // 10)
         # Los nombres de tecla de rocola.toml se resuelven con SDL: después de pygame.init().
         self.input.keymap = rin.build_keymap(self.config.keys)
@@ -90,9 +92,11 @@ class RocolaApp:
             # MPD. Recién después sondeamos/(re)conectamos MPD, así un MPD lento o
             # caído no deja la pantalla en negro al arrancar (sólo la congela un
             # instante mientras reintenta, ya con la UI visible).
+            started = time.perf_counter()
             if self.scene:
                 self.scene.draw(self.screen)
             pygame.display.flip()
+            self.effects.frame((time.perf_counter() - started) * 1000)
             self._poll_state()
             self.clock.tick(self.config.fps)
 
@@ -208,19 +212,15 @@ class RocolaApp:
     # --- header (branding) -----------------------------------------------
     def draw_header(self, surface, subtitle: str = "") -> None:
         w = surface.get_width()
-        surface.fill(self.theme.color("accent"), (0, 0, w, self.header_h))
+        surface.fill(self.theme.color("surface"), (0, 0, w, self.header_h))
         x = 12
-        logo = self.theme.logo(max_height=self.header_h - 10)
-        if logo:
-            surface.blit(logo, (x, 5))
-            x += logo.get_width() + 12
-        title_font = self.theme.font("title", self.header_h // 2)
+        title_font = self.theme.font("marquee", self.header_h // 2)
         title = self.theme.title_for(i18n.language())
-        timg = title_font.render(title, True, self.theme.color("background"))
+        timg = title_font.render(title, self.theme.antialias, self.theme.color("text"))
         surface.blit(timg, (x, (self.header_h - timg.get_height()) // 2))
         if subtitle:
             sfont = self.theme.font("body", max(14, self.header_h // 3))
-            simg = sfont.render(subtitle, True, self.theme.color("background"))
+            simg = sfont.render(subtitle, self.theme.antialias, self.theme.color("text_dim"))
             sy = (self.header_h - simg.get_height()) // 2
             surface.blit(simg, (w - simg.get_width() - 12, sy))
 

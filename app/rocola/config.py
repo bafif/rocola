@@ -6,6 +6,8 @@ import os
 from dataclasses import dataclass, field, fields
 from pathlib import Path
 
+from .effects import parse_level
+
 try:  # Python 3.11+
     import tomllib
 except ModuleNotFoundError:  # pragma: no cover
@@ -16,6 +18,24 @@ ASSETS_DIR = Path(
     os.environ.get("ROCOLA_ASSETS", Path(__file__).resolve().parent.parent / "assets")
 )
 USER_CONFIG = Path(os.environ.get("ROCOLA_CONFIG", "/etc/rocola/rocola.toml"))
+# What rocola-display-setup was told at install time (MODE=auto|vga|crt15; see docs/05).
+DISPLAY_CONF = Path("/etc/rocola/display.conf")
+
+# Kinds of display a theme can have a variant for (docs/09).
+DISPLAYS = ("lcd", "crt", "crt15", "tv")
+
+
+def _display_from_conf(path: Path) -> str | None:
+    """ "crt15" when display.conf sets the 15 kHz mode; None otherwise or without the file."""
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return None
+    for line in lines:
+        key, _, value = line.partition("=")
+        if key.strip() == "MODE" and value.strip().strip("'\"") == "crt15":
+            return "crt15"
+    return None
 
 
 def _parse_res(value: object) -> tuple[int, int] | None:
@@ -77,6 +97,11 @@ def _coerce(name: str, value: object, current: object) -> object:
         return _parse_res(value)
     if name in ("keys", "buttons"):
         return _parse_map(value, int_keys=name == "buttons")
+    if name == "display":
+        name_ok = isinstance(value, str) and value.strip().lower() in DISPLAYS
+        return value.strip().lower() if name_ok else current
+    if name == "effects":
+        return parse_level(value, current)
     if isinstance(current, bool):
         return value if isinstance(value, bool) else current
     if isinstance(current, int):
@@ -90,7 +115,12 @@ def _coerce(name: str, value: object, current: object) -> object:
 class Config:
     mpd_host: str = "127.0.0.1"
     mpd_port: int = 6600
-    theme: str = "default"
+    theme: str = "ambar"
+    # Kind of display the theme dresses for: lcd, crt, crt15 or tv. Until the display is
+    # detected (fase 3), it comes from here or from display.conf, else lcd.
+    display: str = "lcd"
+    # completo | suave | apagado: lowered by itself when the PC cannot keep up (effects.py).
+    effects: str = "completo"
     # None => pantalla completa al modo nativo. Forzar p. ej. (640, 480) para CRT/pruebas.
     resolution: tuple[int, int] | None = None
     windowed: bool = False
@@ -111,6 +141,7 @@ class Config:
     @classmethod
     def load(cls) -> Config:
         cfg = cls()
+        cfg.display = _display_from_conf(DISPLAY_CONF) or cfg.display
         # 1) archivo de usuario (si existe y hay tomllib)
         if tomllib is not None and USER_CONFIG.is_file():
             try:
@@ -125,6 +156,8 @@ class Config:
         cfg.mpd_host = os.environ.get("ROCOLA_MPD_HOST", cfg.mpd_host)
         cfg.mpd_port = _parse_int(os.environ.get("ROCOLA_MPD_PORT", cfg.mpd_port), cfg.mpd_port)
         cfg.theme = os.environ.get("ROCOLA_THEME", cfg.theme)
+        cfg.display = _coerce("display", os.environ.get("ROCOLA_DISPLAY"), cfg.display)
+        cfg.effects = parse_level(os.environ.get("ROCOLA_EFFECTS"), cfg.effects)
         cfg.windowed = os.environ.get("ROCOLA_WINDOWED", "1" if cfg.windowed else "0") == "1"
         res = _parse_res(os.environ.get("ROCOLA_RES"))
         if res:

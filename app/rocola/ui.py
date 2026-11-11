@@ -148,19 +148,21 @@ class LibraryScene(Scene):
 
         if self.error:
             msg = body.render(
-                t("library.mpd_error", error=self.error), True, self.theme.color("accent")
+                t("library.mpd_error", error=self.error), True, self.theme.color("glow")
             )
             surface.blit(msg, (16, top_y))
             return
         if not self.songs:
-            msg = body.render(t("library.empty"), True, self.theme.color("muted"))
+            msg = body.render(t("library.empty"), True, self.theme.color("on_dark_dim"))
             surface.blit(msg, (16, top_y))
             return
 
         view = self.view
         if len(self.stack) > 1:  # breadcrumb: where in the library we are
             path = " / ".join(v.title for v in self.stack[1:])
-            surface.blit(self._label(body, path, w - 32, self.theme.color("muted")), (16, top_y))
+            surface.blit(
+                self._label(body, path, w - 32, self.theme.color("on_dark_dim")), (16, top_y)
+            )
             top_y += line_h
         rows = max(1, (h - top_y - 8) // line_h)
 
@@ -175,12 +177,15 @@ class LibraryScene(Scene):
             y = top_y + (i - view.top) * line_h
             selected = i == view.index
             if selected:
-                surface.fill(self.theme.color("highlight"), (8, y - 2, w - 16, line_h))
-            color = bg if selected else self.theme.color("text")
+                surface.fill(self.theme.color("glow"), (8, y - 2, w - 16, line_h))
+            color = bg if selected else self.theme.color("on_dark")
             text_w = w - 32
             if row.is_folder:  # how many songs it holds, at the right
                 count = self._label(
-                    body, str(len(row.songs)), w, bg if selected else self.theme.color("muted")
+                    body,
+                    str(len(row.songs)),
+                    w,
+                    bg if selected else self.theme.color("on_dark_dim"),
                 )
                 surface.blit(count, (w - 16 - count.get_width(), y))
                 text_w -= count.get_width() + 12
@@ -248,17 +253,17 @@ class NowPlayingScene(Scene):
 
         song = self.app.state.get("song", {})
         status = self.app.state.get("status", {})
-        big = self.theme.font("title", max(22, h // 12))
+        big = self.theme.font("marquee", max(22, h // 12))
         body = self.theme.font("body", max(16, h // 20))
         lines = [
             (
                 song.get("Title") or (_basename(song["file"]) if song.get("file") else "—"),
                 big,
-                "text",
+                "on_dark",
             ),
-            (song.get("Artist") or "", body, "muted"),
-            (song.get("Album") or "", body, "muted"),
-            (_status_line(status), body, "accent"),
+            (song.get("Artist") or "", body, "on_dark_dim"),
+            (song.get("Album") or "", body, "on_dark_dim"),
+            (_status_line(status), body, "glow"),
         ]
         lines = [line for line in lines if line[0]]
 
@@ -360,14 +365,14 @@ class MenuScene(Scene):
         y = self.app.header_h + h // 6
         for i, key in enumerate(self.options):
             selected = i == self.index
-            color = self.theme.color("highlight") if selected else self.theme.color("text")
+            color = self.theme.color("glow") if selected else self.theme.color("on_dark")
             prefix = "> " if selected else "  "
             img = font.render(prefix + t(f"menu.{key}"), True, color)
             surface.blit(img, (w // 2 - img.get_width() // 2, y))
             y += img.get_height() + 14
         if self.notice:
             small = self.theme.font("body", max(14, h // 26))
-            img = small.render(_fit(small, self.notice, w - 32), True, self.theme.color("accent"))
+            img = small.render(_fit(small, self.notice, w - 32), True, self.theme.color("glow"))
             surface.blit(img, (w // 2 - img.get_width() // 2, y + 10))
 
 
@@ -440,7 +445,7 @@ class AudioScene(Scene):
 
         if not self.available:
             text = t("audio.unavailable")
-            msg = body.render(_fit(body, text, w - 32), True, self.theme.color("accent"))
+            msg = body.render(_fit(body, text, w - 32), True, self.theme.color("glow"))
             surface.blit(msg, (16, top_y))
             return
 
@@ -454,8 +459,8 @@ class AudioScene(Scene):
             y = top_y + (i - self.top) * line_h
             selected = i == self.index
             if selected:
-                surface.fill(self.theme.color("highlight"), (8, y - 2, w - 16, line_h))
-            color = self.theme.color("background") if selected else self.theme.color("text")
+                surface.fill(self.theme.color("glow"), (8, y - 2, w - 16, line_h))
+            color = self.theme.color("background") if selected else self.theme.color("on_dark")
             if self._is_pair_row(i):
                 text = t("audio.pair")
             else:
@@ -470,7 +475,7 @@ class AudioScene(Scene):
         himg = hint.render(
             _fit(hint, t("audio.hint"), w - 32),
             True,
-            self.theme.color("muted"),
+            self.theme.color("on_dark_dim"),
         )
         surface.blit(himg, (16, h - himg.get_height() - 6))
 
@@ -501,17 +506,17 @@ class InfoScene(Scene):
         y = self.app.header_h + 12
         for label, value in self.rows:
             label_img = font.render(
-                _fit(font, f"{label}:", col - 8), True, self.theme.color("accent")
+                _fit(font, f"{label}:", col - 8), True, self.theme.color("glow")
             )
             surface.blit(label_img, (x, y))
             value_img = font.render(
-                _fit(font, str(value), w - x - col - 16), True, self.theme.color("text")
+                _fit(font, str(value), w - x - col - 16), True, self.theme.color("on_dark")
             )
             surface.blit(value_img, (x + col, y))
             y += line_h
 
         hint = self.theme.font("body", max(13, h // 26))
-        himg = hint.render(t("info.hint"), True, self.theme.color("muted"))
+        himg = hint.render(t("info.hint"), True, self.theme.color("on_dark_dim"))
         surface.blit(himg, (16, h - himg.get_height() - 6))
 
 
@@ -574,15 +579,15 @@ class InputTestScene(Scene):
         font = self.theme.font("body", max(15, h // 22))
         line_h = font.get_height() + 8
         y = self.app.header_h + 12
-        surface.blit(font.render(t("input.intro"), True, self.theme.color("muted")), (16, y))
+        surface.blit(font.render(t("input.intro"), True, self.theme.color("on_dark_dim")), (16, y))
         y += line_h + 6
         for line in self.lines or [t("input.waiting")]:
-            surface.blit(font.render(line, True, self.theme.color("text")), (16, y))
+            surface.blit(font.render(line, True, self.theme.color("on_dark")), (16, y))
             y += line_h
 
         hint = self.theme.font("body", max(13, h // 26))
         text = t("input.hint", seconds=round(self.IDLE_EXIT_S))
-        himg = hint.render(text, True, self.theme.color("muted"))
+        himg = hint.render(text, True, self.theme.color("on_dark_dim"))
         surface.blit(himg, (16, h - himg.get_height() - 6))
 
 
@@ -709,7 +714,7 @@ class BtPairScene(Scene):
         body = self.theme.font("body", max(16, h // 18))
         line_h = body.get_height() + 8
         top_y = self.app.header_h + 8
-        surface.blit(body.render(status, True, self.theme.color("muted")), (16, top_y))
+        surface.blit(body.render(status, True, self.theme.color("on_dark_dim")), (16, top_y))
         list_y = top_y + line_h
         rows = max(1, (h - list_y - 2 * line_h) // line_h)
 
@@ -722,12 +727,12 @@ class BtPairScene(Scene):
             y = list_y + (i - self.top) * line_h
             selected = i == self.index
             if selected:
-                surface.fill(self.theme.color("highlight"), (8, y - 2, w - 16, line_h))
-            color = self.theme.color("background") if selected else self.theme.color("text")
+                surface.fill(self.theme.color("glow"), (8, y - 2, w - 16, line_h))
+            color = self.theme.color("background") if selected else self.theme.color("on_dark")
             surface.blit(body.render(self.devices[i][1], True, color), (16, y))
 
         hint = self.theme.font("body", max(13, h // 26))
-        himg = hint.render(t("bt.hint"), True, self.theme.color("muted"))
+        himg = hint.render(t("bt.hint"), True, self.theme.color("on_dark_dim"))
         surface.blit(himg, (16, h - himg.get_height() - 6))
 
     def _draw_message(self, surface, text: str) -> None:
@@ -735,6 +740,6 @@ class BtPairScene(Scene):
         font = self.theme.font("body", max(18, h // 16))
         y = self.app.header_h + h // 6
         for line in text.split("\n"):
-            img = font.render(line, True, self.theme.color("text"))
+            img = font.render(line, True, self.theme.color("on_dark"))
             surface.blit(img, (w // 2 - img.get_width() // 2, y))
             y += img.get_height() + 8

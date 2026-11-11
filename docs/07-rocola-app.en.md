@@ -105,7 +105,9 @@ start because of the configuration.
 |------------------------|---------------------|---------|
 | `mpd_host` | `ROCOLA_MPD_HOST` | `127.0.0.1` |
 | `mpd_port` | `ROCOLA_MPD_PORT` | `6600` |
-| `theme` | `ROCOLA_THEME` | `default` |
+| `theme` | `ROCOLA_THEME` | `ambar` |
+| `display` (`lcd`, `crt`, `crt15`, `tv`; see [09](09-branding-theming.en.md)) | `ROCOLA_DISPLAY` | `crt15` if `display.conf` says `MODE=crt15`; otherwise `lcd` |
+| `effects` (`completo`, `suave`, `apagado`) | `ROCOLA_EFFECTS` | `completo` |
 | `resolution` (`"640x480"` or `[640, 480]`) | `ROCOLA_RES` | native resolution |
 | `windowed` | `ROCOLA_WINDOWED=1` | `false` |
 | `fps` | — | `30` |

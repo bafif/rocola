@@ -15,16 +15,16 @@ rocola/
   input.py      keyboard + joystick → actions
   ui.py         scenes: library, now-playing, menu
   library.py    library views by artist and album (no pygame)
-  theme.py      branding (logo, colors, fonts) from assets/
+  theme.py      themes v2: colors, fonts, pieces, effects and per-display variants
+  effects.py    effects level, lowered by itself on a slow PC
   config.py     settings (MPD host, resolution, theme…)
   audio.py      PipeWire outputs (pactl)
   bt.py         Bluetooth pairing (bluetoothctl)
   sysinfo.py    data for the info screen
 tests/          pytest (fake MPD, dummy SDL)
 assets/
-  logo.svg
   fonts/
-  themes/default/theme.toml
+  themes/ambar/theme.toml
 ```
 
 ## Running in development

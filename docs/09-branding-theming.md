@@ -2,55 +2,96 @@
 
 *[English](09-branding-theming.en.md) · Español*
 
-La estética es **100% propia y reemplazable** sin tocar la lógica de la app. Logos, colores y fuentes
-se cargan desde `app/assets/` según un archivo de tema.
-
-## Qué se puede personalizar
-
-- **Logo** (pantalla de inicio y cabecera).
-- **Colores** (fondo, acentos, texto, resaltado de selección).
-- **Fuentes** (titulares y cuerpo).
-- **Fondo/atmósfera** (imagen o color sólido; pensado para verse bien en CRT).
-- **Textos** (nombre de la rocola, mensajes).
+Todo lo que se ve sale de un tema: la app no conoce colores ni archivos de imagen. Un tema es una
+carpeta de `app/assets/themes/` con un `theme.toml` y, si tiene arte, sus imágenes. La rocola trae
+**Ámbar** (una rocola de fines de los 40), el tema por defecto; hasta que llegue su arte se dibuja
+sólo con sus colores.
 
 ## Estructura
 
 ```
 app/assets/
-  logo.svg            # logo principal (vectorial; reemplazable por PNG)
-  fonts/              # tipografías (.ttf/.otf) + README de licencias
+  fonts/              # tipografías compartidas (.ttf/.otf) + README con sus licencias
   themes/
-    default/
-      theme.toml      # colores, fuentes, rutas de assets, textos
-      background.png  # opcional
+    ambar/
+      theme.toml      # colores, fuentes, piezas, efectos y variantes
+      *.png           # piezas (opcionales)
+      src/            # los SVG originales de las piezas
 ```
 
-`theme.toml` (ejemplo conceptual):
+## `theme.toml`
 
 ```toml
-name = "Rocola Clásica"
+version = 2
+name    = "Ámbar"
 [colors]
-background = "#0b0b15"
-accent     = "#ff3366"
-text       = "#f5f5f5"
-highlight  = "#ffd24a"
-[fonts]
-title = "fonts/PressStart2P.ttf"
-body  = "fonts/Inter-Regular.ttf"
+background = "#24140c"
+surface    = "#f1e4c6"
+text       = "#2a160b"
+on_dark    = "#f1e4c6"
+accent     = "#8c1c2c"
+glow       = "#ffcf7a"
+[fonts]      # desde la carpeta del tema o desde app/assets/
+marquee = "fonts/Limelight-Regular.ttf"
+body    = "fonts/Oswald-Medium.ttf"
+[pieces]     # PNG; `slice` son los nueve cortes: izquierda, arriba, derecha, abajo
+strip = { file = "strip.png", slice = [10, 6, 10, 6] }
+[effects]
+record = { rpm = 45 }
+[variant.crt15]
+fonts.body      = "fonts/VT323-Regular.ttf"
+fonts.antialias = false
+[variant.tv]
+safe_area = 0.10
 [branding]
-logo   = "logo.svg"
-title  = { es = "MI ROCOLA", en = "MY JUKEBOX" }
+title = { es = "MI ROCOLA", en = "MY JUKEBOX" }
 ```
 
-`app/rocola/theme.py` lee este archivo; el código **nunca** hardcodea colores ni rutas de imagen.
-El título del encabezado puede ser un solo texto (`title = "BAR PEPE"`) o uno por idioma de la
-rocola, como arriba; si falta el del idioma activo, se usa el que haya.
+- **Colores**, por rol:
 
-## Consideraciones para CRT
+  | Rol | Qué pinta |
+  |-----|-----------|
+  | `background` | lo que está detrás de todo: el gabinete |
+  | `surface` | las tarjetas y los paneles |
+  | `text`, `text_dim` | el texto sobre `surface` |
+  | `on_dark`, `on_dark_dim` | el texto sobre `background` |
+  | `accent` | las franjas y los códigos de las tarjetas |
+  | `glow` | el cursor y las lámparas |
 
-- Alto contraste y tipografías legibles a 320×240 / 640×480.
-- Respetar el *title-safe area* (no pegar texto a los bordes; los CRT recortan).
-- Evitar líneas horizontales de 1 px puro en contenido entrelazado (parpadean); preferir grosores ≥2.
+  Si faltan `text_dim` u `on_dark_dim`, se mezclan de su par.
+- **Fuentes**: `marquee` (la marquesina), `strip` (las tarjetas), `body` (el texto) y `digits`
+  (números y códigos). La que falta usa otra (marquesina → tarjetas → texto; números → texto) y, al
+  final, la de SDL. `antialias = false` es para fuentes de píxeles.
+- **Piezas**: imágenes PNG. La que falta se dibuja con los colores.
+- **Efectos**: los parámetros que lee cada pantalla.
+- **Variantes**: `[variant.lcd]`, `[variant.crt]`, `[variant.crt15]` y `[variant.tv]` se superponen
+  a la base según el tipo de pantalla. Una tabla se mezcla clave por clave (`fonts.body` cambia sólo
+  esa fuente); una pieza o un efecto se reemplaza entero.
+- **`safe_area`**: el margen de cada lado, como fracción de la pantalla; sin él, el del tipo de
+  pantalla.
+- **`[branding] title`**: el texto de la marquesina, uno solo (`title = "BAR PEPE"`) o uno por
+  idioma; si falta el del idioma activo, se usa el que haya.
+
+Nada es obligatorio: si falta el tema o está roto, la rocola arranca en blanco y negro.
+
+## Tipos de pantalla
+
+| Tipo | Qué es | Margen | Letra mínima | Tarjetas por página |
+|------|--------|--------|--------------|---------------------|
+| `lcd` | pantalla plana | 3 % | 18 px | 10 |
+| `crt` | monitor de tubo de PC (VGA, 31 kHz o más) | 5 % | 16 px | 8 |
+| `crt15` | tubo por RGB a 15 kHz (arcade o SCART) | 8 % | 10 px | 6 |
+| `tv` | TV por compuesto, S-Video o conversor | 10 % | 14 px | 6 |
+
+El tipo sale de `display` en `/etc/rocola/rocola.toml` (ver [07](07-rocola-app.md)); si no está, de
+`/etc/rocola/display.conf` (`MODE=crt15` es `crt15`) y, si no, es `lcd`. Que la rocola detecte la
+pantalla sola llega en una versión siguiente.
+
+## Efectos
+
+`effects` en `/etc/rocola/rocola.toml` es `completo`, `suave` o `apagado` (también `full`, `soft`,
+`off`). Si los cuadros tardan en promedio más de 20 ms, la rocola baja un nivel sola y no vuelve a
+subir hasta que se reinicia.
 
 ## Cambiar de tema
 
@@ -60,7 +101,7 @@ uno en cada instalación (ver [07](07-rocola-app.md)).
 
 ## Fuentes y licencias
 
-Las tipografías incluidas deben tener licencia compatible (OFL/MIT/Apache). Documentá cada una en
-`app/assets/fonts/README.md`. Si falta una fuente, la app cae a una fuente del sistema.
+Las tipografías incluidas tienen que tener licencia OFL o Apache. Cada una se anota en
+`app/assets/fonts/README.md`.
 
 Siguiente: [10 · Grabar el pendrive](10-flashing-usb.md).
