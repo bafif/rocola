@@ -37,7 +37,10 @@ reciente de pygame hay que probarlo en la ISO.
 | `input.py` | capa de input: teclado + joystick → acciones de la rocola |
 | `ui.py` | widgets/escenas: biblioteca, now-playing, menús |
 | `library.py` | vistas de la biblioteca por artista y álbum (sin pygame, se prueba sola) |
-| `theme.py` | carga branding desde `assets/` (logo, colores, fuentes) |
+| `theme.py` | carga el tema (`theme.toml`, piezas, fuentes) con la variante del tipo de pantalla |
+| `skin.py` | dibuja cada pieza (marquesina, tarjetas, cursor, lámparas, disco) con lo que dice el tema |
+| `effects.py` | el nivel de efectos y la baja automática en una PC lenta |
+| `themecheck.py` | `python -m rocola.theme check`: contraste, letras con tilde y archivos de un tema |
 | `config.py` | ajustes (defaults + `/etc/rocola/rocola.toml` + variables de entorno) |
 | `audio.py` | salidas de PipeWire vía `pactl`: listar, elegir y recordar la salida |
 | `bt.py` | emparejar parlantes Bluetooth vía `bluetoothctl` |
@@ -104,7 +107,8 @@ aparece un texto de pantalla escrito fuera de ahí.
 ## Render y rendimiento
 
 - Resolución nativa del display activo (320×240 / 640×480 en CRT; mayor en VGA/moderno).
-- Sin animaciones costosas por defecto; objetivo fluido en GPUs viejas.
+- Lo que se mueve (el disco, las lámparas, las burbujas) tiene tres niveles y baja solo si la PC no
+  llega (ver [09 · Efectos](09-branding-theming.md#efectos)).
 - Fuentes y assets escalados al modo activo; layouts conscientes del *title-safe area* del CRT.
 
 ## Desarrollo local
@@ -133,7 +137,8 @@ configuración.
 | — (`/etc/rocola/language.conf`, ver «Idioma») | `ROCOLA_LANG=es\|en` | según el locale |
 | `[keys]`, `[buttons]` (mapeos de controles, ver [06](06-arcade-controls.md)) | — | los de `input.py` |
 
-`ROCOLA_SCREENSHOT=/ruta.png` (y `ROCOLA_SCREENSHOT_SCENE=library|nowplaying|menu|audio|info|inputtest|btpair`)
-dibuja una escena, guarda el PNG y sale: así se generan las capturas `docs/screenshots/ui-*.png`.
+`ROCOLA_SCREENSHOT=/ruta.png` (y
+`ROCOLA_SCREENSHOT_SCENE=library|nowplaying|menu|audio|info|inputtest|btpair`) dibuja una escena,
+guarda el PNG y sale: así se generan las capturas `docs/screenshots/ui-*.png`.
 
 Siguiente: [08 · Música](08-music-management.md).

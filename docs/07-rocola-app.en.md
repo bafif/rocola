@@ -37,7 +37,10 @@ pygame function has to be tested on the ISO.
 | `input.py` | input layer: keyboard + joystick → jukebox actions |
 | `ui.py` | widgets/scenes: library, now playing, menus |
 | `library.py` | library views by artist and album (no pygame, testable on its own) |
-| `theme.py` | loads branding from `assets/` (logo, colors, fonts) |
+| `theme.py` | loads the theme (`theme.toml`, pieces, fonts) with the variant for the kind of display |
+| `skin.py` | draws every piece (marquee, cards, cursor, lamps, record) with what the theme says |
+| `effects.py` | the effects level, and lowering it by itself on a slow PC |
+| `themecheck.py` | `python -m rocola.theme check`: contrast, accented letters and files of a theme |
 | `config.py` | settings (defaults + `/etc/rocola/rocola.toml` + environment variables) |
 | `audio.py` | PipeWire outputs via `pactl`: list, pick and remember the output |
 | `bt.py` | pair Bluetooth speakers via `bluetoothctl` |
@@ -104,7 +107,8 @@ one of them is missing a language or if an on-screen text is written outside tha
 ## Rendering and performance
 
 - Native resolution of the active display (320×240 / 640×480 on CRT; higher on VGA/modern).
-- No expensive animations by default; the goal is smooth performance on old GPUs.
+- What moves (the record, the lamps, the bubbles) has three levels and steps down by itself when the
+  PC can't keep up (see [09 · Effects](09-branding-theming.en.md#effects)).
 - Fonts and assets scaled to the active mode; layouts aware of the CRT's *title-safe area*.
 
 ## Local development
@@ -133,7 +137,8 @@ start because of the configuration.
 | — (`/etc/rocola/language.conf`, see "Language") | `ROCOLA_LANG=es\|en` | from the locale |
 | `[keys]`, `[buttons]` (control mappings, see [06](06-arcade-controls.en.md)) | — | the ones in `input.py` |
 
-`ROCOLA_SCREENSHOT=/path.png` (and `ROCOLA_SCREENSHOT_SCENE=library|nowplaying|menu|audio|info|inputtest|btpair`)
-draws a scene, saves the PNG and exits: that's how the `docs/screenshots/ui-*.png` screenshots are generated.
+`ROCOLA_SCREENSHOT=/path.png` (and
+`ROCOLA_SCREENSHOT_SCENE=library|nowplaying|menu|audio|info|inputtest|btpair`) draws a scene, saves
+the PNG and exits: that's how the `docs/screenshots/ui-*.png` screenshots are generated.
 
 Next: [08 · Music](08-music-management.en.md).
