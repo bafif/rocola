@@ -2,8 +2,8 @@
 
 *English · [Español](08-music-management.md)*
 
-There are two ways to load songs, and you can combine them: **preloaded in the image** and **imported from a 2nd USB drive**.
-The library lives on a **persistent data partition** (`/music`).
+There are two ways to load songs, and you can combine them: **preloaded in the image** and **imported
+from a 2nd USB drive**. The library lives on a **persistent data partition** (`/music`).
 
 ## Where the music lives
 
@@ -25,7 +25,7 @@ os/rootfs-overlay/opt/rocola/music/
 
 (that path is ignored by git except for `.gitkeep`, so heavy audio doesn't get versioned). On the USB stick,
 `rocola-music-import` mounts that folder on top of `/music` instead of copying it: the live system runs in RAM,
-and a copy took up the library twice in memory. When installing, the installer copies it to the disk's `/music`
+and a copy would take up the library twice in memory. When installing, the installer copies it to the disk's `/music`
 partition (along with whatever was imported during the live session) if that partition has no music, so it
 doesn't eat into the system's 12 GiB. MPD scans it at boot. Handy for handing over the USB stick "with music
 already on it".
@@ -35,7 +35,7 @@ already on it".
 1. Plug in a USB stick with your songs (in the root or in folders, e.g. `Music/Artist/Album/`),
    either while the jukebox is running or before turning it on. FAT32, exFAT, NTFS and ext2/3/4 all work.
 2. udev detects it (`/etc/udev/rules.d/90-rocola-usb-music.rules`) and starts
-   `rocola-usb-music@<dispositivo>.service`, which mounts each partition **read-only** under
+   `rocola-usb-music@<device>.service`, which mounts each partition **read-only** under
    `/run/rocola-usb/`. There's nothing to confirm: the USB stick is never modified.
 3. `rocola-music-import` copies the audio (mp3, flac, ogg, m4a, wav, opus, aac, case-insensitive:
    `TEMA01.MP3` gets in too) and the folder artwork (`cover.*`, `folder.*`) to `/music`, without

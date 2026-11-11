@@ -25,7 +25,7 @@ os/rootfs-overlay/opt/rocola/music/
 
 (esa ruta se ignora en git salvo `.gitkeep`, para no versionar audio pesado). En el pendrive,
 `rocola-music-import` monta esa carpeta encima de `/music` en vez de copiarla: el sistema en vivo
-corre en RAM y una copia ocupaba la biblioteca dos veces en memoria. Al instalar, el instalador la
+corre en RAM y una copia ocuparía la biblioteca dos veces en memoria. Al instalar, el instalador la
 copia a la partición `/music` del disco (con lo que se haya importado en la sesión en vivo) si esa
 partición no tiene música, así no ocupa los 12 GiB del sistema. MPD la escanea al arrancar. Útil
 para entregar el pendrive "con música puesta".
