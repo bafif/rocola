@@ -63,8 +63,7 @@ openssh-server
 xserver-xorg-core
 xserver-xorg-legacy
 xserver-xorg-video-all     # drivers de video genéricos (incluye CRT-capaces)
-xserver-xorg-input-libinput
-xserver-xorg-input-evdev
+xserver-xorg-input-libinput # teclado, mouse y encoders de arcade: el driver de entrada que Xorg mantiene
 xinit
 x11-xserver-utils          # xrandr, etc.
 libgl1-mesa-dri
