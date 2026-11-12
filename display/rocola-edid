@@ -1,0 +1,60 @@
+#!/bin/bash
+# rocola-edid — lista las pantallas conectadas que entregan un EDID válido.
+#
+# Con KMS, el kernel expone el EDID de cada conector en /sys/class/drm/cardN-<conector>/edid
+# (vacío si no hay nada enchufado). Con 'nomodeset' no hay conectores y no hay nada que
+# leer. Un EDID vale si empieza con la cabecera fija 00 FF FF FF FF FF FF 00 y sus primeros
+# 128 bytes suman 0 módulo 256: un cable VGA en mal estado suele entregarlo corrupto.
+#
+# Salida: una línea por conector, "<conector> <nombre del monitor>"; el nombre falta si el
+# EDID no lo trae. Sale con 1 si no encontró ninguno. ROCOLA_DRM_DIR cambia el directorio
+# que se recorre (los tests usan uno falso).
+set -euo pipefail
+
+DRM_DIR="${ROCOLA_DRM_DIR:-/sys/class/drm}"
+
+# Nombre del monitor: el descriptor de pantalla con etiqueta 0xFC, en uno de los cuatro
+# bloques de 18 bytes que empiezan en el byte 54. El texto va del byte 5 al 17 del bloque,
+# termina en 0x0A y se rellena con espacios. Recibe los 128 bytes en decimal.
+monitor_name() {
+    local -a b=("$@")
+    local off i c ch name
+    for off in 54 72 90 108; do
+        if [ "${b[off]}" -ne 0 ] || [ "${b[off + 1]}" -ne 0 ] || [ "${b[off + 3]}" -ne 252 ]; then
+            continue
+        fi
+        name=
+        for ((i = off + 5; i < off + 18; i++)); do
+            c=${b[i]}
+            if [ "$c" -eq 10 ]; then break; fi
+            if ((c >= 32 && c < 127)); then
+                printf -v ch '%b' "\\x$(printf '%02x' "$c")"
+                name+="$ch"
+            fi
+        done
+        name="${name%"${name##*[! ]}"}"
+        printf '%s' "$name"
+        return 0
+    done
+}
+
+found=0
+for f in "$DRM_DIR"/card*-*/edid; do
+    [ -r "$f" ] || continue
+    bytes=()
+    read -r -d '' -a bytes < <(od -An -v -tu1 -N128 "$f" 2>/dev/null) || true
+    [ "${#bytes[@]}" -eq 128 ] || continue
+    [ "${bytes[*]:0:8}" = "0 255 255 255 255 255 255 0" ] || continue
+    sum=0
+    for v in "${bytes[@]}"; do sum=$((sum + v)); done
+    [ $((sum % 256)) -eq 0 ] || continue
+
+    conn="${f%/edid}"
+    conn="${conn##*/}"
+    conn="${conn#card*-}"
+    name="$(monitor_name "${bytes[@]}")"
+    echo "$conn${name:+ $name}"
+    found=$((found + 1))
+done
+
+[ "$found" -gt 0 ]

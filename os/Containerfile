@@ -73,6 +73,7 @@ COPY os/rootfs-overlay/ /
 # --- Permisos de ejecutables y enlaces ------------------------------------
 RUN set -eux; \
     chmod +x /usr/local/bin/* /opt/rocola-installer/rocola-install /opt/rocola-display/rocola-display-setup \
+             /opt/rocola-display/rocola-edid \
              /etc/grub.d/11_rocola_noui; \
     ln -sf /opt/rocola-installer/rocola-install   /usr/local/bin/rocola-install; \
     ln -sf /opt/rocola-display/rocola-display-setup /usr/local/bin/rocola-display-setup; \

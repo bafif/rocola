@@ -10,7 +10,7 @@ end.
 ```bash
 make app-test      # the app with pytest, no display or audio (SDL's dummy driver and a fake MPD)
 make app-lint      # ruff
-make os-test       # the OS scripts that run without root (the music import)
+make os-test       # the OS scripts that run without root (the music import and the EDID reader)
 make theme-check   # contrast, accented letters and files of every theme
 ```
 

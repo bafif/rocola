@@ -105,8 +105,9 @@ theme-shots: ## Capturas de cada pantalla en cada tipo de pantalla: make theme-s
 	app/tools/theme-shots.sh $(or $(THEME),ambar) $(OUT)/shots
 
 .PHONY: os-test
-os-test: ## Tests de los scripts del SO que corren sin root (import de música)
+os-test: ## Tests de los scripts del SO que corren sin root (import de música, lector de EDID)
 	bash os/tests/music-import.sh
+	bash os/tests/display-edid.sh
 
 .PHONY: clean
 clean: ## Borra artefactos de build

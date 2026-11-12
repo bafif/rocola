@@ -52,6 +52,9 @@ arranque → rocola-display-setup
 - **modelines** (`display/modelines/15khz.conf`): 320×240 y 640×480i (NTSC, 60 Hz), 384×288 y
   768×576i (PAL, 50 Hz). Para VGA no hace falta archivo: Xorg los saca del EDID.
 - **Xorg**: config mínima que admite modelines custom; la app SDL2 renderiza al modo activo.
+- **EDID** (`display/rocola-edid`): con KMS, el kernel deja el EDID de cada conector en
+  `/sys/class/drm/*/edid`. `rocola-display-setup` lo lee y anota en el log qué monitor encontró y en
+  qué salida. Con la entrada por defecto (`nomodeset`) no hay conectores y no hay EDID que leer.
 - `switchres`, que calcula modelines a medida de cada CRT, no está en Debian y no viene en la imagen.
 
 ## El límite del hardware

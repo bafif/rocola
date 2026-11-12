@@ -95,4 +95,4 @@ fonts-dejavu-core          # fuente de fallback
 
 # --- Video CRT / 15 kHz ---
 # Modelines fijos (display/modelines/). 'switchres' no está en Debian y no se incluye.
-read-edid                  # parseo de EDID para autodetección
+# El EDID se lee de /sys/class/drm (display/rocola-edid), sin paquete aparte.

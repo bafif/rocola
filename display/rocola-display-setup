@@ -10,6 +10,7 @@ set -euo pipefail
 
 CONF=/etc/rocola/display.conf
 MODELINES_DIR=/opt/rocola-display/modelines
+EDID_READER=/opt/rocola-display/rocola-edid
 OUT=/etc/X11/xorg.conf.d/10-rocola-display.conf
 
 MODE=auto
@@ -126,11 +127,15 @@ case "$MODE" in
         # Autodetección. Los CRT de 15 kHz no entregan EDID confiable, así que
         # 'auto' siempre escribe una config VGA segura (Xorg elige el mejor modo
         # por EDID si lo hay). El 15 kHz se activa explícitamente con MODE=crt15.
-        # El chequeo de EDID sólo sirve para dejar una pista útil en el log.
+        # El chequeo de EDID sólo sirve para dejar una pista útil en el log. El EDID
+        # se lee de los conectores DRM (rocola-edid), que existen sólo con KMS.
         write_vga
-        if command -v get-edid >/dev/null 2>&1 \
-           && get-edid 2>/dev/null | parse-edid 2>/dev/null | grep -qi 'Modeline\|Monitor'; then
-            echo "rocola-display-setup: EDID detectado -> modos VGA/moderno por EDID"
+        if edids="$("$EDID_READER" 2>/dev/null)"; then
+            while read -r conn name; do
+                echo "rocola-display-setup: EDID de ${name:-un monitor sin nombre} en $conn -> Xorg toma los modos de ahí"
+            done <<<"$edids"
+        elif [ "$(detect_driver)" = fbdev ]; then
+            echo "rocola-display-setup: sin KMS no hay EDID que leer; el modo es el que dejó el firmware"
         else
             echo "rocola-display-setup: sin EDID útil; VGA seguro. Si usás CRT 15 kHz, poné MODE=crt15 en $CONF"
         fi

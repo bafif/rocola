@@ -53,6 +53,9 @@ boot → rocola-display-setup
 - **modelines** (`display/modelines/15khz.conf`): 320×240 and 640×480i (NTSC, 60 Hz), 384×288 and
   768×576i (PAL, 50 Hz). VGA doesn't need a file: Xorg gets them from EDID.
 - **Xorg**: a minimal config that accepts custom modelines; the SDL2 app renders at the active mode.
+- **EDID** (`display/rocola-edid`): with KMS, the kernel exposes each connector's EDID in
+  `/sys/class/drm/*/edid`. `rocola-display-setup` reads it and logs which monitor it found and on
+  which output. With the default entry (`nomodeset`) there are no connectors and no EDID to read.
 - `switchres`, which calculates modelines tailored to each CRT, isn't in Debian and isn't included
   in the image.
 

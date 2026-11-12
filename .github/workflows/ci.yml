@@ -35,3 +35,5 @@ jobs:
             | grep -v '\.md$' | sort | xargs shellcheck -S warning
       - name: music import script
         run: bash os/tests/music-import.sh
+      - name: EDID reader
+        run: bash os/tests/display-edid.sh
