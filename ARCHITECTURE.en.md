@@ -161,6 +161,7 @@ app/        the jukebox UI (Python + pygame/SDL2), MPD client, input, themes, te
 installer/  guided installer (whiptail TUI) that clones the system to disk
 display/    15 kHz modelines and the VGA/CRT video setup
 docs/       one document per subsystem
+landing/    the page at bafif.github.io/rocola/ (static, in Spanish and English)
 ```
 
 Each top-level folder maps to a subsystem of this architecture and has its matching document in

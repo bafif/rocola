@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rocola: a jukebox on an old PC, with a single USB stick</title>
+    <meta name="description" content="Boot an old PC from the stick and a full-screen jukebox comes up. A guided installer puts it on the disk; it is driven with arcade controls and works on modern monitors and CRTs." />
+    <link rel="alternate" hreflang="es" href="../" />
+    <script src="../idioma.js"></script>
+    <link rel="canonical" href="https://bafif.github.io/rocola/en/" />
+    <link rel="icon" href="../img/rocola-icono.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
+    <meta name="theme-color" content="#24140C" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Rocola" />
+    <meta property="og:description" content="Turn an old desktop PC into a jukebox with a single USB stick." />
+    <meta property="og:url" content="https://bafif.github.io/rocola/en/" />
+    <link rel="preload" href="../fuentes/Limelight-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="../estilo.css" />
+    <script src="../rocola.js" defer></script>
+  </head>
+  <body>
+    <header class="barra">
+      <a class="marca" href="#arriba"><img src="../img/rocola-icono.svg" alt="" width="32" height="32" /><span>ROCOLA</span></a>
+      <nav><a href="#what-it-is">What it is</a><a href="#install">Install</a><a href="#how-to-use-it">How to use it</a><a href="https://github.com/bafif/rocola">GitHub</a><a href="../" hreflang="es" lang="es">Español</a></nav>
+    </header>
+    <main id="arriba">
+      <section class="hero">
+        <div class="escenario">
+          <div class="marquesina"><svg class="marquesina-svg" viewBox="50 150 500 275" role="img" aria-label="ROCOLA"><defs><linearGradient id="m-vidrio" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE7B4"/><stop offset="0.35" stop-color="#FFC66A"/><stop offset="0.8" stop-color="#F4A443"/><stop offset="1" stop-color="#D9832B"/></linearGradient><linearGradient id="m-bronce" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9C27A"/><stop offset="0.45" stop-color="#9A6A2C"/><stop offset="1" stop-color="#5E3A14"/></linearGradient></defs><path fill="url(#m-bronce)" d="M70 382 L70 300 Q300 128 530 300 L530 382 Z"/><path class="vidrio" fill="url(#m-vidrio)" d="M92 366 L92 306 Q300 156 508 306 L508 366 Z"/><path transform="translate(116.72 352)" fill="#2A160B" d="M33.2421875 -18.9453125 36.4453125 -18.7109375Q43.3203125 -18.7109375 48.125 -23.515625Q52.9296875 -28.3203125 52.9296875 -35.46875Q52.9296875 -44.84375 44.6875 -49.375Q40.15625 -51.875 35.0 -52.265625Q32.8125 -52.4609375 30.9375 -52.4609375H28.28125Q27.4609375 -52.4609375 26.8359375 -52.421875V0.0H6.9140625V-55.2734375Q16.0546875 -55.2734375 21.71875 -55.2734375Q27.3828125 -55.2734375 29.1015625 -55.234375Q30.8203125 -55.1953125 32.16796875 -55.13671875Q33.515625 -55.078125 34.6875 -55.0Q36.40625 -54.84375 39.55078125 -54.2578125Q42.6953125 -53.671875 45.78125 -52.03125Q48.8671875 -50.390625 51.09375 -47.96875Q55.8984375 -42.8125 55.8984375 -35.703125Q55.8984375 -28.671875 51.4453125 -23.28125Q46.875 -17.7734375 39.2578125 -16.171875Q42.890625 -4.921875 48.515625 -2.734375Q50.234375 -2.0703125 51.953125 -2.0703125L55.0390625 -2.8125Q56.484375 -2.8125 56.484375 -1.328125Q56.484375 0.7421875 51.640625 0.7421875Q48.125 0.7421875 45.1953125 -1.2109375Q40.625 -3.9453125 37.421875 -11.8359375L36.2890625 -14.609375Q36.015625 -15.2734375 35.80078125 -15.4296875Q35.5859375 -15.5859375 35.05859375 -15.5859375Q34.53125 -15.5859375 34.140625 -15.5078125L33.203125 -15.46875Q31.640625 -15.46875 31.07421875 -16.0546875Q30.5078125 -16.640625 30.5078125 -17.265625Q30.5078125 -18.9453125 33.2421875 -18.9453125Z M75.0546875 -48.0859375Q83.2578125 -55.9765625 95.640625 -55.9765625Q107.9453125 -55.9765625 115.796875 -48.203125Q123.765625 -40.3125 123.765625 -27.734375Q123.765625 -15.1953125 115.6015625 -7.109375Q110.484375 -2.109375 103.0234375 -0.1953125Q99.3125 0.7421875 94.41015625 0.7421875Q89.5078125 0.7421875 84.3515625 -1.26953125Q79.1953125 -3.28125 75.328125 -7.05078125Q71.4609375 -10.8203125 69.17578125 -16.19140625Q66.890625 -21.5625 66.890625 -27.91015625Q66.890625 -34.2578125 69.05859375 -39.31640625Q71.2265625 -44.375 75.0546875 -48.0859375ZM95.6015625 -53.125Q93.453125 -53.125 91.578125 -52.8125V-2.421875Q93.375 -2.109375 95.6015625 -2.109375Q106.03125 -2.109375 113.1796875 -9.0625Q120.640625 -16.2890625 120.640625 -27.734375Q120.640625 -38.6328125 113.6484375 -45.859375Q106.578125 -53.125 95.6015625 -53.125Z M183.703125 -9.2578125Q185.3046875 -9.2578125 185.3046875 -7.4609375Q185.3046875 -5.9765625 183.0390625 -4.4921875Q178.8203125 -1.71875 175.9296875 -0.859375Q170.5 0.7421875 164.5234375 0.7421875Q158.546875 0.7421875 153.01953125 -1.38671875Q147.4921875 -3.515625 143.5859375 -7.34375Q135.421875 -15.390625 135.421875 -28.125Q135.421875 -34.2578125 137.7265625 -39.39453125Q140.03125 -44.53125 144.09375 -48.203125Q152.6875 -55.9765625 165.6953125 -55.9765625Q173.0 -55.9765625 178.546875 -53.4765625Q184.4453125 -50.859375 184.4453125 -49.0234375Q184.4453125 -48.28125 183.95703125 -47.734375Q183.46875 -47.1875 182.84375 -47.1875Q181.59375 -47.1875 180.578125 -48.30078125Q179.5625 -49.4140625 177.82421875 -50.3125Q176.0859375 -51.2109375 174.015625 -51.875Q169.796875 -53.1640625 166.33984375 -53.1640625Q162.8828125 -53.1640625 160.6171875 -52.6953125V-2.6171875Q163.3515625 -2.1484375 165.4609375 -2.1484375Q167.5703125 -2.1484375 169.7578125 -2.421875Q171.9453125 -2.6953125 174.0546875 -3.3203125Q178.78125 -4.7265625 181.1640625 -7.4609375Q182.0234375 -8.4765625 182.53125 -8.8671875Q183.0390625 -9.2578125 183.703125 -9.2578125Z M204.5 -48.0859375Q212.703125 -55.9765625 225.0859375 -55.9765625Q237.390625 -55.9765625 245.2421875 -48.203125Q253.2109375 -40.3125 253.2109375 -27.734375Q253.2109375 -15.1953125 245.046875 -7.109375Q239.9296875 -2.109375 232.46875 -0.1953125Q228.7578125 0.7421875 223.85546875 0.7421875Q218.953125 0.7421875 213.796875 -1.26953125Q208.640625 -3.28125 204.7734375 -7.05078125Q200.90625 -10.8203125 198.62109375 -16.19140625Q196.3359375 -21.5625 196.3359375 -27.91015625Q196.3359375 -34.2578125 198.50390625 -39.31640625Q200.671875 -44.375 204.5 -48.0859375ZM225.046875 -53.125Q222.8984375 -53.125 221.0234375 -52.8125V-2.421875Q222.8203125 -2.109375 225.046875 -2.109375Q235.4765625 -2.109375 242.625 -9.0625Q250.0859375 -16.2890625 250.0859375 -27.734375Q250.0859375 -38.6328125 243.09375 -45.859375Q236.0234375 -53.125 225.046875 -53.125Z M301.8203125 -3.5546875Q303.890625 -3.5546875 303.890625 -1.796875Q303.890625 -1.09375 303.05078125 -0.546875Q302.2109375 0.0 300.0625 0.0H268.34375V-55.2734375H288.265625V-2.578125H295.5703125Q298.03125 -2.578125 299.80859375 -3.06640625Q301.5859375 -3.5546875 301.8203125 -3.5546875Z M325.1171875 -6.953125Q317.96875 -6.953125 315.3515625 -7.0703125L314.21875 -4.375Q313.7109375 -3.2421875 313.28125 -1.9921875Q312.3828125 0.4296875 310.78125 0.4296875Q310.0390625 0.4296875 309.5703125 -0.0390625Q309.1015625 -0.5078125 309.1015625 -1.015625Q309.1015625 -1.875 309.84375 -2.9296875Q311.015625 -4.5703125 312.1484375 -7.2265625Q308.7890625 -7.5390625 308.7890625 -9.1796875Q308.7890625 -10.8203125 310.703125 -10.8203125Q311.875 -10.8203125 313.4375 -10.4296875L332.9296875 -57.7734375L359.6484375 0.0H339.296875L336.0546875 -6.953125ZM316.6015625 -10.1171875Q320.3515625 -9.8046875 323.3203125 -9.8046875H334.765625L325.0 -30.859375Z"/><g class="lamparas"><circle class="lampara" cx="100" cy="404" r="9"/><circle class="lampara" cx="140" cy="404" r="9"/><circle class="lampara" cx="180" cy="404" r="9"/><circle class="lampara" cx="220" cy="404" r="9"/><circle class="lampara" cx="260" cy="404" r="9"/><circle class="lampara" cx="300" cy="404" r="9"/><circle class="lampara" cx="340" cy="404" r="9"/><circle class="lampara" cx="380" cy="404" r="9"/><circle class="lampara" cx="420" cy="404" r="9"/><circle class="lampara" cx="460" cy="404" r="9"/><circle class="lampara" cx="500" cy="404" r="9"/></g></svg></div>
+          <div class="lema">
+            <h1>Turn an old desktop PC into a jukebox with a single USB stick.</h1>
+            <p class="acciones"><a class="boton" href="https://github.com/bafif/rocola/releases/latest">Download</a><a class="pildora" href="https://github.com/bafif/rocola">Code on GitHub</a></p>
+          </div>
+          <p class="baja" aria-hidden="true">Scroll <span>↓</span></p>
+        </div>
+      </section>
+      <section id="what-it-is" class="seccion">
+        <h2 class="aparece">What it is</h2>
+        <p class="intro aparece">Boot an old PC from the stick and a full-screen jukebox comes up, ready to play. When you decide to, a guided installer copies it to the internal disk: from then on the PC starts straight into the jukebox, driven with arcade controls, on a modern monitor or a CRT. It plays through analog, HDMI, USB or Bluetooth speakers and speaks English and Spanish.</p>
+        <div class="pantallas">
+          <figure class="aparece"><img src="../img/biblioteca.webp" width="640" height="480" alt="The library: the artists as paper cards in two columns, with codes A1 to A8, under the ROCOLA marquee and a row of lamps." loading="lazy" /><figcaption>The library: the artists as paper cards with their code, under the marquee.</figcaption></figure>
+          <figure class="aparece"><img src="../img/sonando.webp" width="640" height="480" alt="Now playing: a 45 record on the left, and on the right the title, the artist, the album, lamps for the progress and the volume, and the next song." loading="lazy" /><figcaption>Now playing: the 45 record, the song, what comes next and lamps for the progress and the volume.</figcaption></figure>
+        </div>
+      </section>
+      <section class="seccion">
+        <h2 class="aparece">Why Rocola</h2>
+        <ul class="tarjetas"><li class="tarjeta aparece"><span class="codigo">A1</span><h3>Try it without touching the disk</h3><p>The live system runs in RAM on top of the stick's read-only image: nothing is written to the PC until you install.</p></li><li class="tarjeta aparece"><span class="codigo">A2</span><h3>It never wipes a disk on its own</h3><p>The installer opens only from the menu, and only from the stick; you pick the disk and type a confirmation word. Reinstalling can keep the music.</p></li><li class="tarjeta aparece"><span class="codigo">A3</span><h3>Made for old PCs</h3><p>Debian i386 with a PAE kernel and a non-PAE fallback, about 2 GB of RAM, and boot over BIOS (32- and 64-bit PCs) or UEFI x64.</p></li><li class="tarjeta aparece"><span class="codigo">A4</span><h3>Arcade controls with no setup</h3><p>Encoders that show up as a keyboard or as a joystick work at the same time, and «Test controls» shows what each button sends.</p></li><li class="tarjeta aparece"><span class="codigo">A5</span><h3>CRTs too</h3><p>VGA monitors and 15 kHz arcade or TV screens, with fixed modelines; the monitor type is chosen once, when installing. 15 kHz depends on the video card and its driver.</p></li><li class="tarjeta aparece"><span class="codigo">A6</span><h3>Music that stays</h3><p>Preloaded in the image, or copied from a second USB stick as soon as you plug it in. Once installed, it lives in a /music partition that survives reinstalls.</p></li></ul>
+      </section>
+      <section id="install" class="seccion">
+        <h2 class="aparece">Install</h2>
+        <div class="papel aparece">
+          <p>You need a USB stick of 1 GB or more (<strong>it gets erased</strong>).</p>
+          <ol>
+            <li>Download <code>rocola-i386-&lt;version&gt;.iso</code> (about 671 MiB) and its <code>SHA256SUMS.txt</code> from the <a href="https://github.com/bafif/rocola/releases/latest">latest release</a>.</li>
+            <li>Write it to the stick:
+              <div class="tabla"><table><thead><tr><th scope="col">Tool</th><th scope="col">How</th></tr></thead><tbody><tr><th scope="row">Rufus (Windows)</th><td>«Write in DD Image mode» (<a href="https://github.com/bafif/rocola/blob/main/docs/13-rufus-windows.en.md">step by step</a>)</td></tr><tr><th scope="row">Ventoy</th><td>install Ventoy on the stick once, then copy the <code>.iso</code> onto it</td></tr><tr><th scope="row">balenaEtcher</th><td>«Flash from file», the <code>.iso</code>, the stick, «Flash»</td></tr><tr><th scope="row"><code>dd</code> (Linux)</th><td><code>sudo dd if=rocola-i386-&lt;version&gt;.iso of=/dev/sdX bs=4M conv=fsync</code></td></tr></tbody></table></div>
+            </li>
+          </ol>
+          <p>On a UEFI PC, turn Secure Boot off: the boot loader isn't signed. Checking the download and the stick, and trying it in QEMU: <a href="https://github.com/bafif/rocola/blob/main/docs/10-flashing-usb.en.md">Flashing the USB stick</a>.</p>
+        </div>
+      </section>
+      <section id="how-to-use-it" class="seccion">
+        <h2 class="aparece">How to use it</h2>
+        <ol class="pasos"><li class="paso aparece"><span class="numero">1</span><div><h3>Boot the old PC from the stick</h3><p>From its boot menu or by changing the boot order. «Rocola — English» starts it in English; «Rocola», in Spanish.</p></div></li><li class="paso aparece"><span class="numero">2</span><div><h3>Play music</h3><p>Plug in a second stick with songs: they are copied and show up in the library. The arrows and Enter move and pick, F10 opens the menu, and the arcade buttons are in <a href="https://github.com/bafif/rocola/blob/main/docs/06-arcade-controls.en.md">Arcade controls</a>.</p></div></li><li class="paso aparece"><span class="numero">3</span><div><h3>Install it</h3><p>Plug in a keyboard, open the menu and choose «Install to disk». Pick the language and the disk (14 GB or more), type the confirmation word and pick the monitor type. Remove the stick and reboot: from then on the PC starts straight into the jukebox.</p></div></li></ol>
+      </section>
+      <section class="seccion">
+        <h2 class="aparece">Status</h2>
+        <div class="estado aparece"><p><strong>Beta.</strong> In QEMU/KVM it works end to end: it boots to the jukebox over BIOS and UEFI x64, the installer clones it to an empty disk that then boots on its own, songs from a second stick show up in the library, and reinstalling keeps the music.</p><p><strong>On real hardware</strong> the live system boots from a Ventoy stick. Not tried there yet: 15 kHz on a CRT, an arcade encoder, importing from a second stick and reinstalling while keeping the music.</p><p>All the detail is in the <a href="https://github.com/bafif/rocola#more-documentation">documentation</a>.</p></div>
+      </section>
+    </main>
+    <footer class="pie">
+      <img src="../img/rocola-logo.svg" alt="Rocola" width="120" height="171" />
+      <p><a class="boton" href="https://github.com/bafif/rocola/releases/latest">Download</a></p>
+      <p>Free software under the MIT license · © 2026 Bautista D. Fiori · <a href="https://github.com/bafif/rocola">GitHub</a></p>
+    </footer>
+  </body>
+</html>

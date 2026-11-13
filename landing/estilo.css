@@ -1,0 +1,188 @@
+/* Rocola: the Ámbar theme of the jukebox (app/assets/themes/ambar/theme.toml) on a page. Wood behind, paper cards
+   with a burgundy strip, amber glass and light, Limelight for the marquee, Oswald for the text and Special Elite for
+   what is typed on the cards. */
+
+@font-face { font-family: 'Limelight'; src: url('fuentes/Limelight-Regular.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Oswald'; src: url('fuentes/Oswald-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Oswald'; src: url('fuentes/Oswald-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Special Elite'; src: url('fuentes/SpecialElite-Regular.woff2') format('woff2'); font-display: swap; }
+
+:root {
+  --madera: #24140c;
+  --papel: #f1e4c6;
+  --tinta: #2a160b;
+  --tinta-tenue: #5a3418;
+  --papel-tenue: #c8b9a0;
+  --bordo: #8c1c2c;
+  --luz: #ffcf7a;
+  --bronce: #9a6a2c;
+  --bronce-oscuro: #5e3a14;
+  --p: 0;
+  color-scheme: dark;
+  scroll-padding-top: 76px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root { scroll-behavior: smooth; }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--madera)
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.012) 0 3px, transparent 3px 11px, rgb(0 0 0 / 0.05) 11px 13px, transparent 13px 29px);
+  color: var(--papel);
+  font: 500 1.125rem/1.55 'Oswald', 'Arial Narrow', sans-serif;
+}
+a { color: var(--luz); text-underline-offset: 0.18em; }
+a:hover { color: #ffe3ad; }
+a:focus-visible, .boton:focus-visible, .pildora:focus-visible { outline: 3px solid var(--luz); outline-offset: 3px; }
+img { max-width: 100%; }
+code { font-family: ui-monospace, 'DejaVu Sans Mono', monospace; font-size: 0.9em; overflow-wrap: anywhere; }
+
+/* The bar at the top */
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) clamp(16px, 4vw, 40px) 10px;
+  background: rgb(36 20 12 / 0.94);
+  border-bottom: 2px solid var(--bronce);
+}
+.marca { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; }
+.marca span { font-family: 'Limelight', serif; font-size: 1.45rem; letter-spacing: 0.08em; color: var(--luz); }
+.barra nav { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; }
+.barra nav a { color: var(--papel); font-weight: 600; text-decoration: none; letter-spacing: 0.03em; }
+.barra nav a:hover { color: var(--luz); }
+@media (max-width: 640px) {
+  .barra nav a:not(:nth-last-child(-n + 2)) { display: none; }
+}
+
+/* The opening: the marquee in the middle */
+.escenario {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(1.2rem, 3vh, 2.2rem);
+  min-height: calc(100svh - 60px);
+  padding: 2rem clamp(16px, 4vw, 40px);
+  text-align: center;
+}
+.marquesina { width: min(92vw, 880px); }
+.marquesina-svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 0 48px rgb(255 198 106 / 0.28)); }
+.lampara { fill: var(--luz); }
+.lema h1 { margin: 0 auto; max-width: 28ch; font-weight: 600; font-size: clamp(1.45rem, 3.4vw, 2.3rem); line-height: 1.25; }
+.acciones { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem 1rem; margin: 1.4rem 0 0; }
+.boton, .pildora {
+  display: inline-block;
+  padding: 0.7em 1.5em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.boton { background: var(--luz); color: var(--madera); }
+.boton:hover { background: #ffe0a3; color: var(--madera); }
+.pildora { border: 2px solid var(--luz); color: var(--luz); }
+.baja { margin: 0; color: var(--papel-tenue); letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.95rem; }
+.baja span { display: inline-block; }
+
+/* Sections */
+.seccion { max-width: 1060px; margin: 0 auto; padding: clamp(56px, 9vw, 112px) clamp(16px, 4vw, 40px) 0; }
+.seccion h2 {
+  margin: 0 0 1.3rem;
+  font: 400 clamp(2rem, 5.4vw, 3.3rem)/1.05 'Limelight', serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--luz);
+}
+.intro { max-width: 64ch; margin: 0; font-size: 1.25rem; }
+.pantallas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 2rem; margin-top: 2.6rem; }
+.pantallas figure { margin: 0; }
+.pantallas img {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 10px;
+  background: linear-gradient(#e9c27a, var(--bronce) 45%, var(--bronce-oscuro));
+  border-radius: 8px;
+  box-shadow: 0 22px 44px rgb(0 0 0 / 0.5);
+}
+.pantallas figcaption { margin-top: 0.8rem; color: var(--papel-tenue); font-size: 1rem; }
+
+/* Paper cards with their code, like the library of the jukebox */
+.tarjetas { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 1.5rem; }
+.tarjeta, .papel {
+  background: linear-gradient(#f6ebd0, #e9d9b4);
+  color: var(--tinta);
+  box-shadow: 0 12px 26px rgb(0 0 0 / 0.42);
+}
+.tarjeta { padding: 1.4rem 1.4rem 1.5rem; border-top: 12px solid var(--bordo); }
+.codigo { font-weight: 600; color: var(--bordo); letter-spacing: 0.05em; font-size: 1.15rem; }
+.tarjeta h3 { margin: 0.25rem 0 0.6rem; font: 400 1.38rem/1.2 'Special Elite', 'Courier New', monospace; }
+.tarjeta p { margin: 0; color: var(--tinta-tenue); font-size: 1.05rem; }
+
+.papel { padding: clamp(1.3rem, 4vw, 2.4rem); }
+.papel p:first-child { margin-top: 0; }
+.papel p:last-child { margin-bottom: 0; }
+.papel a { color: var(--bordo); }
+.papel code { background: rgb(42 22 11 / 0.08); padding: 0.08em 0.35em; }
+.papel ol { padding-left: 1.4rem; }
+.papel li { margin-bottom: 0.9rem; }
+.tabla { overflow-x: auto; margin-top: 0.8rem; }
+.tabla table { border-collapse: collapse; width: 100%; min-width: 30rem; }
+.tabla th, .tabla td { padding: 0.55rem 0.8rem; text-align: left; vertical-align: top; border-bottom: 1px solid rgb(42 22 11 / 0.2); }
+.tabla thead th { color: var(--bordo); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.95rem; }
+.tabla tbody th { font-weight: 600; white-space: nowrap; }
+
+.pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.8rem; }
+.paso { display: grid; grid-template-columns: 3.2rem 1fr; gap: 1.2rem; }
+.numero { font: 400 3.2rem/1 'Limelight', serif; color: var(--luz); text-align: center; }
+.paso h3 { margin: 0.2rem 0 0.35rem; font-size: 1.45rem; font-weight: 600; }
+.paso p { margin: 0; max-width: 66ch; }
+.estado p { max-width: 70ch; margin: 0 0 1rem; }
+
+.pie {
+  margin-top: clamp(64px, 10vw, 120px);
+  padding: 56px 16px calc(48px + env(safe-area-inset-bottom, 0px));
+  border-top: 2px solid var(--bronce-oscuro);
+  text-align: center;
+  color: var(--papel-tenue);
+}
+.pie img { width: 120px; height: auto; }
+.pie p { margin: 1.2rem 0 0; }
+
+/* Motion: only when the visitor's system allows it (rocola.js adds .anima) */
+.anima .barra { position: fixed; left: 0; right: 0; opacity: 0; transform: translateY(-100%); transition: opacity 0.35s, transform 0.35s; }
+.anima.con-barra .barra, .anima .barra:focus-within { opacity: 1; transform: none; }
+.anima .hero { height: 240vh; }
+.anima .escenario { position: sticky; top: 0; height: 100svh; min-height: 0; overflow: hidden; }
+.anima .marquesina {
+  transform: translateY(calc(var(--p) * -42vh)) scale(max(0.2, 1 - var(--p) * 1.15));
+  opacity: calc(1 - var(--p) * 1.65);
+  will-change: transform, opacity;
+}
+.anima .lema { opacity: calc(1 - var(--p) * 3); transform: translateY(calc(var(--p) * 8vh)); }
+/* The first section rises over the end of the opening, so the screen is never left empty while the marquee clears. */
+.anima .hero + .seccion { position: relative; z-index: 1; margin-top: -85vh; }
+.anima .baja { opacity: calc(1 - var(--p) * 6); }
+.anima .baja span { animation: baja 1.8s ease-in-out infinite; }
+@keyframes baja { 50% { transform: translateY(6px); } }
+.anima .lampara { animation: lampara 1.5s steps(1, end) infinite; }
+.anima .lampara:nth-child(3n + 2) { animation-delay: -0.5s; }
+.anima .lampara:nth-child(3n) { animation-delay: -1s; }
+@keyframes lampara { 0% { fill: var(--luz); } 66% { fill: #6e4422; } }
+.anima .vidrio { animation: vidrio 4s ease-in-out infinite; }
+@keyframes vidrio { 50% { opacity: 0.9; } }
+
+.anima .aparece { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.anima .aparece.visto { opacity: 1; transform: none; }
+.anima .tarjeta:nth-child(2), .anima .paso:nth-child(2), .anima .pantallas figure:nth-child(2) { transition-delay: 0.08s; }
+.anima .tarjeta:nth-child(3), .anima .paso:nth-child(3) { transition-delay: 0.16s; }
+.anima .tarjeta:nth-child(4) { transition-delay: 0.24s; }
+.anima .tarjeta:nth-child(5) { transition-delay: 0.32s; }
+.anima .tarjeta:nth-child(6) { transition-delay: 0.4s; }

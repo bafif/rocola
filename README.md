@@ -5,7 +5,7 @@
 # Rocola
 
 **Turn an old desktop PC into a jukebox with a single USB stick.**<br>
-[Español](README.es.md) · [Download](https://github.com/bafif/rocola/releases/latest) · [Install](#install) ·
+[Español](README.es.md) · [Site](https://bafif.github.io/rocola/en/) · [Download](https://github.com/bafif/rocola/releases/latest) · [Install](#install) ·
 [How to use it](#how-to-use-it)
 
 </div>

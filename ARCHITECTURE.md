@@ -160,6 +160,7 @@ app/        la UI de la rocola (Python + pygame/SDL2), cliente MPD, entrada, tem
 installer/  instalador guiado (TUI con whiptail) que clona el sistema al disco
 display/    modelines de 15 kHz y la configuración de video VGA/CRT
 docs/       un documento por subsistema
+landing/    la página de bafif.github.io/rocola/ (estática, en español y en inglés)
 ```
 
 Cada carpeta de nivel superior corresponde a un subsistema de esta arquitectura y tiene su documento en
