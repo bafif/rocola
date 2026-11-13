@@ -10,9 +10,9 @@
 # Lo corre update-grub. Si algo no cierra, no escribe la entrada y sale bien: un error
 # acá haría fallar update-grub, y con él la instalación.
 
-prefix="/usr"
-exec_prefix="/usr"
-datarootdir="/usr/share"
+# Las mismas variables que definen los scripts de grub.d de Debian antes de cargar la librería.
+# shellcheck disable=SC2034
+prefix="/usr" exec_prefix="/usr" datarootdir="/usr/share"
 . "${pkgdatadir:-/usr/share/grub}/grub-mkconfig_lib" || exit 0
 
 kernel=$(ls -1 /boot/vmlinuz-*-686-pae 2>/dev/null | sort -V | tail -n 1)
