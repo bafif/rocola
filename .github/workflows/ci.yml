@@ -37,3 +37,5 @@ jobs:
         run: bash os/tests/music-import.sh
       - name: EDID reader
         run: bash os/tests/display-edid.sh
+      - name: Display setup
+        run: bash os/tests/display-setup.sh

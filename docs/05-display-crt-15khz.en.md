@@ -43,6 +43,10 @@ boot → rocola-display-setup
   example 800×600, at 32 or 16 bits of color).
 - "Rocola — GPU / CRT 15 kHz (KMS)" loads the video card's driver and Xorg uses `modesetting`: it takes
   the monitor's resolution, and it's the one 15 kHz needs.
+- With that entry, `rocola-display-setup` waits for the video card's driver to finish loading before
+  it picks Xorg's (up to 10 seconds; a slow machine can take a while). If `/dev/dri/card0` still isn't
+  there after that, the kernel doesn't drive that card and it uses `fbdev`. With `nomodeset` it doesn't
+  wait.
 - The installed disk boots with the same video as the stick had when installing; with 15 kHz, always
   with KMS.
 - On some AMD APUs (Picasso, Raven2) the `amdgpu` driver doesn't work with the i386 kernel: use the

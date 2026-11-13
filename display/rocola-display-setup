@@ -6,12 +6,20 @@
 # adecuados (VGA/moderno por EDID, o CRT 15 kHz con modelines fijos).
 #
 # Lee /etc/rocola/display.conf (MODE = auto|vga|crt15). Ver docs/05.
+#
+# ROCOLA_ROOT antepone un directorio a todas las rutas del sistema (/etc, /opt, /proc, /dev,
+# /sys) y ROCOLA_UDEVADM cambia el udevadm que se llama: los tests corren el script sobre un
+# árbol falso (os/tests/display-setup.sh).
 set -euo pipefail
 
-CONF=/etc/rocola/display.conf
-MODELINES_DIR=/opt/rocola-display/modelines
-EDID_READER=/opt/rocola-display/rocola-edid
-OUT=/etc/X11/xorg.conf.d/10-rocola-display.conf
+ROOT="${ROCOLA_ROOT:-}"
+UDEVADM="${ROCOLA_UDEVADM:-udevadm}"
+CONF=$ROOT/etc/rocola/display.conf
+MODELINES_DIR=$ROOT/opt/rocola-display/modelines
+EDID_READER=$ROOT/opt/rocola-display/rocola-edid
+OUT=$ROOT/etc/X11/xorg.conf.d/10-rocola-display.conf
+GPU_NODE=$ROOT/dev/dri/card0
+export ROCOLA_DRM_DIR="$ROOT/sys/class/drm"
 
 MODE=auto
 TV_STANDARD=ntsc
@@ -19,7 +27,7 @@ PREFERRED_RES=
 # shellcheck disable=SC1090
 [ -f "$CONF" ] && . "$CONF" || true
 
-mkdir -p /etc/X11/xorg.conf.d 2>/dev/null || true
+mkdir -p "$ROOT/etc/X11/xorg.conf.d" 2>/dev/null || true
 
 # Defensa en profundidad (kiosko): si /etc no es escribible —no debería pasar, el
 # servicio ya corre con el rootfs rw (After=local-fs.target)— no abortamos el
@@ -30,6 +38,20 @@ if ! ( : >> "$OUT" ) 2>/dev/null; then
     exit 0
 fi
 
+# Con KMS, el nodo /dev/dri/card0 aparece cuando udev carga el driver de la GPU, y eso
+# puede terminar después de que arranca este servicio: el módulo tarda en cargar o tiene
+# que leer su firmware. Si lo miráramos enseguida, en una máquina lenta elegiríamos fbdev
+# aunque se haya arrancado con la entrada KMS, y el modo de 15 kHz no andaría. Por eso,
+# salvo con 'nomodeset' (ahí no va a aparecer), esperamos a que udev termine de procesar
+# los dispositivos del arranque, con un tope de 10 s. Si después no hay card0, el kernel
+# no maneja esa GPU.
+wait_for_gpu_driver() {
+    grep -qw nomodeset "$ROOT/proc/cmdline" 2>/dev/null && return 0
+    [ -e "$GPU_NODE" ] && return 0
+    command -v "$UDEVADM" >/dev/null 2>&1 || return 0
+    "$UDEVADM" settle --timeout=10 2>/dev/null || true
+}
+
 # Elige el driver de Xorg según haya o no KMS. CLAVE para no crashear:
 #  - Con KMS (/dev/dri/card0 presente): 'modesetting' (genérico; sirve para los
 #    modelines de CRT 15 kHz y para GPUs cuyo KMS funciona).
@@ -37,20 +59,18 @@ fi
 #    'fbdev' sobre el framebuffer del firmware (efifb en UEFI, vesafb en BIOS).
 #    No dejamos que Xorg autodetecte, porque puede elegir 'vesa', que se niega a
 #    correr bajo UEFI ("Refusing to run on UEFI") y tumba el servidor X.
-detect_driver() {
-    if [ -e /dev/dri/card0 ]; then echo modesetting; else echo fbdev; fi
-}
+wait_for_gpu_driver
+if [ -e "$GPU_NODE" ]; then DRIVER=modesetting; else DRIVER=fbdev; fi
 
 device_section() {
-    local drv; drv="$(detect_driver)"
     echo 'Section "Device"'
     echo '    Identifier "rocola-gpu"'
-    printf '    Driver "%s"\n' "$drv"
+    printf '    Driver "%s"\n' "$DRIVER"
     # Con fbdev, apuntar al framebuffer explícitamente: sin esto el driver a veces
     # tira "Unable to find a valid framebuffer device" sobre efifb y crashea X.
-    [ "$drv" = fbdev ] && echo '    Option "fbdev" "/dev/fb0"'
+    [ "$DRIVER" = fbdev ] && echo '    Option "fbdev" "/dev/fb0"'
     echo 'EndSection'
-    echo "rocola-display-setup: driver de video = $drv $( [ -e /dev/dri/card0 ] && echo '(KMS)' || echo '(sin KMS -> fbdev)')" >&2
+    echo "rocola-display-setup: driver de video = $DRIVER $( [ "$DRIVER" = modesetting ] && echo '(KMS)' || echo '(sin KMS -> fbdev)')" >&2
 }
 
 # Con fbdev, Xorg tiene que usar EXACTAMENTE el formato de píxel del framebuffer del
@@ -60,9 +80,9 @@ device_section() {
 # arreglo de este lado (Xorg 21 no acepta fbbpp 24): por eso GRUB pide 32 o 16 bpp por
 # BIOS (image/build-image.sh). Con KMS (modesetting) el driver elige el modo.
 screen_section() {
-    [ "$(detect_driver)" = fbdev ] || return 0
+    [ "$DRIVER" = fbdev ] || return 0
     local bpp depth
-    bpp="$(cat /sys/class/graphics/fb0/bits_per_pixel 2>/dev/null || true)"
+    bpp="$(cat "$ROOT/sys/class/graphics/fb0/bits_per_pixel" 2>/dev/null || true)"
     case "$bpp" in
         16) depth=16 ;;
         8)  depth=8 ;;
@@ -80,7 +100,7 @@ screen_section() {
 
 write_vga() {
     {
-        echo "# VGA / moderno. Driver forzado (ver detect_driver); Xorg toma los modos por EDID."
+        echo "# VGA / moderno. Driver elegido según haya KMS o no; Xorg toma los modos por EDID."
         device_section
         screen_section
         echo 'Section "Monitor"'
@@ -134,7 +154,7 @@ case "$MODE" in
             while read -r conn name; do
                 echo "rocola-display-setup: EDID de ${name:-un monitor sin nombre} en $conn -> Xorg toma los modos de ahí"
             done <<<"$edids"
-        elif [ "$(detect_driver)" = fbdev ]; then
+        elif [ "$DRIVER" = fbdev ]; then
             echo "rocola-display-setup: sin KMS no hay EDID que leer; el modo es el que dejó el firmware"
         else
             echo "rocola-display-setup: sin EDID útil; VGA seguro. Si usás CRT 15 kHz, poné MODE=crt15 en $CONF"

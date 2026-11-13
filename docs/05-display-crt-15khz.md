@@ -42,6 +42,9 @@ arranque → rocola-display-setup
   GRUB (por ejemplo 800×600, con 32 o 16 bits de color).
 - «Rocola — GPU / CRT 15 kHz (KMS)» carga el driver de la placa y Xorg usa `modesetting`: toma la
   resolución del monitor, y es la que hace falta para 15 kHz.
+- Con esa entrada, `rocola-display-setup` espera a que se termine de cargar el driver de la placa
+  antes de elegir el de Xorg (hasta 10 segundos; en una máquina lenta puede tardar). Si después de eso
+  no aparece `/dev/dri/card0`, el kernel no maneja esa placa y usa `fbdev`. Con `nomodeset` no espera.
 - El disco instalado arranca con el mismo video que el pendrive en el momento de instalar; con 15 kHz,
   siempre con KMS.
 - En algunas APU de AMD (Picasso, Raven2) el driver `amdgpu` no anda con el kernel i386: ahí va la

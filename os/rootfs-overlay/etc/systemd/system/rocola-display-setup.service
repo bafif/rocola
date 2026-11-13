@@ -15,6 +15,9 @@ Before=getty@tty1.service
 # -> Xorg quedaba sin config -> consola de texto en vez de la rocola. local-fs.target
 # garantiza el rootfs rw antes de correr. (En el live no pasaba: el overlay es rw.)
 After=local-fs.target
+# El driver de la GPU lo carga udev y, con KMS, puede terminar después de local-fs.target.
+# La espera está en el script (udevadm settle, hasta 10 s, y sólo sin 'nomodeset'), no acá:
+# After=systemd-udev-settle.service demoraría también la entrada por defecto, que no la necesita.
 
 [Service]
 Type=oneshot
