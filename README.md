@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/logo/rocola-icono.svg" width="96" alt="">
+
 # Rocola
 
 **Turn an old desktop PC into a jukebox with a single USB stick.**<br>

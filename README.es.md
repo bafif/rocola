@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/logo/rocola-icono.svg" width="96" alt="">
+
 # Rocola
 
 **Convertí una computadora de escritorio vieja en una rocola con un solo pendrive.**<br>

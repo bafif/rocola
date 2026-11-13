@@ -138,6 +138,19 @@ The active theme is set with `theme` in `/etc/rocola/rocola.toml` (or with the `
 variable), with the name of a folder in `themes/`. You can have several themes and pick one for each
 installation (see [07](07-rocola-app.en.md)).
 
+## Logo
+
+The Rocola logo is the jukebox arch, with a bronze ring and amber glass, an «R» inside and the word ROCOLA
+underneath, in Limelight. The letters are outlined, so the font isn't needed. The files live in `docs/logo/`:
+
+| File | For |
+| :--- | :--- |
+| `rocola-logo.svg` | Dark backgrounds: the word in amber light. |
+| `rocola-logo-tinta.svg` | Light backgrounds: the word in ink. |
+| `rocola-icono.svg`, `rocola-icono-512.png` | Icon and favicon: the arch with the «R», with a heavier letter so it reads at 16 and 32 px. |
+
+The app doesn't use the logo: on screen the marquee rules, with the title from `[branding]`.
+
 ## Fonts and licenses
 
 Bundled typefaces must be under the OFL or Apache license. Each one is listed in

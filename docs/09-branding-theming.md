@@ -138,6 +138,20 @@ El tema activo se elige con `theme` en `/etc/rocola/rocola.toml` (o con la varia
 `ROCOLA_THEME`), con el nombre de una carpeta de `themes/`. Se pueden tener varios temas y elegir
 uno en cada instalación (ver [07](07-rocola-app.md)).
 
+## Logo
+
+El logo de Rocola es el arco de la rocola, con aro de bronce y vidrio ámbar, una «R» adentro y la palabra
+ROCOLA abajo, en Limelight. Las letras están pasadas a trazos, así que no hace falta tener la fuente. Los
+archivos están en `docs/logo/`:
+
+| Archivo | Para |
+| :--- | :--- |
+| `rocola-logo.svg` | Fondos oscuros: la palabra va en la luz ámbar. |
+| `rocola-logo-tinta.svg` | Fondos claros: la palabra va en tinta. |
+| `rocola-icono.svg`, `rocola-icono-512.png` | Ícono y favicon: el arco con la «R», con la letra más gruesa para que se lea a 16 y 32 px. |
+
+La app no usa el logo: en la pantalla manda la marquesina, con el título de `[branding]`.
+
 ## Fuentes y licencias
 
 Las tipografías incluidas tienen que tener licencia OFL o Apache. Cada una se anota en
