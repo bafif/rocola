@@ -1,8 +1,8 @@
 """The repository's documents: each one in Spanish and in English, and no broken links.
 
 A document X.md has its other language next to it as X.en.md or X.es.md (README.md is the
-English one, with README.es.md). Not documents of their own: CLAUDE.md, licenses, changelogs
-and the GitHub templates under .github/.
+English one, with README.es.md). Not documents of their own: licenses, changelogs and the
+GitHub templates under .github/. Only what git tracks counts.
 """
 
 from __future__ import annotations
@@ -29,11 +29,7 @@ def documents() -> list[str]:
 
 def _skipped(path: str) -> bool:
     name = path.rsplit("/", 1)[-1]
-    return (
-        path.startswith(".github/")
-        or name == "CLAUDE.md"
-        or name.upper().startswith(("LICENSE", "CHANGELOG"))
-    )
+    return path.startswith(".github/") or name.upper().startswith(("LICENSE", "CHANGELOG"))
 
 
 def _others(path: str) -> list[str]:

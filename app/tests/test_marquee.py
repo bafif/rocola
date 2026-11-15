@@ -262,7 +262,7 @@ def test_the_app_asks_for_the_next_song_only_when_the_queue_changes():
     app._update_next({"playlist": "5", "nextsong": "3"})
     app._update_next({"playlist": "5", "nextsong": "3"})
     assert asked == [3] and app.state["next"] == {"file": "3.mp3"}
-    app._update_next({"playlist": "6"})  # the last song of the queue: nothing next
+    app._update_next({"playlist": "6"})  # the last song of the queue, so nothing is next
     assert asked == [3] and app.state["next"] == {}
 
 
